@@ -1,0 +1,18 @@
+{
+  "mode": "private-anvil",
+  "chainId": 31337,
+  "source": "operator-reviewed private Anvil deployment",
+  "rpcUrl": "http://127.0.0.1:8547",
+  "module": "REPLACE_WITH_DEPLOYED_MODULE_ADDRESS",
+  "token": "REPLACE_WITH_DEPLOYED_TOKEN_ADDRESS",
+  "factory": "REPLACE_WITH_DEPLOYED_FACTORY_ADDRESS",
+  "registry": "REPLACE_WITH_DEPLOYED_REGISTRY_ADDRESS",
+  "tokenDecimals": 6,
+  "tokenSymbol": "USDC",
+  "ownerAddress": "REPLACE_WITH_TEST_SAFE_OWNER_ADDRESS",
+  "settlementUrl": "http://127.0.0.1:6572",
+  "runtimeUrl": "http://127.0.0.1:6490",
+  "marketBundleMetadataUrl": "http://127.0.0.1:6583/skills/bundles/REPLACE_WITH_MARKET_SERVICE_ID/metadata",
+  "bundleSha256": "REPLACE_WITH_PUBLISHED_BUNDLE_SHA256",
+  "maxUsageUnits": 1
+}

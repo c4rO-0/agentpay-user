@@ -1,0 +1,23 @@
+{
+  "schema": "agentpay.user-protocol-artifacts.v1",
+  "sourceRepository": "https://github.com/c4rO-0/agentpay-protocol.git",
+  "sourceCommit": "1c6ffab3a325579ecfa165e3e5e5a9dc6d3e6ab1",
+  "sourceCommitScope": "Exact public source snapshot used to build packages/types; no private source or old archives reused.",
+  "build": {
+    "node": "22.22.3",
+    "pnpm": "10.0.0",
+    "typescript": "5.9.3",
+    "commands": [
+      "pnpm --filter @agentpay/types build",
+      "pnpm --ignore-workspace pack (in packages/types)"
+    ]
+  },
+  "packages": [
+    {
+      "name": "@agentpay/types",
+      "version": "0.14.1",
+      "file": "agentpay-types-0.14.1.tgz",
+      "sha256": "e4c9f65c536f7104a6edc1078c275e95f100f2795c955e0f35e9ef5a009d36c0"
+    }
+  ]
+}

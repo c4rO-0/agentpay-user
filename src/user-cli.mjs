@@ -1,0 +1,355 @@
+// SPDX-License-Identifier: MPL-2.0
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+// If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { spawn } from "node:child_process";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { join } from "node:path";
+import { installedUserDir } from "./local-data-directory.mjs";
+const execute = promisify(execFile);
+const groups = {
+  wallet: [
+    ["info", "Wallet identity and local file locations"],
+    ["unlock", "Unlock Wallet for payments"],
+    ["lock", "Lock Wallet; keep services running"],
+    ["restore", "Restore an existing key and Policy"],
+  ],
+  policy: [
+    ["info", "View current spending permission"],
+    ["renew", "Renew or replace spending limits and expiry"],
+    ["revoke", "Revoke spending permission on-chain"],
+  ],
+  service: [
+    ["start", "Start Wallet and Runtime"],
+    ["stop", "Stop Wallet and Runtime"],
+    ["restart", "Restart both; Wallet starts locked"],
+    ["autostart on|off", "Change startup at login"],
+    ["logs wallet|runtime", "Read recent service logs"],
+  ],
+  market: [
+    ["connect [--market URL]", "Sign in and connect this Wallet to Market"],
+  ],
+  orders: [
+    ["list", "List saved Orders and warnings"],
+    ["details ID", "Read saved Order details"],
+    ["status ID", "Check an Order online"],
+    ["retrieve ID", "Retrieve its original result"],
+    ["case ID", "Find support for an Order"],
+    ["archive ID", "Hide a reviewed local warning"],
+    ["unarchive ID", "Show its warning again"],
+    ["files ID [remove KEY]", "View or remove cached attachments"],
+  ],
+  cache: [
+    ["info", "View cache usage"],
+    ["list [PAGE] [input|output]", "List cached files"],
+    ["details ID", "Inspect one cached file"],
+    ["export ID PATH", "Export a verified copy"],
+    ["clean", "Review and confirm cleanup"],
+    ["settings [KEY VALUE]", "View or change cache limits"],
+  ],
+  payment: [["test", "Test the full payment path with the official Skill"]],
+};
+function panel(title, rows, example = "") {
+  return (
+    "\nAgentPay · " +
+    title +
+    "\n\n" +
+    rows
+      .map(([name, description]) => "  " + name.padEnd(32) + "  " + description)
+      .join("\n") +
+    (example ? "\n\nExample:\n  " + example : "") +
+    "\n"
+  );
+}
+export const helpText =
+  panel(
+    "User and Wallet",
+    [
+      ["status", "Check services, permission and Order warnings"],
+      ["install --market URL", "Install and continue setup"],
+      ["setup", "Continue setup"],
+      ["repair [-f]", "Rebuild local code; -f skips confirmation"],
+      ["uninstall", "Confirm removal of local data"],
+      ...Object.keys(groups).map((name) => [
+        name + " help",
+        name === "service"
+          ? "Background processes and login startup"
+          : name === "policy"
+            ? "Spending permission"
+            : name === "orders"
+              ? "Order history and support"
+              : name === "wallet"
+                ? "Local Wallet"
+                : name === "market"
+                  ? "Website connection"
+                  : name === "payment"
+                    ? "Payment path checks"
+                    : "Local file cache",
+      ]),
+      ["help", "Show this overview"],
+    ],
+    "./run policy help",
+  ) +
+  `
+Update your installation
+  1. Stop services: ./run service stop
+  2. Get compatible User and Wallet versions from their release pages.
+     Git: run git pull --ff-only in each repository on its release branch.
+     ZIP: replace the program folders; keep your private User data and
+     .agentpay-install directory. Do not uninstall.
+  3. From User: ./run repair
+  4. ./run wallet unlock, then ./run status
+`;
+
+function topicHelp(group, sub) {
+  if (group === "service" && sub === "autostart")
+    return (
+      panel(
+        "Login startup",
+        [
+          ["./run service autostart on", "Enable startup at future logins"],
+          ["./run service autostart off", "Disable startup at future logins"],
+        ],
+        "./run service autostart off",
+      ) + "Current processes are unchanged. Wallet starts locked.\n"
+    );
+  const notes = {
+    wallet: "Locking Wallet does not revoke on-chain spending permission.",
+    policy:
+      "Renewal and revocation require owner approval. Existing Orders are retained.",
+    service:
+      "Services run in the background as systemd user services. Closing your terminal does not stop them.",
+    orders:
+      "Use an Order/request ID or unique short ID. Queries need an unlocked Wallet; retrieving a result does not purchase again.",
+    cache:
+      "Add --offline when Runtime is stopped. Unfinished inputs are protected.",
+    market: "Connecting grants website Order access, not spending permission.",
+    payment:
+      "Each new test requires price confirmation. An interrupted test continues its original Order.",
+  };
+  return (
+    panel(
+      group[0].toUpperCase() + group.slice(1),
+      groups[group].map(([name, text]) => [
+        "./run " + group + " " + name,
+        text,
+      ]),
+      "./run " +
+        group +
+        " " +
+        (group === "orders" ? "details ORDER_ID" : groups[group][0][0]),
+    ) +
+    "\n" +
+    notes[group] +
+    "\n"
+  );
+}
+function runNode(args) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, args, {
+      stdio: "inherit",
+      shell: false,
+    });
+    child.once("error", () => {
+      console.error(
+        "Could not launch this command with the selected Node executable. Check AGENTPAY_NODE and run ./run help.",
+      );
+      resolve(1);
+    });
+    child.once("exit", (code) => resolve(code ?? 1));
+  });
+}
+export async function runUserCli(
+  args,
+  {
+    run = runNode,
+    status = async (write) => {
+      const { showStatusPanel } = await import("./status-panel.mjs");
+      return showStatusPanel(write);
+    },
+    logs = async (role) => {
+      try {
+        const { stdout } = await execute(
+          "journalctl",
+          [
+            "--user",
+            "-u",
+            `agentpay-local-${role}.service`,
+            "-n",
+            "40",
+            "--no-pager",
+          ],
+          { timeout: 10000, maxBuffer: 262144 },
+        );
+        console.log(
+          `Recent ${role === "wallet" ? "Wallet" : "Runtime"} service logs`,
+        );
+        process.stdout.write(
+          !stdout.trim() || stdout.trim() === "-- No entries --"
+            ? "No recent entries for this user service.\n"
+            : stdout,
+        );
+        return 0;
+      } catch {
+        console.error(
+          "Could not read the user service journal. Run ./run status to check services; verify access to your systemd user journal.",
+        );
+        return 1;
+      }
+    },
+    uninstall = async () => {
+      const { uninstallLocal } = await import("./uninstall-local.mjs");
+      return uninstallLocal();
+    },
+    connect = async (args, options) => {
+      const { connectMarket } = await import("./connect-market.mjs");
+      return connectMarket(args, options);
+    },
+    write = console.log,
+  } = {},
+) {
+  const [command, ...rest] = args;
+  const script = (name) => join(installedUserDir, "scripts", name + ".mjs");
+  const isHelp = (value) => ["help", "--help", "-h"].includes(value);
+  if (!command || isHelp(command)) {
+    if (rest.length && groups[rest[0]]) write(topicHelp(rest[0], rest[1]));
+    else write(helpText);
+    return 0;
+  }
+  if (
+    groups[command] &&
+    (!rest.length || (rest.length === 1 && isHelp(rest[0])))
+  ) {
+    write(topicHelp(command));
+    return 0;
+  }
+  const [action, ...values] = rest;
+  if (groups[command] && values.length === 1 && isHelp(values[0])) {
+    write(topicHelp(command, action));
+    return 0;
+  }
+  if (
+    ["repair", "install", "setup", "status", "uninstall"].includes(command) &&
+    rest.length === 1 &&
+    isHelp(action)
+  ) {
+    write(helpText);
+    return 0;
+  }
+  if (command === "orders" && action === "files" && !values.length) {
+    write(
+      panel("Order files", [
+        ["./run orders files ORDER_ID", "List cached attachments"],
+        [
+          "./run orders files ORDER_ID remove FILE_KEY",
+          "Confirm removal of one copy",
+        ],
+      ]),
+    );
+    return 0;
+  }
+  if (
+    command === "service" &&
+    action === "autostart" &&
+    (!values.length || (values.length === 1 && isHelp(values[0])))
+  ) {
+    write(topicHelp(command, action));
+    return 0;
+  }
+  if (command === "install" && rest.length === 2 && action === "--market")
+    return run([script("install-user"), ...rest]);
+  if (
+    command === "repair" &&
+    (!rest.length || (rest.length === 1 && action === "-f"))
+  )
+    return run([script("repair"), ...rest]);
+  if (command === "setup" && !rest.length)
+    return run([script("user-setup"), "--guided"]);
+  if (command === "payment" && action === "test" && !values.length)
+    return run([script("official-paid-test")]);
+  if (command === "status" && !rest.length) return status(write);
+  if (command === "uninstall" && !rest.length) return uninstall();
+  if (command === "wallet") {
+    if (["unlock", "lock"].includes(action) && !values.length)
+      return run([script(action)]);
+    if (action === "restore" && !values.length) {
+      const { runWalletRestore } = await import("./restore-wallet.mjs");
+      return runWalletRestore({ write });
+    }
+    if (action === "info" && !values.length) {
+      const { showLocalInfo } = await import("./local-info.mjs");
+      return showLocalInfo({ write });
+    }
+  }
+  if (command === "policy" && !values.length) {
+    if (["renew", "revoke"].includes(action)) return run([script(action)]);
+    if (action === "info") {
+      const { showPolicyInfo } = await import("./policy-info.mjs");
+      return showPolicyInfo({ write });
+    }
+  }
+  if (command === "service") {
+    if (["start", "restart"].includes(action) && !values.length) {
+      const prepared = await run([script("autostart"), "prepare"]);
+      return prepared || run([script("autostart"), action]);
+    }
+    if (action === "stop" && !values.length)
+      return run([script("autostart"), "stop"]);
+    if (
+      action === "autostart" &&
+      values.length === 1 &&
+      ["on", "off"].includes(values[0])
+    )
+      return run([
+        script("autostart"),
+        values[0] === "on" ? "enable" : "disable",
+      ]);
+    if (
+      action === "logs" &&
+      values.length === 1 &&
+      ["wallet", "runtime"].includes(values[0])
+    )
+      return logs(values[0]);
+  }
+  if (
+    command === "market" &&
+    action === "connect" &&
+    (!values.length || (values.length === 2 && values[0] === "--market"))
+  )
+    return connect(values, { write });
+  if (command === "orders") {
+    if (action === "files") {
+      const { runFileCache } = await import("./file-cache-cli.mjs");
+      return runFileCache(values, { write });
+    }
+    if (
+      (action === "list" && !values.length) ||
+      ([
+        "details",
+        "status",
+        "retrieve",
+        "case",
+        "archive",
+        "unarchive",
+      ].includes(action) &&
+        values.length === 1)
+    ) {
+      const { runOrderSupport } = await import("./order-support.mjs");
+      return runOrderSupport(action === "list" ? [] : [values[0], action], {
+        write,
+      });
+    }
+  }
+  if (command === "cache") {
+    const { runCacheManagement } = await import("./cache-management-cli.mjs");
+    return runCacheManagement(
+      [...(action === "info" ? ["summary"] : [action]), ...values],
+      { write },
+    );
+  }
+  write(
+    "Unknown command or arguments. " +
+      (groups[command] ? "Use ./run " + command + " help." : "Use ./run help."),
+  );
+  return 2;
+}

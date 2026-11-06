@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.tmp/
+data/
+
+# Private local state and key material must never enter source/release archives.
+.agentpay-install/
+.agentpay-user/
+*.keystore.json
+*.token
+*.sock
+*.pem
+*.key
+*.p12
+*.pfx
+*.swp
+.DS_Store

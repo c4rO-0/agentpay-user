@@ -1,0 +1,307 @@
+// Apply already-downloaded source. Preserve identity/history and startup preferences;
+// build failure must not silently enable a mismatched Wallet/Runtime pair.
+// SPDX-License-Identifier: MPL-2.0
+// This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
+// If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { ensureRuntimeConnection } from "./runtime-connection-settings.mjs";
+import { prepareOfficialTestUpdate } from "./official-test-update.mjs";
+import { readFile, open, lstat } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { spawn } from "node:child_process";
+import {
+  installedUserDir,
+  resolveUserDataDir,
+} from "./local-data-directory.mjs";
+import {
+  checkServiceDirectory,
+  readServiceSettings,
+} from "./local-services.mjs";
+import { createInterface } from "node:readline/promises";
+import { createHash } from "node:crypto";
+import { runInstall, fingerprint } from "./install-user.mjs";
+import { localWalletAdmin } from "./local-wallet-ipc.mjs";
+import { readRuntimeStatus } from "./runtime-status.mjs";
+
+async function json(path) {
+  const info = await lstat(path);
+  if (!info.isFile() || info.isSymbolicLink() || info.size > 65536)
+    throw Error("Update metadata must be a regular file.");
+  return JSON.parse(await readFile(path, "utf8"));
+}
+export async function checkUpdatePair(userDir) {
+  const walletDir = join(dirname(userDir), "wallet");
+  const [pair, user, wallet] = await Promise.all([
+    json(join(userDir, "update-pair.json")),
+    json(join(userDir, "package.json")),
+    json(join(walletDir, "package.json")),
+  ]);
+  if (
+    pair.format !== "agentpay.local-update-pair.v1" ||
+    !/^\d+\.\d+\.\d+$/.test(pair.userVersion) ||
+    !/^\d+\.\d+\.\d+$/.test(pair.walletVersion) ||
+    typeof pair.typesDependency !== "string" ||
+    !pair.typesDependency ||
+    user.name !== "@agentpay/user-runtime" ||
+    wallet.name !== "agentpay-wallet" ||
+    user.version !== pair.userVersion ||
+    wallet.version !== pair.walletVersion ||
+    user.dependencies?.["@agentpay/types"] !== pair.typesDependency ||
+    wallet.dependencies?.["@agentpay/types"] !== pair.typesDependency
+  ) {
+    throw Error(
+      "User and Wallet do not match the downloaded update. Get the documented pair from the release page, then retry ./run repair.",
+    );
+  }
+  return pair;
+}
+export async function updateSnapshot(userDir) {
+  const walletDir = join(dirname(userDir), "wallet");
+  const inputs = createHash("sha256")
+    .update(
+      JSON.stringify([
+        userDir,
+        process.execPath,
+        process.versions.node,
+        await fingerprint(userDir, [
+          "package.json",
+          "package-lock.json",
+          "update-pair.json",
+          "run",
+          "src",
+          "scripts",
+          "vendor",
+        ]),
+        await fingerprint(walletDir, [
+          "package.json",
+          "pnpm-lock.yaml",
+          "tsconfig.json",
+          "src",
+          "vendor",
+        ]),
+      ]),
+    )
+    .digest("hex");
+  let outputs = null;
+  try {
+    outputs = await fingerprint(walletDir, ["dist/src"]);
+  } catch (e) {
+    if (e.code !== "ENOENT") throw e;
+  }
+  return { inputs, outputs };
+}
+async function askUpdate(prompt) {
+  if (!process.stdin.isTTY)
+    throw Error(
+      "Run ./run repair in a terminal to confirm, or use ./run repair -f to skip confirmation.",
+    );
+  const terminal = createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  try {
+    return await terminal.question(prompt + "\n> ");
+  } finally {
+    terminal.close();
+  }
+}
+async function manage(action, { userDir, dataDir, logPath }) {
+  const file = await open(logPath, "a", 0o600);
+  try {
+    await new Promise((done, reject) => {
+      const child = spawn(
+        process.execPath,
+        [join(userDir, "scripts/autostart.mjs"), action],
+        {
+          shell: false,
+          env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
+          stdio: ["ignore", file.fd, file.fd],
+        },
+      );
+      child.once("error", reject);
+      child.once("exit", (code) =>
+        code === 0
+          ? done()
+          : reject(Error("Background service operation failed.")),
+      );
+    });
+  } finally {
+    await file.close();
+  }
+}
+export async function applyLocalUpdate({
+  userDir = installedUserDir,
+  dataDir,
+  write = console.log,
+  platform = process.platform,
+  force = false,
+  ask = askUpdate,
+  snapshot = updateSnapshot,
+  officialTest = prepareOfficialTestUpdate,
+  resolveDirectory = resolveUserDataDir,
+  pairCheck = checkUpdatePair,
+  checkDirectory = checkServiceDirectory,
+  settings = readServiceSettings,
+  connection = ensureRuntimeConnection,
+  prepare = runInstall,
+  service = manage,
+  wallet = localWalletAdmin,
+  runtime = readRuntimeStatus,
+  pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+} = {}) {
+  let phase = "preflight",
+    logPath,
+    selected;
+  try {
+    write(
+      "\n------------------------------------------------------------\n> Repair User and Wallet\n------------------------------------------------------------",
+    );
+    write(
+      "Rebuilds from local User and Wallet code, then checks the official test Skill.",
+    );
+    if (platform !== "linux")
+      throw Error(
+        "This repair command currently supports Linux user services. macOS startup support is not ready.",
+      );
+    dataDir ??= await resolveDirectory({ userDir });
+    const pair = await pairCheck(userDir);
+    await checkDirectory(dataDir);
+    await settings(dataDir);
+    write(
+      `1/3 Check local files · User ${pair.userVersion} / Wallet ${pair.walletVersion}`,
+    );
+    const result = await prepare({
+      userDir,
+      dataDir,
+      prepareOnly: true,
+      forceWalletBuild: true,
+      write: () => {},
+      beforePrepare: async (context) => {
+        logPath = context.logPath;
+        // Recheck after taking the shared installer lock, before stopping anything.
+        await pairCheck(userDir);
+        selected = await snapshot(userDir);
+        const applied = context.state.localUpdate;
+        if (
+          context.initial.ok &&
+          applied?.status === "complete" &&
+          applied.inputs === selected.inputs &&
+          applied.outputs === selected.outputs
+        ) {
+          await connection({ dataDir, write });
+          phase = "unchanged";
+          write(
+            "Local installation is already up to date. Background services were not changed.",
+          );
+          return false;
+        }
+        write(
+          applied?.status === "pending"
+            ? "A previous repair did not finish. Retry preparation."
+            : "Local code or build changes need to be applied.",
+        );
+        write(
+          "Wallet and Runtime will pause, rebuild and restart. Wallet will need unlocking afterwards.",
+        );
+        if (!force) {
+          while (true) {
+            const answer = (
+              await ask("Type 'confirm' to repair, or 'q' to cancel")
+            )
+              .trim()
+              .toLowerCase();
+            if (answer === "q") {
+              phase = "cancelled";
+              write("Repair cancelled. Background services were not changed.");
+              return false;
+            }
+            if (answer === "confirm") break;
+            write("Enter 'confirm' or 'q'.");
+          }
+        }
+        const confirmed = await snapshot(userDir);
+        if (JSON.stringify(confirmed) !== JSON.stringify(selected))
+          throw Error(
+            "Local files changed during confirmation. Run ./run repair again.",
+          );
+        await connection({ dataDir, write });
+        context.state.localUpdate = {
+          status: "pending",
+          inputs: selected.inputs,
+        };
+        await context.saveState();
+        await service("prepare", { userDir, dataDir, logPath });
+        phase = "stopping";
+        write(
+          "2/3 Pause background services and rebuild local code. This may take a few minutes.",
+        );
+        await service("stop", { userDir, dataDir, logPath });
+        phase = "building";
+      },
+      afterPrepare: async (context) => {
+        logPath = context.logPath;
+        const built = await snapshot(userDir);
+        if (built.inputs !== selected.inputs)
+          throw Error("Local source changed during the build.");
+        phase = "starting";
+        write("3/3 Start Wallet and Runtime.");
+        await service("start", { userDir, dataDir, logPath });
+        let ready = false;
+        const deadline = Date.now() + 15000;
+        for (
+          let attempt = 0;
+          attempt < 20 && Date.now() < deadline;
+          attempt++
+        ) {
+          try {
+            const [w, r] = await Promise.all([
+              wallet(dataDir, "status"),
+              runtime(dataDir),
+            ]);
+            if (typeof w.locked === "boolean" && r.role === "user-runtime") {
+              ready = true;
+              break;
+            }
+          } catch {
+            /* Startup can take a moment; final failure is reported below. */
+          }
+          await pause(500);
+        }
+        if (!ready) throw Error("Service readiness could not be confirmed.");
+        context.state.localUpdate = { status: "complete", ...built };
+        await context.saveState();
+        phase = "ready";
+      },
+    });
+    if (result?.skipped && phase === "cancelled") return 0;
+    if (result?.skipped && phase === "unchanged") {
+      await officialTest({ userDir, dataDir, write });
+      return 0;
+    }
+    if (!result?.completed || phase !== "ready")
+      throw Error("Repair did not finish.");
+    write(
+      "\nRepair complete. Wallet and Runtime are running in the background.",
+    );
+    write(
+      "Keys, spending permission and Order records were kept. Login startup preference is unchanged.",
+    );
+    await officialTest({ userDir, dataDir, write });
+    write("Next: ./run wallet unlock\nThen: ./run status");
+    return 0;
+  } catch (error) {
+    if (phase === "preflight")
+      write("Repair stopped before pausing services. " + error.message);
+    else if (phase === "building")
+      write(
+        "Repair could not finish. Wallet and Runtime remain stopped; your local data was kept.",
+      );
+    else
+      write(
+        "Service changes could not be confirmed. Check ./run status and ./run service logs runtime before retrying.",
+      );
+    const log = error.logPath || logPath;
+    if (log) write("Details: " + log);
+    write("After resolving the problem, run ./run repair again.");
+    return 1;
+  }
+}
