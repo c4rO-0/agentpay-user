@@ -64,6 +64,8 @@ Git objects are outside this review and must not be assumed clean.
 User still imports Wallet compiled internals and enforces an exact update pair.
 The supported compatibility boundary and combined release archive remain separate
 work in the [distribution plan](../plans/user-wallet-distribution.md).
-No automatic source download, service change, payment, history rewrite, push or
-public-visibility change was performed. Owner review and the publication/history
-steps remain open in [TODO](../TODO.md).
+The source review itself performed no automatic source download, service change
+or payment. Subsequently, the owner approved a single-commit history baseline
+(`2a80f4a`), force push and removal of old tags, then confirmed public visibility.
+Anonymous remote refs were verified; full fresh-clone/ZIP installation remains
+open in [TODO](../TODO.md).

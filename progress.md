@@ -4,7 +4,9 @@
 
 User's original code is MPL 2.0, as selected by the owner; public Protocol and
 attributed reference fixtures retain MIT. Wallet and Protocol are public. User
-history/visibility and release publishing have not changed.
+history was replaced by the approved single-commit baseline `2a80f4a`; the owner
+confirmed public visibility. Anonymous refs were verified on 2026-11-06. Release
+assets and full anonymous clone/ZIP installation remain separate work.
 
 Current preparation removes private platform harnesses and historical dependency
 archives from the public tree, uses the reviewed public Protocol 0.14.1 archive,
@@ -46,7 +48,7 @@ approval. Detailed operational records are not distributed in this repository.
 
 ## Next work
 
-Owner review and commit/publication decisions come next, followed by the approved
+Public source preparation is complete within the recorded review scope. Next is the approved
 [distribution plan](doc/plans/user-wallet-distribution.md): a supported public Wallet
 client/version boundary and combined release archive. No automatic source updater.
 

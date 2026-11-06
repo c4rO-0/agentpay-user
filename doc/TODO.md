@@ -10,7 +10,8 @@
 - [x] Rewrite current entry guides and source map; separate implemented references from future plans.
 - [x] Finish behavioral test review, code readability checks and isolated User + Wallet verification: 364 tests passed, no failures or skips.
 - [x] Correct follow-up review findings: identity/support instructions, explicit signer flow, installation prerequisites and legacy-preview comments.
-- [ ] Owner review, commit/history decision and anonymous checkout verification before opening User.
+- [x] Owner approved history reset/public visibility; anonymous main ref verified, with no published tags.
+- [ ] Verify full anonymous clone and ZIP installation independently of source-ref access.
 
 ## Independent distribution (next development loop)
 
