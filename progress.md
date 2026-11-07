@@ -1,5 +1,24 @@
 # AgentPay User progress
 
+## Wallet first npm publication — 2026-11-07
+
+Owner authorized publishing Wallet independently before User integration. Preparing
+0.3.0, a tested artifact and token-free GitHub OIDC workflow. Public registry lookup
+returned no Wallet package; this host has no npm login. First publication requires
+maintainer authentication, then public registry integrity verification. README, usage, developer guide and public-interface examples were reviewed for
+standalone readers before packaging. Status: pending publication, not released. User 0.2.0 still rejects this new Wallet pair.
+
+
+## Wallet package review follow-up — 2026-11-07
+
+Review found a missing prepack build guard and stale internal-path examples in
+packaged documentation. Wallet now rebuilds compiled files before normal npm pack;
+installed tarballs need no build hook. Public client examples and package reading
+paths are corrected. Clean independent pack/install, a TypeScript consumer and real
+CLI/IPC unlock/restart checks passed. User integration remains the next loop;
+Wallet 0.3.0 is still unpublished and intentionally rejected by User 0.2.0 pairing.
+
+
 ## Wallet npm candidate verified — 2026-11-07
 
 Steps 1–2 complete: Protocol migration baseline committed; Wallet 0.3.0 candidate

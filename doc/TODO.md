@@ -5,9 +5,11 @@
 - [x] Record npm-first plan; combined source ZIP is optional, not the primary installer.
 - [x] Step 1: commit verified User/Wallet Protocol dependency migration baseline.
 - [x] Step 2: prepare Wallet public entry points, compiled npm artifact and standalone acceptance (29 behavioral tests plus installed-package CLI/IPC lifecycle).
+- [x] Review step 2: guard normal packing against missing/stale builds, correct public-interface docs and verify a standalone TypeScript consumer.
 - [ ] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions.
 - [ ] Step 4: installed/running compatibility, upgrade recovery and explicit uninstall modes.
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
+  - Wallet first publication authorized separately; reviewed README/docs and verified tarball ready. Maintainer npm authentication and registry acceptance pending.
 - [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
 
 
