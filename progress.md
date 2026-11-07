@@ -1,12 +1,18 @@
 # AgentPay User progress
 
-## Wallet first npm publication — 2026-11-07
+## Wallet first npm publication complete — 2026-11-07
 
-Owner authorized publishing Wallet independently before User integration. Preparing
-0.3.0, a tested artifact and token-free GitHub OIDC workflow. Public registry lookup
-returned no Wallet package; this host has no npm login. First publication requires
-maintainer authentication, then public registry integrity verification. README, usage, developer guide and public-interface examples were reviewed for
-standalone readers before packaging. Status: pending publication, not released. User 0.2.0 still rejects this new Wallet pair.
+`@c4roa0/agentpay-wallet@0.3.0` is public; npm `latest` is 0.3.0. The owner
+published the verified artifact using a hidden-input Token. Registry SHA-512
+integrity matches the local artifact. A fresh public-registry installation with
+scripts disabled passed installed CLI and real IPC permission/unlock/restart checks;
+disposable test data was removed. Source revision: Wallet `082a8db`.
+
+The publication workflow is on GitHub, but Wallet's npm Trusted Publisher setup
+and first OIDC publication remain unverified. User 0.2.0 still rejects this Wallet
+pair; next development loop is User package adoption. No live Wallet services,
+keys, Policies or Orders were changed. Earlier candidate sections record pre-release
+evidence and are superseded for publication status by this section.
 
 
 ## Wallet package review follow-up — 2026-11-07

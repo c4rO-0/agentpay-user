@@ -9,7 +9,8 @@
 - [ ] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions.
 - [ ] Step 4: installed/running compatibility, upgrade recovery and explicit uninstall modes.
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
-  - Wallet first publication authorized separately; reviewed README/docs and verified tarball ready. Maintainer npm authentication and registry acceptance pending.
+  - [x] Wallet 0.3.0 first Token publication; registry integrity/latest and fresh public install/CLI/IPC verified.
+  - [ ] Configure Wallet npm Trusted Publisher and validate with a later reviewed OIDC release. User publication and Market guide updates remain pending.
 - [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
 
 
