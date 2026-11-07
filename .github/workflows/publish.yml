@@ -1,0 +1,61 @@
+name: Publish User to npm
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact package version to publish (must match package.json)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-npm-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'c4rO-0/agentpay-user' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.3
+          package-manager-cache: false
+      - name: Check requested version
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: |
+          node --input-type=module <<'JS'
+          import {readFileSync} from 'node:fs';
+          const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
+          if (pkg.name !== '@c4roa0/agentpay-user' || pkg.private ||
+              !/^\d+\.\d+\.\d+$/.test(pkg.version) || pkg.version !== process.env.RELEASE_VERSION) {
+            throw Error('Enter the exact stable version from package.json.');
+          }
+          JS
+      - name: Prepare npm
+        run: npm install --global npm@11.5.1
+      - run: npm ci --ignore-scripts
+      - name: Verify User behavior
+        run: npm test
+      - name: Verify and retain the standalone package
+        run: node scripts/test-package.mjs artifacts/npm
+      - name: Publish with npm trusted identity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: npm publish "artifacts/npm/c4roa0-agentpay-user-${RELEASE_VERSION}.tgz" --access public --ignore-scripts --registry=https://registry.npmjs.org/
+      - name: Verify public registry integrity
+        env:
+          RELEASE_VERSION: ${{ inputs.version }}
+        run: node scripts/verify-npm-release.mjs "artifacts/npm/c4roa0-agentpay-user-${RELEASE_VERSION}.tgz" "$RELEASE_VERSION"

@@ -53,8 +53,8 @@ inputs, result bodies, keys or bearer credentials.
 
 ## Remaining product work
 
-Current source pairing and sibling Wallet imports remain implementation constraints.
-Independent compatibility checking and a combined User/Wallet release archive are
+User consumes a pinned public Wallet package without sibling source assumptions.
+Running-process compatibility negotiation and optional combined installers remain
 [planned](plans/user-wallet-distribution.md). Real-network, multisig and additional
 platform acceptance remain explicit gates in [TODO](TODO.md); private results do
 not establish production safety.

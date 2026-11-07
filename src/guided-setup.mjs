@@ -1,3 +1,4 @@
+import { importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -122,10 +123,10 @@ export async function runGuidedEntry({
         failed
           .map(
             (c) =>
-              `${c.message}\n  ${c.fix || "Run ./run install --market YOUR_MARKET_URL."}`,
+              `${c.message}\n  ${c.fix || "Run agentpay install --market YOUR_MARKET_URL."}`,
           )
           .join("\n") +
-        "\nThen retry ./run setup.",
+        "\nThen retry agentpay setup.",
     );
   }
   for (const check of checked.checks.filter((c) => c.status === "warning"))
@@ -169,8 +170,9 @@ export async function runGuidedEntry({
       terminal.close();
     }
   };
+  await importSetupFiles(dataDir, userDir);
   const configPath = await ensureGuidedConfig({
-    parent: dirname(userDir),
+    parent: dataDir,
     ask,
     write,
     validateConfig,

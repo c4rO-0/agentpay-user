@@ -8,7 +8,7 @@ import { installAndSetup } from "../src/install-and-setup.mjs";
 try {
   const args = process.argv.slice(2);
   if (args.length !== 2 || args[0] !== "--market")
-    throw Error("Usage: ./run install --market MARKET_URL");
+    throw Error("Usage: agentpay install --market MARKET_URL");
   if (!process.stdin.isTTY)
     throw Error(
       "Run Install in an interactive terminal so setup can continue.",

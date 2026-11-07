@@ -1,3 +1,4 @@
+import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -150,7 +151,7 @@ export async function collectLocalStatus() {
     execute(
       process.execPath,
       [
-        join(installedUserDir, "../wallet/dist/src/cli.js"),
+        walletCliPath(),
         "status",
         join(dataDir, "wallet"),
       ],
@@ -278,25 +279,25 @@ export function renderStatusPanel(
     level = "error";
     detail =
       "Your saved installation could not be read. Keep your existing Wallet data.";
-    next = "./run service logs runtime";
+    next = "agentpay service logs runtime";
   } else if (model.deployment?.state === "changed") {
     title = "Spending permission needs updating";
     level = "error";
     detail =
       "AgentPay deployment changed. New purchases need updated permission; existing Orders remain accessible.";
-    next = "./run policy renew";
+    next = "agentpay policy renew";
   } else if (revoked) {
     title = "Spending permission revoked";
     level = "error";
     detail =
       "New payments are stopped. Existing Orders and support remain available.";
-    next = "./run policy renew";
+    next = "agentpay policy renew";
   } else if (expired) {
     title = "Spending permission expired";
     level = "error";
     detail =
       "New payments are blocked. Your existing Orders and records are kept.";
-    next = "./run policy renew";
+    next = "agentpay policy renew";
   } else if (!r) {
     title = stopped(rs)
       ? "Runtime is not running"
@@ -308,82 +309,82 @@ export function renderStatusPanel(
         ? "Start the background services, then check again."
         : "Check the Runtime log for the cause.";
     next = model.runtimeUnsupported
-      ? "Update User, then run ./run service restart."
+      ? "Update User, then run agentpay service restart."
       : stopped(rs)
-        ? "./run service start"
-        : "./run service logs runtime";
+        ? "agentpay service start"
+        : "agentpay service logs runtime";
   } else if (r.inventory === "blocked" || r.storageError) {
     title = "History needs attention";
     level = "error";
     detail =
       "New payments are paused. Keep your history; do not repeat purchases.";
-    next = "./run service logs runtime";
+    next = "agentpay service logs runtime";
   } else if (!w) {
     title = stopped(ws) ? "Wallet is not running" : "Wallet status unavailable";
     level = "error";
     detail =
       "Runtime is running. Order checks will continue when Wallet is available.";
-    next = stopped(ws) ? "./run service start" : "./run service logs wallet";
+    next = stopped(ws) ? "agentpay service start" : "agentpay service logs wallet";
   } else if (w.policyRenewalPending) {
     title = "Spending permission renewal incomplete";
     level = "wait";
     detail = "Finish the saved renewal before making new payments.";
-    next = "./run policy renew";
+    next = "agentpay policy renew";
   } else if (w.policyMigrationPending) {
     title = "Authorization update needed";
     level = "wait";
     detail = "New payments are paused until the update is complete.";
-    next = "./run policy renew";
+    next = "agentpay policy renew";
   } else if (w.locked) {
     title = "Waiting for unlock";
     level = "wait";
     detail =
       "Your services are running. Unlock Wallet to continue Order checks.";
-    next = "./run wallet unlock";
+    next = "agentpay wallet unlock";
   } else if (!w.bound) {
     title = "Spending permission needed";
     level = "wait";
     detail = "Choose your Safe and spending limits in setup.";
-    next = "./run setup";
+    next = "agentpay setup";
   } else if (r.inventory !== "complete" || r.wallet !== "available") {
     title = "Checks in progress";
     level = "wait";
     detail =
       "Wallet is available. Runtime will refresh its checks automatically.";
     next =
-      "Leave the services running. Wait about 15 seconds, then run ./run status. Large histories may take longer.";
+      "Leave the services running. Wait about 15 seconds, then run agentpay status. Large histories may take longer.";
   } else if (model.deployment?.state === "downloaded") {
     title = "Platform deployment not checked online";
     level = "wait";
     detail =
       "Only downloaded settings were compared. Connect Market to check current deployment.";
-    next = "./run market connect";
+    next = "agentpay market connect";
   } else if (model.deployment?.state === "unknown") {
     title = "Payment availability could not be confirmed";
     level = "wait";
     detail =
       "Platform deployment check is unavailable. Check your network and retry.";
-    next = "./run status";
+    next = "agentpay status";
   } else if (onlyRetryable) {
     title = "Order checks temporarily unavailable";
     level = "wait";
     detail = "Runtime retries automatically. See the Order list for details.";
-    next = "./run orders list";
+    next = "agentpay orders list";
   } else if (r.orders.review > 0) {
     title = "Some Orders need review";
     level = "wait";
     detail = "Open your local Order list to review the warnings.";
-    next = "./run orders list";
+    next = "agentpay orders list";
   } else if (r.orders.missingResult > 0) {
     title = "Payment complete; local result unavailable";
     level = "wait";
     detail = "See the Order list for recovery options. Do not pay again.";
-    next = "./run orders list";
+    next = "agentpay orders list";
   } else if (r.orders.archived > 0 && r.orders.waiting === 0) {
     title = "Local review complete";
     detail =
       "Archived records are retained; archiving does not confirm their financial state.";
-    next = "./run orders list";
+    next = "agentpay orders list";
   } else if (r.orders.expired > 0 && r.orders.waiting === 0) {
     title = "Unpaid Orders expired";
     level = "ok";
@@ -408,7 +409,7 @@ export function renderStatusPanel(
     level = "wait";
     detail =
       "Website access to this Policy is not confirmed. Local payments are unaffected.";
-    next = "./run market connect";
+    next = "agentpay market connect";
   }
   const divider = "-".repeat(Math.min(60, width));
   const lines = [
@@ -485,7 +486,7 @@ export function renderStatusPanel(
         "  Deployment matches downloaded settings; live compatibility not confirmed.",
       );
     if (policyState[1] === "Could not confirm")
-      lines.push("  Details: ./run policy info");
+      lines.push("  Details: agentpay policy info");
     const startup = loginStartupLabel;
     lines.push("", "> Login startup");
     const startupBadge = (s) =>
@@ -517,7 +518,7 @@ export function renderStatusPanel(
               ? `  ${badge("wait")} Current Policy not connected`
               : `  ${badge("wait")} Could not check saved connection`,
       );
-      if (marketPending) lines.push("  Continue: ./run market connect");
+      if (marketPending) lines.push("  Continue: agentpay market connect");
     }
   }
   if (r && r.inventory !== "complete")
@@ -537,7 +538,7 @@ export function renderStatusPanel(
     );
     if (r.orders.archived > 0)
       lines.push(
-        `  ${count(r.orders.archived)} archived locally · ./run orders list`,
+        `  ${count(r.orders.archived)} archived locally · agentpay orders list`,
       );
     if (r.orders.review > 0)
       lines.push(

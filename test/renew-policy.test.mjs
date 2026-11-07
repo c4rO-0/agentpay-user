@@ -264,8 +264,8 @@ test("Market failure never turns completed renewal into failed renewal", async (
   };
   assert.equal(await renewPolicy(f.opts), 0);
   assert.equal(f.binds, 1);
-  assert.match(f.lines.join("\n"), /Retry: .\/run market connect/);
-  assert.doesNotMatch(f.lines.join("\n"), /Retry: .\/run policy renew/);
+  assert.match(f.lines.join("\n"), /Retry: agentpay market connect/);
+  assert.doesNotMatch(f.lines.join("\n"), /Retry: agentpay policy renew/);
 });
 
 test("paused renewal and failed binding do not enter Market connection", async () => {

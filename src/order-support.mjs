@@ -58,7 +58,7 @@ async function wallet(dataDir, method, params) {
       e ? reject(e) : resolve(v);
     };
     const timer = setTimeout(
-      () => finish(Error("Wallet did not respond. Run ./run status.")),
+      () => finish(Error("Wallet did not respond. Run agentpay status.")),
       40000,
     );
     socket.setEncoding("utf8");
@@ -144,7 +144,7 @@ export async function runOrderSupport(
       args.length > 2
     ) {
       write(
-        "Usage: ./run orders details|status|archive|unarchive|case|retrieve ID",
+        "Usage: agentpay orders details|status|archive|unarchive|case|retrieve ID",
       );
       return 2;
     }
@@ -210,7 +210,7 @@ export async function runOrderSupport(
           "No Order ID is saved. Open local details before requesting support.",
         );
       write(
-        `Connect this Wallet to your Market account:\n  ./run market connect\nThen open Market → Account → My Orders and choose Order ${orderId}.\nThe connection covers this Wallet authorization; no one-Order access code is needed.`,
+        `Connect this Wallet to your Market account:\n  agentpay market connect\nThen open Market → Account → My Orders and choose Order ${orderId}.\nThe connection covers this Wallet authorization; no one-Order access code is needed.`,
       );
       return 0;
     }
@@ -357,7 +357,7 @@ export async function runOrderSupport(
   } catch (e) {
     write(
       ["WALLET_LOCKED", "LOCKED"].includes(e.code)
-        ? "Wallet is locked. Run ./run wallet unlock, then repeat this command."
+        ? "Wallet is locked. Run agentpay wallet unlock, then repeat this command."
         : String(e.message || e),
     );
     return 1;

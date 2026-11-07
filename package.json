@@ -1,12 +1,12 @@
 {
-  "name": "@agentpay/user-runtime",
-  "version": "0.2.0",
-  "private": true,
+  "name": "@c4roa0/agentpay-user",
+  "version": "0.3.0",
   "type": "module",
   "dependencies": {
     "ethers": "^6.17.0",
     "fs-native-extensions": "1.5.3",
-    "@c4roa0/agentpay-protocol": "0.14.3"
+    "@c4roa0/agentpay-protocol": "0.14.3",
+    "@c4roa0/agentpay-wallet": "0.3.0"
   },
   "scripts": {
     "start": "node src/index.mjs",
@@ -18,5 +18,34 @@
     "test:market-connection": "node --test test/connect-market.test.mjs test/local-wallet-ipc.test.mjs",
     "test": "node --test --test-concurrency=1 test/*.test.mjs"
   },
-  "license": "MPL-2.0"
+  "license": "MPL-2.0",
+  "bin": {
+    "agentpay": "scripts/agentpay-cli.mjs"
+  },
+  "engines": {
+    "node": ">=22.22.3"
+  },
+  "files": [
+    "src/",
+    "scripts/",
+    "run",
+    "update-pair.json",
+    "README.md",
+    "LICENSE",
+    "NOTICE.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "progress.md",
+    "AGENTS.md",
+    "doc/"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/c4rO-0/agentpay-user.git"
+  },
+  "description": "Local AgentPay Runtime and guided Wallet setup for AI Agents",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  }
 }

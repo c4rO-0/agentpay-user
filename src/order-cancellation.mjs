@@ -6,7 +6,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { constants } from "node:fs";
 import { mkdir, open, link, unlink } from "node:fs/promises";
 import { join, resolve, dirname } from "node:path";
-import { callWallet, readCapability } from "../../wallet/dist/src/ipc.js";
+import { callWallet, readCapability } from "@c4roa0/agentpay-wallet";
 import { readPrivateFile } from "./runtime-client.mjs";
 import { readSettlementResult } from "./settlement-response.mjs";
 const B32 = /^0x[0-9a-f]{64}$/;

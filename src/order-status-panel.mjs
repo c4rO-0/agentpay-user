@@ -13,7 +13,7 @@ export async function showOrderStatus({
   now = Date.now,
 }) {
   write("Checking the latest Order status with Settlement…");
-  const details = "./run orders details " + selector;
+  const details = "agentpay orders details " + selector;
   try {
     const result = await read();
     write("\n> Order status");
@@ -45,8 +45,8 @@ export async function showOrderStatus({
     write("[WAIT] Could not update from Settlement");
     write(
       ["LOCKED", "WALLET_LOCKED"].includes(error.code)
-        ? "Unlock Wallet: ./run wallet unlock"
-        : "Check ./run status and your network, then retry this query.",
+        ? "Unlock Wallet: agentpay wallet unlock"
+        : "Check agentpay status and your network, then retry this query.",
     );
     const summary = localOrderSummary(entry, observation, review);
     write("\n> Last local record · not refreshed");

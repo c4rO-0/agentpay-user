@@ -171,11 +171,11 @@ export async function loadRuntimeConnection({
     if (error.code === "ENOENT")
       throw fail(
         "LOCAL_SETUP_REQUIRED",
-        "Local Runtime connection is missing. Run ./run repair, then retry the original request.",
+        "Local Runtime connection is missing. Run agentpay repair, then retry the original request.",
       );
     throw fail(
       "LOCAL_SETUP_REQUIRED",
-      "Local Runtime connection could not be read safely. Run ./run repair for diagnostics; keep your local files.",
+      "Local Runtime connection could not be read safely. Run agentpay repair for diagnostics; keep your local files.",
     );
   }
   if (
@@ -230,7 +230,7 @@ async function requestJson(url, options, timeoutMs) {
     } catch {
       throw fail(
         "RUNTIME_RESPONSE_INVALID",
-        "Runtime returned unreadable data. Check ./run service logs runtime; keep the original request and do not create a replacement purchase.",
+        "Runtime returned unreadable data. Check agentpay service logs runtime; keep the original request and do not create a replacement purchase.",
       );
     }
     return { response, body };
@@ -243,7 +243,7 @@ async function requestJson(url, options, timeoutMs) {
       );
     throw fail(
       "RUNTIME_UNAVAILABLE",
-      "Could not finish communicating with Runtime. Check ./run status and ./run service logs runtime, then resume the same request. Do not create a replacement purchase.",
+      "Could not finish communicating with Runtime. Check agentpay status and agentpay service logs runtime, then resume the same request. Do not create a replacement purchase.",
     );
   }
 }
@@ -652,7 +652,7 @@ async function invokeSaved(
       ORDER_EXPIRED:
         "This Order expired without payment. No result is expected. The original request will not make another payment.",
       ORDER_TERMS_MISMATCH:
-        "The prepared Order differs from accepted conditions. No payment was signed. Run ./run orders list and preserve this Order for support; do not replace it.",
+        "The prepared Order differs from accepted conditions. No payment was signed. Run agentpay orders list and preserve this Order for support; do not replace it.",
       QUOTE_TERMS_CHANGED:
         "Price or delivery time changed before Order creation. Read --quote, reevaluate the terms and continue this same request; do not use --force.",
       QUOTE_TERMS_CONFLICT:
@@ -660,21 +660,21 @@ async function invokeSaved(
       ORDER_ALREADY_SETTLED:
         "This Order is settled but its local result is unavailable. Preserve the original request; do not repeat the purchase.",
       RUNTIME_RECOVERY_REQUIRED:
-        "Runtime is running but local history needs review. Run ./run status; do not delete history or create replacement purchases.",
+        "Runtime is running but local history needs review. Run agentpay status; do not delete history or create replacement purchases.",
       ORDER_CLOSING:
         "Order closure is pending. Query this Order; do not submit another payment.",
       ORDER_CANCELLED: "This Order was cancelled. Preserve its saved request.",
       ORDER_REFUNDED:
         "This Order was refunded. Cumulative Policy spend is not restored.",
       LOCKED:
-        "From the User repository, run ./run wallet unlock, then resume this request.",
+        "From the User repository, run agentpay wallet unlock, then resume this request.",
       POLICY_UNBOUND:
         "Complete spending authorization and Wallet binding in AgentPay setup, then resume this request.",
       POLICY_MIGRATION_PENDING:
         "Finish the pending Policy migration in your terminal, then resume this request.",
       UNAUTHORIZED: "Run AgentPay setup to repair the local caller credential.",
       WALLET_LOCKED:
-        "From the User repository, run ./run wallet unlock, then resume this request.",
+        "From the User repository, run agentpay wallet unlock, then resume this request.",
       SERVICE_MAINTENANCE:
         "Service is under maintenance. Resume this request later.",
       SERVICE_NOT_READY:

@@ -16,7 +16,7 @@ import { loadRuntimeConnection, readServiceOffer } from "./runtime-client.mjs";
 import { normalizeAcceptedTerms } from "./service-reference.mjs";
 import { readPrivateFile } from "./runtime-client.mjs";
 import { readServiceSettings } from "./local-services.mjs";
-import { callWallet } from "../../wallet/dist/src/ipc.js";
+import { callWallet } from "@c4roa0/agentpay-wallet";
 import { withClientRequestLock } from "./client-request-lock.mjs";
 
 const run = promisify(execFile),
@@ -80,7 +80,7 @@ async function save(path, value, replace = false) {
 }
 async function prompt(question) {
   if (!process.stdin.isTTY)
-    throw Error("Run ./run payment test in your terminal.");
+    throw Error("Run agentpay payment test in your terminal.");
   const t = createInterface({ input: process.stdin, output: process.stdout });
   try {
     return (await t.question(question + "\n> ")).trim().toLowerCase();
@@ -215,7 +215,7 @@ export async function runOfficialPaidTest({
           installed.locallyModified
         )
           throw Error(
-            "The installed official Skill differs from this User release. Run ./run repair first.",
+            "The installed official Skill differs from this User release. Run agentpay repair first.",
           );
         const connection = await connect({ dataDir });
         if (
@@ -245,7 +245,7 @@ export async function runOfficialPaidTest({
             BigInt(current.quote.maxUsageUnits || 0) < 1n
           )
             throw Error(
-              "Official service is not ready for a paid test. Check ./run status and retry later.",
+              "Official service is not ready for a paid test. Check agentpay status and retry later.",
             );
           const terms = normalizeAcceptedTerms({
             baseAmountAtomic: String(current.quote.baseAmountAtomic),
@@ -355,7 +355,7 @@ export async function runOfficialPaidTest({
               record = { ...record, needsRequote: true };
               await saveRecord(path, record, true);
               throw Error(
-                "Price or service time changed before Order creation. Run ./run payment test again to review the new quote with the same request ID.",
+                "Price or service time changed before Order creation. Run agentpay payment test again to review the new quote with the same request ID.",
               );
             }
             throw error;
@@ -400,7 +400,7 @@ export async function runOfficialPaidTest({
   } catch (e) {
     write(`Official test paused: ${e.message || "Unknown error"}`);
     write(
-      "Retry ./run payment test. Keep the original Order and local test record; do not start a replacement purchase.",
+      "Retry agentpay payment test. Keep the original Order and local test record; do not start a replacement purchase.",
     );
     return 1;
   }

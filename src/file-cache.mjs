@@ -316,7 +316,7 @@ export function createFileCache(
   }
   function rowFor(doc, id) {
     if (!hex.test(id || "") || !doc.files[id])
-      throw fail("FILE_NOT_FOUND", "Use a full file ID from ./run cache list.");
+      throw fail("FILE_NOT_FOUND", "Use a full file ID from agentpay cache list.");
     return doc.files[id];
   }
   async function deleteRow(doc, id) {
@@ -446,7 +446,7 @@ export function createFileCache(
         if (!old && rows.length >= limits.records)
           throw fail(
             "FILE_HISTORY_LIMIT",
-            "File history is full. Increase the record limit with ./run cache settings.",
+            "File history is full. Increase the record limit with agentpay cache settings.",
           );
         let reservation = limits.singleBytes;
         if (local) {
@@ -473,7 +473,7 @@ export function createFileCache(
         if (used.bytes + used.reservedBytes + reservation > limits.totalBytes)
           throw fail(
             "FILE_CACHE_FULL",
-            "Cache is full. Run ./run cache to review space and limits.",
+            "Cache is full. Run agentpay cache to review space and limits.",
           );
         await discard(part);
         await discard(join(directory, id + ".bin"));

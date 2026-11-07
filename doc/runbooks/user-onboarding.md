@@ -1,39 +1,27 @@
 # Install and use AgentPay User
 
-Use Linux with Node.js 22.22.3 or newer, npm and Corepack. If needed, run
-`npm install --global corepack` using your Node installation before starting.
-Have your platform's Market address and a
-Safe on its supported network, controlled by your owner wallet. AgentPay does not
-need your owner private key. macOS startup has not been independently verified.
+Use Linux with Node.js 22.22.3 or newer and npm. Have your platform's Market
+address and a Safe on its supported network, controlled by your owner wallet.
+AgentPay does not need your owner private key. macOS startup remains unverified.
 
-## 1. Download
+## 1. Install program files
 
-Keep `user` and `wallet` inside any parent folder you choose:
+Install User with `npm install --global @c4roa0/agentpay-user@0.3.0`.
+Its reviewed Wallet dependency is included. Source/ZIP alternatives are in
+[README](../../README.md). No separate Wallet checkout or build is needed.
+Keep private data outside the program folder.
 
-```text
-agentpay-local/
-  user/
-  wallet/
-```
-
-For Git, see the commands in [README](../../README.md). For ZIPs, download both
-repositories and rename the extracted folders accordingly. Keep private data outside
-the program folders. The combined download is planned; current installation still
-uses two repositories and checks their current version pairing.
-
-## 2. Install and configure
-
-From the User folder:
+## 2. Configure
 
 ```sh
-./run install --market https://YOUR_MARKET_ORIGIN
+agentpay install --market https://YOUR_MARKET_ORIGIN
 ```
 
 Use your platform's actual HTTPS origin; private rehearsals may use loopback HTTP.
-If the ZIP lost executable permissions, use `sh run install --market ...`.
-If Node is not on PATH, set `AGENTPAY_NODE` to its absolute executable path.
+Without `npm link`, run `./run install --market ...` from User instead. For a ZIP
+without executable permissions use `sh run`; `AGENTPAY_NODE` can select Node.
 
-Install prepares dependencies, builds Wallet and downloads public deployment
+Install verifies installed dependencies and downloads public deployment
 settings, then continues into local setup. Read each prompt: setup prepares an
 encrypted Session Key, spending limits, owner approval and local services. Existing
 keys, histories and saved drafts are retained on retry. Approve only the intended
@@ -46,16 +34,16 @@ must not be mistaken for spending permission or payment.
 
 ## Resume and operate
 
-Run the same Install command if preparation failed, or `./run setup` to return to
-a prepared installation. Read its saved log when dependency/build preparation fails;
+Run the same Install command if preparation failed, or `agentpay setup` to return to
+a prepared installation. Read its saved log when dependency preparation fails;
 do not delete Wallet state to bypass an error. Deployment changes are handled by
 [authorization update](deployment-authorization-update.md).
 
 ```sh
-./run status
-./run wallet unlock
-./run market connect
-./run payment test
+agentpay status
+agentpay wallet unlock
+agentpay market connect
+agentpay payment test
 ```
 
 Runtime and Wallet run locally. On Linux, the guide can configure systemd user
@@ -65,7 +53,7 @@ service files available.
 
 The default data location is `$HOME/.local/share/agentpay/user`. Install also stores
 private preparation checkpoints/logs under `.agentpay-install/` beside the repositories.
-`./run wallet info` shows resolved identity and paths. Follow
+`agentpay wallet info` shows resolved identity and paths. Follow
 [backup and restore](wallet-identity.md) before replacing a computer or deleting data.
 
 ## Private Anvil and other deployment settings
@@ -92,8 +80,8 @@ original verification first.
 
 ## Update or uninstall
 
-Download compatible User and Wallet code, then run `./run repair`. It applies local
+Download compatible User and Wallet code, then run `agentpay repair`. It applies local
 code and preserves keys and requests. See [updates](local-update.md).
-`./run uninstall` requires confirmation before removing local data. It does not
+`agentpay uninstall` requires confirmation before removing local data. It does not
 revoke on-chain permission; use the appropriate owner-authorized revocation or
 [emergency stop](emergency-payment-stop.md) when needed.

@@ -68,8 +68,9 @@ export const helpText =
       ["status", "Check services, permission and Order warnings"],
       ["install --market URL", "Install and continue setup"],
       ["setup", "Continue setup"],
-      ["repair [-f]", "Rebuild local code; -f skips confirmation"],
-      ["uninstall", "Confirm removal of local data"],
+      ["update [-f]", "Check npm and update User, Wallet and the official test Skill"],
+      ["repair [-f]", "Refresh installed services; -f skips confirmation"],
+      ["uninstall [--delete-data]", "Remove services; optionally erase private data"],
       ...Object.keys(groups).map((name) => [
         name + " help",
         name === "service"
@@ -88,17 +89,13 @@ export const helpText =
       ]),
       ["help", "Show this overview"],
     ],
-    "./run policy help",
+    "agentpay policy help",
   ) +
   `
 Update your installation
-  1. Stop services: ./run service stop
-  2. Get compatible User and Wallet versions from their release pages.
-     Git: run git pull --ff-only in each repository on its release branch.
-     ZIP: replace the program folders; keep your private User data and
-     .agentpay-install directory. Do not uninstall.
-  3. From User: ./run repair
-  4. ./run wallet unlock, then ./run status
+  npm installation: agentpay update
+  Source checkout: update User, run npm ci, then agentpay repair.
+  Keep your private data. Do not uninstall to upgrade.
 `;
 
 function topicHelp(group, sub) {
@@ -107,10 +104,10 @@ function topicHelp(group, sub) {
       panel(
         "Login startup",
         [
-          ["./run service autostart on", "Enable startup at future logins"],
-          ["./run service autostart off", "Disable startup at future logins"],
+          ["agentpay service autostart on", "Enable startup at future logins"],
+          ["agentpay service autostart off", "Disable startup at future logins"],
         ],
-        "./run service autostart off",
+        "agentpay service autostart off",
       ) + "Current processes are unchanged. Wallet starts locked.\n"
     );
   const notes = {
@@ -131,10 +128,10 @@ function topicHelp(group, sub) {
     panel(
       group[0].toUpperCase() + group.slice(1),
       groups[group].map(([name, text]) => [
-        "./run " + group + " " + name,
+        "agentpay " + group + " " + name,
         text,
       ]),
-      "./run " +
+      "agentpay " +
         group +
         " " +
         (group === "orders" ? "details ORDER_ID" : groups[group][0][0]),
@@ -152,7 +149,7 @@ function runNode(args) {
     });
     child.once("error", () => {
       console.error(
-        "Could not launch this command with the selected Node executable. Check AGENTPAY_NODE and run ./run help.",
+        "Could not launch this command with the selected Node executable. Check AGENTPAY_NODE and run agentpay help.",
       );
       resolve(1);
     });
@@ -192,14 +189,14 @@ export async function runUserCli(
         return 0;
       } catch {
         console.error(
-          "Could not read the user service journal. Run ./run status to check services; verify access to your systemd user journal.",
+          "Could not read the user service journal. Run agentpay status to check services; verify access to your systemd user journal.",
         );
         return 1;
       }
     },
-    uninstall = async () => {
+    uninstall = async (options) => {
       const { uninstallLocal } = await import("./uninstall-local.mjs");
-      return uninstallLocal();
+      return uninstallLocal(options);
     },
     connect = async (args, options) => {
       const { connectMarket } = await import("./connect-market.mjs");
@@ -229,7 +226,7 @@ export async function runUserCli(
     return 0;
   }
   if (
-    ["repair", "install", "setup", "status", "uninstall"].includes(command) &&
+    ["update", "repair", "install", "setup", "status", "uninstall"].includes(command) &&
     rest.length === 1 &&
     isHelp(action)
   ) {
@@ -239,9 +236,9 @@ export async function runUserCli(
   if (command === "orders" && action === "files" && !values.length) {
     write(
       panel("Order files", [
-        ["./run orders files ORDER_ID", "List cached attachments"],
+        ["agentpay orders files ORDER_ID", "List cached attachments"],
         [
-          "./run orders files ORDER_ID remove FILE_KEY",
+          "agentpay orders files ORDER_ID remove FILE_KEY",
           "Confirm removal of one copy",
         ],
       ]),
@@ -263,12 +260,14 @@ export async function runUserCli(
     (!rest.length || (rest.length === 1 && action === "-f"))
   )
     return run([script("repair"), ...rest]);
+  if (command === "update" && (!rest.length || (rest.length === 1 && action === "-f")))
+    return run([script("update"), ...rest]);
   if (command === "setup" && !rest.length)
     return run([script("user-setup"), "--guided"]);
   if (command === "payment" && action === "test" && !values.length)
     return run([script("official-paid-test")]);
   if (command === "status" && !rest.length) return status(write);
-  if (command === "uninstall" && !rest.length) return uninstall();
+  if (command === "uninstall" && (!rest.length || (rest.length === 1 && action === "--delete-data"))) return uninstall({ removeData: action === "--delete-data" });
   if (command === "wallet") {
     if (["unlock", "lock"].includes(action) && !values.length)
       return run([script(action)]);
@@ -349,7 +348,7 @@ export async function runUserCli(
   }
   write(
     "Unknown command or arguments. " +
-      (groups[command] ? "Use ./run " + command + " help." : "Use ./run help."),
+      (groups[command] ? "Use agentpay " + command + " help." : "Use agentpay help."),
   );
   return 2;
 }

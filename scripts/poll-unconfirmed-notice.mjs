@@ -6,7 +6,7 @@
 import { lstat, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { assertUnixMilliseconds } from "@c4roa0/agentpay-protocol";
-import { callWallet } from "../../wallet/dist/src/ipc.js";
+import { callWallet } from "@c4roa0/agentpay-wallet";
 
 const [dataArg, settlementArg] = process.argv.slice(2);
 if (!dataArg || !settlementArg || process.argv.length !== 4)

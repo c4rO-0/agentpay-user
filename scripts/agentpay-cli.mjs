@@ -6,6 +6,6 @@ import { runUserCli } from "../src/user-cli.mjs";
 try {
   process.exitCode = await runUserCli(process.argv.slice(2));
 } catch (error) {
-  console.error(error.message || "Local operation failed. Run ./run help.");
+  console.error(error.message || "Local operation failed. Run agentpay help.");
   process.exitCode = 1;
 }

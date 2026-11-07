@@ -37,7 +37,7 @@ export async function runFileCache(
       : args.length !== 3)
   ) {
     write(
-      "Usage: ./run orders files ORDER_ID [list PAGE]\n       ./run orders files ORDER_ID remove FILE_KEY\nUse the full Order ID from ./run orders details ID.",
+      "Usage: agentpay orders files ORDER_ID [list PAGE]\n       agentpay orders files ORDER_ID remove FILE_KEY\nUse the full Order ID from agentpay orders details ID.",
     );
     return 2;
   }
@@ -75,7 +75,7 @@ export async function runFileCache(
     );
   }
   if (rows.length === 100)
-    write(`Next page: ./run orders files ${orderId} list ${page + 1}`);
+    write(`Next page: agentpay orders files ${orderId} list ${page + 1}`);
   write(
     "\nRuntime must be running; Wallet unlock is not required. File operations never make a payment.",
   );

@@ -4,6 +4,6 @@
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { runOfficialPaidTest } from "../src/official-paid-test.mjs";
 if (process.argv.length !== 2) {
-  console.error("Use ./run payment test.");
+  console.error("Use agentpay payment test.");
   process.exitCode = 2;
 } else process.exitCode = await runOfficialPaidTest();

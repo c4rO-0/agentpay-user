@@ -134,7 +134,7 @@ export async function connectMarket(
   let token, origin, completion;
   try {
     if (args.length && !(args.length === 2 && args[0] === "--market")) {
-      write("Usage: ./run market connect [--market URL]");
+      write("Usage: agentpay market connect [--market URL]");
       return 2;
     }
     const dataDir = chosen || (await resolveUserDataDir());
@@ -151,11 +151,11 @@ export async function connectMarket(
         throw e;
       write(
         e.code === "METHOD_NOT_ALLOWED"
-          ? "Wallet needs a rebuild before it can connect."
+          ? "Wallet needs a service refresh before it can connect."
           : "Wallet is not running. Let’s prepare it for connection.",
       );
       write(
-        "This will check dependencies, rebuild and restart your local services, then continue here.",
+        "This will check installed packages and restart your local services, then continue here.",
       );
       if (
         (await ask("Type 'confirm' to continue, or 'q' to return")).trim() !==
@@ -367,13 +367,13 @@ export async function connectMarket(
   } catch (e) {
     write(
       ["LOCKED", "WALLET_LOCKED"].includes(e.code)
-        ? "Wallet is locked. Run ./run wallet unlock, then repeat this command."
+        ? "Wallet is locked. Run agentpay wallet unlock, then repeat this command."
         : e.code === "POLICY_UNBOUND"
-          ? "Finish Wallet setup with ./run setup, then connect again."
+          ? "Finish Wallet setup with agentpay setup, then connect again."
           : e.code === "POLICY_MIGRATION_PENDING"
             ? "Complete the pending Policy migration before connecting this Wallet."
             : e.code === "METHOD_NOT_ALLOWED"
-              ? "Wallet still cannot connect. Run ./run market connect again to prepare it."
+              ? "Wallet still cannot connect. Run agentpay market connect again to prepare it."
               : String(e.message || "Could not connect Wallet."),
     );
     return 1;

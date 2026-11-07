@@ -2,8 +2,9 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { lstat, mkdir, readFile, writeFile, unlink } from "node:fs/promises";
+import { lstat, mkdir, readFile, writeFile, unlink, rename } from "node:fs/promises";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import {
@@ -12,6 +13,7 @@ import {
 } from "../src/local-data-directory.mjs";
 import {
   autostartFiles,
+  isManagedUnit,
   units,
   runtimeUnits,
 } from "../src/autostart-files.mjs";
@@ -30,6 +32,7 @@ try {
   if (
     ![
       "prepare",
+      "prepare-repair",
       "enable",
       "disable",
       "remove",
@@ -65,7 +68,7 @@ try {
     const config = join(homedir(), ".config"),
       unitDir = join(config, "systemd/user");
     for (const directory of [config, join(config, "systemd"), unitDir]) {
-      if (["enable", "prepare"].includes(action))
+      if (["enable", "prepare", "prepare-repair"].includes(action))
         await mkdir(directory, { mode: 0o700 }).catch((e) => {
           if (e.code !== "EEXIST") throw e;
         });
@@ -81,10 +84,11 @@ try {
         );
     }
     const paths = Object.entries(files).map(([name, body]) => ({
+      name,
       path: join(unitDir, name),
       body,
     }));
-    for (const { path, body } of paths) {
+    for (const { path, body, name } of paths) {
       try {
         const info = await lstat(path);
         if (
@@ -92,7 +96,7 @@ try {
           info.isSymbolicLink() ||
           info.uid !== process.getuid() ||
           info.mode & 0o022 ||
-          (await readFile(path, "utf8")) !== body
+          !isManagedUnit(await readFile(path, "utf8"), name, dataDir)
         )
           throw Error(
             "An existing startup file belongs to another configuration. Preserve it and review before switching.",
@@ -112,17 +116,22 @@ try {
       ctl(action, ...(action !== "stop" ? runtimeUnits : units));
       console.log(
         action !== "stop"
-          ? `${action === "restart" ? "Restart" : "Start"} requested through systemd. This does not confirm readiness.\nNext: ./run status`
-          : "Stop requested through systemd. Login startup and saved Wallet data are unchanged.\nNext: ./run status",
+          ? `${action === "restart" ? "Restart" : "Start"} requested through systemd. This does not confirm readiness.\nNext: agentpay status`
+          : "Stop requested through systemd. Login startup and saved Wallet data are unchanged.\nNext: agentpay status",
       );
-    } else if (["enable", "prepare"].includes(action)) {
-      await ensureLocalServices({ dataDir });
+    } else if (["enable", "prepare", "prepare-repair"].includes(action)) {
+      await ensureLocalServices({ dataDir, connectionOptions: action === "prepare-repair" ? { refreshClientModule: true, checkOnly: true } : {} });
       // No --now: avoid replacing a Wallet currently owned by terminal setup/system services.
       for (const { path, body } of paths)
         try {
           await writeFile(path, body, { flag: "wx", mode: 0o600 });
         } catch (e) {
           if (e.code !== "EEXIST") throw e;
+          const temporary = path + '.' + randomUUID();
+          try {
+            await writeFile(temporary, body, {flag:'wx',mode:0o600});
+            await rename(temporary,path);
+          } finally { await unlink(temporary).catch(e => { if(e.code !== 'ENOENT') throw e; }); }
         }
       ctl("daemon-reload");
       if (action === "enable") {
@@ -133,7 +142,7 @@ try {
           startupChoice: "enabled",
         });
         console.log(
-          "Login startup enabled for Wallet and Runtime. Current processes were not changed.\nTo start now: ./run service start",
+          "Login startup enabled for Wallet and Runtime. Current processes were not changed.\nTo start now: agentpay service start",
         );
       } else
         console.log(
@@ -148,7 +157,7 @@ try {
         startupChoice: "disabled",
       });
       console.log(
-        "Login startup disabled for Wallet and Runtime. Current processes were not stopped.\nTo stop now: ./run service stop",
+        "Login startup disabled for Wallet and Runtime. Current processes were not stopped.\nTo stop now: agentpay service stop",
       );
     } else {
       await saveServiceSettings({
@@ -171,7 +180,7 @@ try {
   console.error(
     error.status === undefined
       ? error.message
-      : "The systemd command failed; some service changes may already have applied. Wallet keys and request history were kept. Run ./run status before retrying.",
+      : "The systemd command failed; some service changes may already have applied. Wallet keys and request history were kept. Run agentpay status before retrying.",
   );
   process.exitCode = 1;
 }

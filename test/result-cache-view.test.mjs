@@ -103,8 +103,8 @@ test("list uses the Skill name, full Order ID, and no per-row command", async ()
   assert.match(output, /example-skill/);
   assert.ok(output.includes(orderId));
   assert.doesNotMatch(output, /Saved result/);
-  assert.equal((output.match(/run cache details/g) || []).length, 1);
-  assert.match(output, /page 1\nDetails: \.\/run cache details <Cache ID>/);
+  assert.equal((output.match(/agentpay cache details/g) || []).length, 1);
+  assert.match(output, /page 1\nDetails: agentpay cache details <Cache ID>/);
   assert.match(output, /Text \(JSON\) · content 12 B · cached 123 B/);
 });
 

@@ -1,52 +1,66 @@
 # Update User and Wallet
 
-Download the compatible User and Wallet versions listed in the release notes.
-Keep the folders side by side, named `user` and `wallet`. Git users can obtain the
-same versions through Git; ZIP users do not need Git.
+Keep your private data when updating program files. Do not uninstall to upgrade.
 
-For this npm dependency migration, update both repositories together. Mixing an old
-archive-based checkout with a new npm-based checkout is rejected by the repair
-check. Keep your existing private data when replacing the program folders.
-
-Before replacing program files, stop the background processes with `./run service stop`.
-Keep your private User data directory and the parent `.agentpay-install` directory.
-Do not use uninstall, replace key backups, or erase local Order history for an update.
-
-Once the downloaded source folders are ready, run from User:
+For a global npm installation:
 
 ```sh
-./run repair
+agentpay update
 ```
 
-AgentPay first checks the local files. If changes need applying, it asks you to type
-`confirm` before pausing services. Type `q` to cancel. If nothing changed after the
-last successful update, it finishes without rebuilding or restarting.
+It checks the published User version and shows its exact Wallet dependency. Confirm
+to continue, or cancel without changing services. `agentpay update -f` skips only
+this confirmation. The updater checks requirements, stops configured services,
+installs the confirmed version and invokes the new version's repair to refresh
+services and verify its pinned official test Skill. No paid test runs automatically.
+Other installed Skills and original requests are kept. Wallet needs unlocking after
+restart. A current User version still checks the official test Skill.
 
-To skip this confirmation (all version and safety checks still run):
+Only genuine global npm installations are updated. A source checkout or `npm link`
+is refused rather than overwritten: update User's files, run `npm ci`, then
+`agentpay repair`. The first User 0.3.0 release establishes the package baseline; a later real
+registry upgrade still needs participant acceptance. The updater uses npm's configured registry, checks
+Node engine requirements and disables package installation hooks; releases must
+ship usable runtime artifacts. It never independently selects the newest Wallet.
 
-```sh
-./run repair -f
-```
+If npm fails after services stop, keep your private data. Review the shown log;
+reinstall the intended User version with npm if program files are incomplete, then
+run `agentpay repair`. Interrupted installers may leave a lock to inspect. Repair
+failure is not reported as update success. A newer update cannot silently downgrade
+a version changed while you were reviewing the confirmation.
 
-AgentPay checks the pair, pauses services, installs dependencies, builds Wallet and
-starts Wallet/Runtime. This applies local code; it does not fetch Git commits or ZIPs.
-Node, npm and Corepack are required as for installation. It does not change your
-login startup preference, spending permission or Market connection.
+For an old custom data location, first note `wallet info` in the old installation.
+Set `AGENTPAY_USER_DATA_DIR` to that same directory when moving to npm; do not
+initialize another Wallet. Source repair can read the old adjacent checkpoint, but
+an unrelated npm installation cannot discover arbitrary old source folders.
 
-After success:
+User supplies its exact reviewed Wallet dependency; do not independently replace it.
+For a source/ZIP
+installation, stop services, update the User files, run `npm ci`, then `agentpay repair`.
+If using the source wrapper instead of `npm link`, replace `agentpay` with `./run`.
 
-```sh
-./run wallet unlock
-./run status
-```
+Repair checks installed versions and asks before restarting changed services.
+`agentpay repair -f` skips that confirmation only. It refreshes the managed systemd
+user units and local client-module path; it preserves the Runtime address, caller
+credential, login startup preference, keys, Policies and original requests.
+Wallet starts locked after restart. No Wallet compilation is required.
 
-If building fails, services remain stopped. The command shows the log location;
-resolve the reported problem and repeat `./run repair`. If service state cannot be
-confirmed, use `./run status` and `./run service logs runtime`. There is no automatic rollback.
-An interrupted run may retain the install lock; inspect it before treating it as stale.
+If preparation fails after stopping services, they remain stopped. Resolve the
+reported cause and repeat repair; the log path is shown. An interrupted run may
+leave an installation lock: inspect it before removing it. There is no automatic
+code rollback. Running-package negotiation is not implemented; complete the managed
+restart before relying on a newly installed version.
 
-Updating does not buy a test or renew expired authorization. A new paid connectivity
-test requires a separate deliberate confirmation. Your original requests are kept.
+## Uninstall
+
+`agentpay uninstall` asks before removing background services and keeps private data.
+`agentpay uninstall --delete-data` asks for explicit confirmation before permanently
+removing the selected local keys, configuration, history and cache. A matching old source checkpoint and its saved setup files are also retired during
+explicit data deletion, so later setup cannot import them again. Unrelated source
+installations are preserved. Neither command revokes on-chain permission. Afterwards, remove the program with
+`npm uninstall --global @c4roa0/agentpay-user`, or delete your source folder.
+If you removed npm's program first, reinstall the same reviewed version to run
+cleanup against your existing data. Never erase keys to repair an installation.
 
 ## Official test Skill check
 
@@ -56,14 +70,14 @@ SHA-256 and saves the new package alongside existing ones. It does not replace t
 selected original test, edit checkpoints, execute package scripts or purchase.
 The same check also runs when local software has no changes. Cancelling an update
 skips it. Missing settings, network errors or a hash mismatch are reported separately;
-they do not turn a successful software update into a failed build. Retry `./run repair`
-without rebuilding unchanged software. Local edits in an existing installed copy
+they do not turn a successful software update into a failed preparation. Retry `agentpay repair`
+without restarting unchanged software. Local edits in an existing installed copy
 are retained and reported rather than overwritten.
 
 ## Missing local Skill connection
 
 If a Skill reports a missing Runtime connection while services are running, run
-`./run repair`. Preparation restores a missing `runtime/connection.json` from your
+`agentpay repair`. Preparation restores a missing `runtime/connection.json` from your
 saved service settings, including when local code is unchanged. It keeps caller
 credentials, keys, Policies and request history. A conflicting, malformed or unsafe
 existing connection file is retained and reported for review; do not delete your

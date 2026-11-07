@@ -46,3 +46,7 @@ The [User/Wallet distribution plan](plans/user-wallet-distribution.md) describes
 compatibility and combined packaging work. `reference/` describes implemented design;
 `runbooks/` provides operation steps; `security/` records boundaries and review scope.
 Private platform histories and harnesses are retained outside this public tree.
+
+- [User npm integration verification](reference/npm-integration-verification.md): candidate installation, repair and evidence limits.
+
+- [npm publication](runbooks/npm-publication.md): archive checks, initial upload and GitHub Trusted Publisher.

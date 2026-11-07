@@ -1,3 +1,4 @@
+import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -26,7 +27,7 @@ import { randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAddress, formatUnits, JsonRpcProvider, Contract } from "ethers";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { buildSafePolicyPlan, inspectSafePolicy } from "./safe-policy-plan.mjs";
 import { executeAnvilOwnerCall } from "./safe-owner-anvil.mjs";
 import { checkLocalInstallation } from "./install-preflight.mjs";
@@ -44,9 +45,7 @@ import {
 
 const line = "------------------------------------------------------------";
 const userDir = fileURLToPath(new URL("..", import.meta.url));
-const walletCli = fileURLToPath(
-  new URL("../../wallet/dist/src/cli.js", import.meta.url),
-);
+const walletCli = walletCliPath();
 const runtimeEntry = fileURLToPath(new URL("./index.mjs", import.meta.url));
 const ownEnv = Object.fromEntries(
   ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "TZ"]

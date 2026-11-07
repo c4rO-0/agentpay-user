@@ -1,3 +1,4 @@
+import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -10,12 +11,12 @@ import { createServer } from "node:net";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
-import { initializeCapabilities } from "../../wallet/dist/src/ipc.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
+import { initializeCapabilities } from "@c4roa0/agentpay-wallet/local";
 import { initializeCallerCredential } from "../src/caller-auth.mjs";
 import { saveServiceSettings } from "../src/local-services.mjs";
 const exec = promisify(execFile),
-  cli = fileURLToPath(new URL("../../wallet/dist/src/cli.js", import.meta.url)),
+  cli = walletCliPath(),
   runner = fileURLToPath(
     new URL("../scripts/local-service.mjs", import.meta.url),
   );

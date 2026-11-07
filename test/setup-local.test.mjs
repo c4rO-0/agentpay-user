@@ -7,7 +7,7 @@ import { mkdtemp, mkdir, readFile, rm, chmod } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { initializeCallerCredential } from "../src/caller-auth.mjs";
 
 const cli = new URL("../scripts/setup-local.mjs", import.meta.url).pathname;

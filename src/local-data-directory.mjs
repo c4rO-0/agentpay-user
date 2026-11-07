@@ -1,3 +1,4 @@
+import { installationDirectory, legacyInstallationDirectory } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -8,8 +9,7 @@ import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 export const installedUserDir = fileURLToPath(new URL("..", import.meta.url));
-const stateDirectory = (userDir) =>
-  join(dirname(resolve(userDir)), ".agentpay-install");
+const stateDirectory = installationDirectory;
 function privateInfo(info) {
   return (
     info.uid === process.getuid() &&
@@ -17,8 +17,7 @@ function privateInfo(info) {
     !info.isSymbolicLink()
   );
 }
-async function readState(userDir) {
-  const directory = stateDirectory(userDir);
+async function readState(userDir, directory = stateDirectory(userDir)) {
   try {
     const info = await lstat(directory);
     if (!info.isDirectory() || !privateInfo(info))
@@ -26,7 +25,10 @@ async function readState(userDir) {
         "Installation record directory must be private and owned by you.",
       );
   } catch (error) {
-    if (error.code === "ENOENT") return {};
+    if (error.code === "ENOENT") {
+      if (directory === stateDirectory(userDir)) return readState(userDir, legacyInstallationDirectory(userDir));
+      return {};
+    }
     throw error;
   }
   let file;
@@ -49,7 +51,10 @@ async function readState(userDir) {
       throw Error("Installation record is invalid.");
     return state;
   } catch (error) {
-    if (error.code === "ENOENT") return {};
+    if (error.code === "ENOENT") {
+      if (directory === stateDirectory(userDir)) return readState(userDir, legacyInstallationDirectory(userDir));
+      return {};
+    }
     throw error;
   } finally {
     await file?.close();
@@ -71,7 +76,7 @@ export async function rememberUserDataDir({
   dataDir,
 }) {
   const directory = stateDirectory(userDir);
-  await mkdir(directory, { mode: 0o700 }).catch((e) => {
+  await mkdir(directory, { recursive:true, mode: 0o700 }).catch((e) => {
     if (e.code !== "EEXIST") throw e;
   });
   const info = await lstat(directory);

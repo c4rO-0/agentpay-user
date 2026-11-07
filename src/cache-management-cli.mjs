@@ -127,7 +127,7 @@ export async function runCacheManagement(
       } else i++;
     }
   const usage =
-    "Usage: ./run cache [info | list [PAGE] [input|output] [--state STATE] [--request ID | --order ID] | details ID | export ID PATH | clean | settings [KEY VALUE]]\nAdd --offline only when managing stopped Runtime storage. Wallet unlock is not required.";
+    "Usage: agentpay cache [info | list [PAGE] [input|output] [--state STATE] [--request ID | --order ID] | details ID | export ID PATH | clean | settings [KEY VALUE]]\nAdd --offline only when managing stopped Runtime storage. Wallet unlock is not required.";
   if (
     invalidFilter ||
     !["summary", "list", "details", "export", "clean", "settings"].includes(
@@ -181,7 +181,7 @@ export async function runCacheManagement(
         write(
           `[!] ${size(r.unknownBytes)} needs inspection; cleanup will keep it.`,
         );
-      write("\n> Next\n  ./run cache list");
+      write("\n> Next\n  agentpay cache list");
     } else if (action === "list") {
       const page = Number(rest[0] || 1),
         r = await operate({
@@ -192,7 +192,7 @@ export async function runCacheManagement(
           ...(rest[1] ? { purpose: rest[1] } : {}),
         });
       write(
-        `\n${r.total} entries · page ${page}\nDetails: ./run cache details <Cache ID>`,
+        `\n${r.total} entries · page ${page}\nDetails: agentpay cache details <Cache ID>`,
       );
       if (!r.items.length)
         write("No saved results or attachments match this view.");
@@ -209,7 +209,7 @@ export async function runCacheManagement(
       }
       if (page * 20 < r.total)
         write(
-          `\nNext page: ./run cache list ${page + 1}${rest[1] ? " " + rest[1] : ""}${Object.entries(
+          `\nNext page: agentpay cache list ${page + 1}${rest[1] ? " " + rest[1] : ""}${Object.entries(
             filters,
           )
             .map(
@@ -235,7 +235,7 @@ export async function runCacheManagement(
       if (r.error) write("Issue: " + safe(r.error));
       if (r.state === "available")
         write(
-          `Export a copy: ./run cache export ${r.id} /your/destination/filename`,
+          `Export a copy: agentpay cache export ${r.id} /your/destination/filename`,
         );
     } else if (action === "export") {
       const row = await operate({ action: "verified", id: rest[0] });
@@ -254,7 +254,7 @@ export async function runCacheManagement(
       write(
         rest.length
           ? "Limits saved and applied. Existing copies are kept."
-          : "Change a limit: ./run cache settings totalBytes 1073741824\nfilesPerResult applies per input request or output Order.",
+          : "Change a limit: agentpay cache settings totalBytes 1073741824\nfilesPerResult applies per input request or output Order.",
       );
     } else if (action === "clean") {
       const items = await operate({ action: "preview" });
@@ -295,7 +295,7 @@ export async function runCacheManagement(
     write(
       offline
         ? "If another Runtime owns this cache, use the command without --offline. Do not delete its lock file."
-        : "Check ./run status. When Runtime is stopped, add --offline. No automatic offline fallback or payment was made.",
+        : "Check agentpay status. When Runtime is stopped, add --offline. No automatic offline fallback or payment was made.",
     );
     return 1;
   }

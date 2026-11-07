@@ -1,6 +1,6 @@
 # User behavior tests
 
-From User, after `npm ci` and building the sibling Wallet:
+From User, after `npm ci`:
 
 ```sh
 npm test
@@ -15,9 +15,8 @@ node --test test/owner-approval-server.test.mjs test/owner-approval-browser.test
 
 Protocol is installed from npm. Installation/repair fixtures intentionally have no
 `vendor` directory; the pair checks reject an older Protocol version or archive-based
-Wallet dependency. No private platform repository, database or real-chain setup is required. Keep the
-sibling Wallet requirement: some suites test real Wallet files and IPC. This is not
-the same as the explicitly paid `./run payment test` command.
+Wallet dependency. No private platform repository, database or real-chain setup is required. Wallet is installed from npm; some suites start its public CLI and use real IPC. This is not
+the same as the explicitly paid `agentpay payment test` command.
 
 ## Find coverage
 

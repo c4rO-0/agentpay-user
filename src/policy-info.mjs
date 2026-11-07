@@ -24,14 +24,14 @@ export async function showPolicyInfo({
             : "Within saved validity period"),
     );
     write(
-      "\nRenew or change limits: ./run policy renew\nRevoke permission: ./run policy revoke\nWallet and network details: ./run wallet info",
+      "\nRenew or change limits: agentpay policy renew\nRevoke permission: agentpay policy revoke\nWallet and network details: agentpay wallet info",
     );
     return 0;
   } catch (e) {
     write(
       e.code === "ENOENT"
-        ? "No saved spending permission. Continue ./run setup."
-        : "Could not read the saved permission. Check ./run wallet info.",
+        ? "No saved spending permission. Continue agentpay setup."
+        : "Could not read the saved permission. Check agentpay wallet info.",
     );
     return 1;
   }

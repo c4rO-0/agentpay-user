@@ -309,9 +309,9 @@ export function createRuntimeRecovery({
         inventoryState === "blocked" || storageError
           ? "Preserve local history and repair its storage; new paid calls are paused."
           : walletState === "locked"
-            ? "Run ./run wallet unlock; Order checks will continue automatically."
+            ? "Run agentpay wallet unlock; Order checks will continue automatically."
             : walletState === "unavailable"
-              ? "Start Wallet or inspect ./run service logs wallet."
+              ? "Start Wallet or inspect agentpay service logs wallet."
               : walletState === "unbound"
                 ? "Complete Wallet authorization before Order checks."
                 : walletState === "migration_pending"
@@ -642,7 +642,7 @@ export function createRuntimeRecovery({
       if (!(await inspect()) || storageError)
         throw Object.assign(
           Error(
-            "Local history needs review. Runtime remains available; preserve existing requests and check ./run status.",
+            "Local history needs review. Runtime remains available; preserve existing requests and check agentpay status.",
           ),
           { code: "RUNTIME_RECOVERY_REQUIRED", status: 409 },
         );

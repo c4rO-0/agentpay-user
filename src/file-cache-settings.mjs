@@ -42,7 +42,7 @@ export async function readCacheLimits(statePath) {
   } catch {
     throw Object.assign(
       Error(
-        "File cache settings could not be read. Check the private JSON file shown by ./run cache settings.",
+        "File cache settings could not be read. Check the private JSON file shown by agentpay cache settings.",
       ),
       { code: "FILE_SETTINGS_INVALID", status: 409 },
     );

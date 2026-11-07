@@ -1,3 +1,5 @@
+import { atomicWritePrivate } from "./private-journal-files.mjs";
+import { isAbsolute } from "node:path";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -10,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { readServiceSettings } from "./local-services.mjs";
 
-export async function ensureRuntimeConnection({ dataDir, write = () => {} }) {
+export async function ensureRuntimeConnection({ dataDir, write = () => {}, refreshClientModule = false, checkOnly = false }) {
   const settings = await readServiceSettings(dataDir);
   const directory = join(dataDir, "runtime"),
     path = join(directory, "connection.json");
@@ -38,10 +40,18 @@ export async function ensureRuntimeConnection({ dataDir, write = () => {} }) {
       if (
         saved.version !== expected.version ||
         new URL(saved.runtimeUrl).href !== expected.runtimeUrl ||
-        saved.callerTokenFile !== expected.callerTokenFile ||
-        saved.clientModule !== expected.clientModule
+        saved.callerTokenFile !== expected.callerTokenFile
       )
         throw Error("conflict");
+      if (saved.clientModule !== expected.clientModule) {
+        if (!refreshClientModule || typeof saved.clientModule !== 'string' || !isAbsolute(saved.clientModule) || !saved.clientModule.endsWith('/src/runtime-client.mjs')) throw Error('conflict');
+        // Explicit repair after stopping services can relocate trusted client code.
+        // URL, credential, request identities and authorization remain unchanged.
+        if (!checkOnly) {
+          await atomicWritePrivate(path, JSON.stringify(expected) + '\n');
+          write('Local Skill client path updated to this User installation.');
+        }
+      }
       return true;
     } catch (e) {
       if (e.code === "ENOENT") return false;
@@ -54,6 +64,7 @@ export async function ensureRuntimeConnection({ dataDir, write = () => {} }) {
     }
   }
   if (await check()) return { created: false };
+  if (checkOnly) return { created: false, missing: true };
   const temporary = path + "." + randomUUID() + ".tmp";
   let h,
     created = false;

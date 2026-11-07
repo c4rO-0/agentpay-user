@@ -1,3 +1,4 @@
+import { installationDirectory, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -78,13 +79,11 @@ export async function runInstall({
   write = console.log,
   nodeVersion = process.versions.node,
   prepareOnly = false,
-  forceWalletBuild = false,
   beforePrepare,
   afterPrepare,
 }) {
   userDir = resolve(userDir);
-  const parent = dirname(userDir),
-    walletDir = join(parent, "wallet");
+
   const endpoint = prepareOnly ? null : marketSettingsUrl(market);
   if (typeof process.getuid !== "function")
     throw Error(
@@ -94,29 +93,13 @@ export async function runInstall({
     throw Error(
       `Install ${NODE_REQUIREMENT} first. Detected Node ${nodeVersion}.`,
     );
-  for (const [dir, name] of [
-    [userDir, "@agentpay/user-runtime"],
-    [walletDir, "agentpay-wallet"],
-  ]) {
-    const info = await lstat(dir);
-    if (!info.isDirectory() || info.isSymbolicLink())
-      throw Error("Keep real User and Wallet folders side by side.");
-    const pkg = JSON.parse(await readFile(join(dir, "package.json"), "utf8"));
-    if (pkg.name !== name) throw Error(`Unexpected repository at ${dir}`);
-  }
-  const privateDir = resolve(dataDir),
-    stateDir = join(parent, ".agentpay-install");
-  await mkdir(stateDir, { mode: 0o700 }).catch((error) => {
-    if (error.code !== "EEXIST") throw error;
-  });
+  const pkg = JSON.parse(await readFile(join(userDir, 'package.json'), 'utf8'));
+  if (pkg.name !== '@c4roa0/agentpay-user') throw Error('Unexpected User package.');
+  const privateDir = resolve(dataDir), stateDir = installationDirectory();
+  await mkdir(stateDir, {recursive:true, mode:0o700});
   const stateInfo = await lstat(stateDir);
-  if (
-    !stateInfo.isDirectory() ||
-    stateInfo.isSymbolicLink() ||
-    stateInfo.uid !== process.getuid() ||
-    stateInfo.mode & 0o077
-  )
-    throw Error("Installation state directory must be owner-held and private.");
+  if (!stateInfo.isDirectory() || stateInfo.isSymbolicLink() || stateInfo.uid !== process.getuid() || stateInfo.mode & 0o077)
+    throw Error('Installation state directory must be owner-held and private.');
   const lockPath = join(stateDir, "install.lock");
   let lock;
   try {
@@ -158,21 +141,6 @@ export async function runInstall({
     );
     if (pathErrors.length)
       throw Error(`${pathErrors[0].message}. ${pathErrors[0].fix || ""}`);
-    const commands = [
-      ["npm", ["--version"]],
-      ["corepack", ["--version"]],
-    ];
-    for (const [command, args] of commands) {
-      try {
-        await run(command, args, { cwd: userDir, logPath });
-      } catch {
-        throw Error(
-          command === "corepack"
-            ? "Corepack is required to build Wallet. Install it with npm install --global corepack, then retry the same command. Node alone may not include Corepack."
-            : "npm is required. Install a Node distribution that includes npm, and retry with its bin directory on PATH (or AGENTPAY_NODE pointing to that Node).",
-        );
-      }
-    }
     // Update service handoff runs inside the same installer lock as dependency writes.
     const preparationContext = {
       logPath,
@@ -186,92 +154,17 @@ export async function runInstall({
       (await beforePrepare(preparationContext)) === false
     )
       return { completed: true, skipped: true, logPath };
-    async function dependencyFailures(prefix) {
-      const result = await checkLocalInstallation({
-        userDir,
-        dataDir: privateDir,
-        nodeVersion,
-      });
-      return result.checks.filter(
-        (c) =>
-          c.status === "failed" && c.code.startsWith(prefix + "_DEPENDENCY_"),
-      );
-    }
-    async function dependenciesPresent(prefix) {
-      return (await dependencyFailures(prefix)).length === 0;
-    }
-    async function verifyDependencies(prefix) {
-      const failed = await dependencyFailures(prefix);
-      if (failed.length) {
-        await appendFile(
-          logPath,
-          failed.map((c) => `${c.code}: ${c.message}`).join("\n") + "\n",
-          { mode: 0o600 },
-        );
-        const message = `${prefix === "WALLET" ? "Wallet" : "User"} dependencies could not be verified: ${failed.map((c) => c.code.slice((prefix + "_DEPENDENCY_").length)).join(", ")}.`;
-        throw Object.assign(Error(message), { preparationMessage: message });
-      }
-    }
-    const walletInputs = await fingerprint(walletDir, [
-      "package.json",
-      "pnpm-lock.yaml",
-    ]);
-    const walletChanged =
-      state.walletDependencies !== walletInputs ||
-      !(await dependenciesPresent("WALLET"));
-    if (walletChanged) {
-      write("1/4 Install Wallet dependencies. This may take a few minutes.");
-      await run("corepack", ["pnpm@10.0.0", "install", "--frozen-lockfile"], {
-        cwd: walletDir,
-        logPath,
-      });
-      await verifyDependencies("WALLET");
-      state.walletDependencies = walletInputs;
-      delete state.walletBuild;
-      await saveJson(statePath, state);
-    } else write("1/4 Wallet dependencies ready.");
-    const buildInputs = await fingerprint(walletDir, [
-      "package.json",
-      "pnpm-lock.yaml",
-      "tsconfig.json",
-      "src",
-    ]);
-    let outputs;
-    try {
-      outputs = await fingerprint(walletDir, ["dist/src"]);
-    } catch {}
-    if (
-      forceWalletBuild ||
-      walletChanged ||
-      state.walletBuild?.inputs !== buildInputs ||
-      state.walletBuild?.outputs !== outputs ||
-      !outputs
-    ) {
-      write("2/4 Build Wallet. This may take a few minutes.");
-      await run("corepack", ["pnpm@10.0.0", "build"], {
-        cwd: walletDir,
-        logPath,
-      });
-      state.walletBuild = {
-        inputs: buildInputs,
-        outputs: await fingerprint(walletDir, ["dist/src"]),
-      };
-      await saveJson(statePath, state);
-    } else write("2/4 Wallet build ready.");
-    const userInputs = await fingerprint(userDir, [
-      "package.json",
-      "package-lock.json",
-    ]);
-    if (
-      state.userDependencies !== userInputs ||
-      !(await dependenciesPresent("USER"))
-    ) {
-      write("3/4 Install User dependencies.");
-      await run("npm", ["ci"], { cwd: userDir, logPath });
-      await verifyDependencies("USER");
-      state.userDependencies = userInputs;
-      await saveJson(statePath, state);
-    } else write("3/4 User dependencies ready.");
+    // npm installations already contain their dependencies. A source checkout may
+    // install its frozen dependency tree, but never compiles or edits Wallet source.
+    const lockfile = join(userDir, 'package-lock.json');
+    let sourceInstall = false;
+    try { sourceInstall = (await lstat(lockfile)).isFile(); } catch (e) { if(e.code !== 'ENOENT') throw e; }
+    const inputs = sourceInstall ? await fingerprint(userDir, ['package.json', 'package-lock.json']) : null;
+    if (sourceInstall && (state.userDependencies !== inputs || !initial.ok)) {
+      write('1/2 Install the pinned User and Wallet dependencies. This may take a few minutes.');
+      await run('npm', ['ci'], {cwd:userDir, logPath});
+      state.userDependencies = inputs;
+    } else write('1/2 Check installed User and Wallet packages.');
     const checked = await checkLocalInstallation({
       userDir,
       dataDir: privateDir,
@@ -281,11 +174,15 @@ export async function runInstall({
       const failed = checked.checks.find((c) => c.status === "failed");
       throw Error(`${failed.message}. ${failed.fix || ""}`);
     }
+    await mkdir(privateDir, {recursive:true, mode:0o700});
+    await importSetupFiles(privateDir, userDir);
+    state.dataDir = privateDir;
+    await saveJson(statePath, state);
     if (prepareOnly) {
       if (afterPrepare) await afterPrepare(preparationContext);
       return { completed: true, logPath };
     }
-    write("4/4 Download public Market settings.");
+    write("2/2 Download public Market settings.");
     let response;
     try {
       response = await fetchImpl(endpoint, {
@@ -323,9 +220,9 @@ export async function runInstall({
       "./prepare-onboarding.mjs"
     );
     const config = validatePublicDeployment(JSON.parse(raw));
-    await saveJson(join(parent, "user-deployment.json"), config);
+    await saveJson(join(privateDir, "user-deployment.json"), config);
     write(
-      "Dependencies, Wallet build and Market settings are ready. Continuing to setup.",
+      "User, Wallet and Market settings are ready. Continuing to setup.",
     );
     return { completed: true, logPath };
   } catch (error) {

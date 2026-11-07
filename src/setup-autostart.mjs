@@ -1,3 +1,4 @@
+import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -13,9 +14,7 @@ import {
 } from "./local-services.mjs";
 const execute = promisify(execFile);
 const userDir = fileURLToPath(new URL("..", import.meta.url));
-const walletCli = fileURLToPath(
-  new URL("../../wallet/dist/src/cli.js", import.meta.url),
-);
+const walletCli = walletCliPath();
 async function ctl(...args) {
   return execute("systemctl", ["--user", ...args], {
     timeout: 10000,
@@ -186,12 +185,12 @@ export async function finishLocalSetup({
     });
     await enable();
     write(
-      "Automatic startup enabled for your next login. Current services are kept; after a restart, use ./run wallet unlock.",
+      "Automatic startup enabled for your next login. Current services are kept; after a restart, use agentpay wallet unlock.",
     );
     return { state: "enabled" };
   } catch {
     write(
-      "Setup is saved, but automatic startup could not be completed. Retry with ./run service autostart on. Current processes and Wallet data were kept.",
+      "Setup is saved, but automatic startup could not be completed. Retry with agentpay service autostart on. Current processes and Wallet data were kept.",
     );
     return { state: "pending" };
   }

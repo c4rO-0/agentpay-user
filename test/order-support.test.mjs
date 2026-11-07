@@ -189,7 +189,7 @@ test("Order support restores two business results using only read/retrieval oper
       }),
       0,
     );
-    assert.match(messages.at(-1), /\.\/run market connect/);
+    assert.match(messages.at(-1), /agentpay market connect/);
     assert.ok(!calls.includes("createSettlementCaseAccess"));
   }
   invalidHash = true;

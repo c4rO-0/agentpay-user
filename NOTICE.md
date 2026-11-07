@@ -13,7 +13,8 @@ Exceptions retain their own licenses:
   snapshot from AgentPay Agent, MIT; see `test/fixtures/REFERENCE-SKILL-LICENSE`
   and its README for the source revision.
 - Installed third-party packages retain the licenses shipped with those packages.
-  Wallet is a separate MIT-licensed repository; it is not relicensed by User.
+  `@c4roa0/agentpay-wallet` is a separate MIT-licensed package; its license ships
+  with the installed dependency and it is not relicensed by User.
 
 For license interpretation, consult the unmodified license text and Mozilla's FAQ:
 https://www.mozilla.org/en-US/MPL/2.0/FAQ/.

@@ -1,3 +1,4 @@
+import { walletPackage } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -22,7 +23,7 @@ export async function checkLocalInstallation({
   uid = process.getuid(),
 }) {
   userDir = resolve(userDir);
-  const walletDir = join(dirname(userDir), "wallet");
+  let walletDir = null;
   const checks = [];
   const add = (code, status, message, fix = null) =>
     checks.push({ code, status, message, fix });
@@ -45,89 +46,45 @@ export async function checkLocalInstallation({
         `${label}_REPOSITORY`,
         "failed",
         `${label} repository missing or invalid`,
-        `Download ${label.toLowerCase()} as the documented sibling repository`,
+        "Reinstall this User version and its pinned npm dependencies",
       );
       return null;
     }
   }
-  const user = await repository(userDir, "@agentpay/user-runtime", "USER");
-  const wallet = await repository(walletDir, "agentpay-wallet", "WALLET");
-  async function file(path, code, fix) {
-    try {
-      const info = await lstat(path);
-      if (!info.isFile()) throw new Error("not a file");
-      add(code, "passed", `${code} present`);
-    } catch {
-      add(code, "failed", `${code} missing or invalid`, fix);
+  const user = await repository(userDir, "@c4roa0/agentpay-user", "USER");
+  try {
+    const wallet = walletPackage(userDir);
+    walletDir = wallet.directory;
+    for (const entry of [wallet.cli, join(walletDir, 'lib/client.js'), join(walletDir, 'lib/local.js')]) {
+      if (!(await lstat(entry)).isFile()) throw Error('Missing compiled Wallet entry');
     }
+    add('WALLET_PACKAGE', 'passed', `Wallet ${wallet.manifest.version} matches the installed User`);
+  } catch (error) {
+    add('WALLET_PACKAGE', 'failed', 'Compatible Wallet package is missing or incomplete', 'Reinstall the reviewed User version, then run agentpay repair. Source checkout: npm ci.');
   }
-  if (user)
-    await file(
-      join(userDir, "package-lock.json"),
-      "USER_LOCKFILE",
-      "Restore user package-lock.json from the repository",
-    );
-  if (wallet) {
-    add(
-      "WALLET_PACKAGE_MANAGER",
-      wallet.packageManager === "pnpm@10.0.0" ? "passed" : "failed",
-      "Wallet build expects pnpm@10.0.0",
-      "Use a compatible Wallet checkout and its declared package manager",
-    );
-    await file(
-      join(walletDir, "pnpm-lock.yaml"),
-      "WALLET_LOCKFILE",
-      "Restore wallet pnpm-lock.yaml",
-    );
-    for (const name of ["cli.js", "wallet.js", "index.js"])
-      await file(
-        join(walletDir, "dist/src", name),
-        `WALLET_BUILD_${name}`,
-        "In wallet: corepack pnpm@10.0.0 install --frozen-lockfile; then corepack pnpm@10.0.0 build",
-      );
-  }
-  for (const [dir, manifest, label] of [
-    [userDir, user, "USER"],
-    [walletDir, wallet, "WALLET"],
-  ]) {
-    if (!manifest) continue;
-    const require = createRequire(join(dir, "package.json"));
-    for (const dependency of Object.keys(manifest.dependencies || {})) {
+  if (user) {
+    const require = createRequire(join(userDir, 'package.json'));
+    for (const dependency of Object.keys(user.dependencies || {})) {
       try {
-        try {
-          require.resolve(dependency);
-        } catch (error) {
-          if (error.code !== "ERR_PACKAGE_PATH_NOT_EXPORTED") throw error;
-          // Protocol types export only an ESM import entry; require.resolve
-          // cannot select it. Inspect its declared entry without executing it.
-          const packageDir = join(dir, "node_modules", dependency);
-          const pkg = JSON.parse(
-            await readFile(join(packageDir, "package.json"), "utf8"),
-          );
-          const entry = pkg.exports?.["."]?.import;
-          if (
-            pkg.name !== dependency ||
-            typeof entry !== "string" ||
-            !entry.startsWith("./")
-          )
-            throw error;
-          const info = await lstat(join(packageDir, entry));
-          if (!info.isFile()) throw error;
+        try { require.resolve(dependency); }
+        catch (error) {
+          if (error.code !== 'ERR_PACKAGE_PATH_NOT_EXPORTED') throw error;
+          let found = false;
+          for (const base of require.resolve.paths(dependency) || []) {
+            try {
+              const dir = join(base, dependency);
+              const pkg = JSON.parse(await readFile(join(dir, 'package.json'), 'utf8'));
+              const entry = pkg.exports?.['.']?.import;
+              if (pkg.name !== dependency || typeof entry !== 'string' || !entry.startsWith('./') || entry.includes('..')) continue;
+              if (!(await lstat(join(dir, entry))).isFile()) continue;
+              found = true; break;
+            } catch {}
+          }
+          if (!found) throw error;
         }
-        add(
-          `${label}_DEPENDENCY_${dependency}`,
-          "passed",
-          `${dependency} resolves without loading code`,
-        );
+        add(`USER_DEPENDENCY_${dependency}`, 'passed', `${dependency} resolves without loading code`);
       } catch (error) {
-        add(
-          `${label}_DEPENDENCY_${dependency}`,
-          "failed",
-          `${dependency} is not installed or resolvable (${error.code || "INVALID_PACKAGE_ENTRY"})`,
-          label === "USER"
-            ? "In user: npm ci"
-            : "In wallet: corepack pnpm@10.0.0 install --frozen-lockfile",
-        );
+        add(`USER_DEPENDENCY_${dependency}`, 'failed', `${dependency} is not installed or resolvable (${error.code || 'INVALID_PACKAGE_ENTRY'})`, 'Reinstall this User version. Source checkout: npm ci.');
       }
     }
   }
@@ -149,7 +106,7 @@ export async function checkLocalInstallation({
       }
     }
     const roots = await Promise.all(
-      [userDir, walletDir].map((path) =>
+      [userDir, walletDir].filter(Boolean).map((path) =>
         realpath(path).catch(() => resolve(path)),
       ),
     );
@@ -217,7 +174,7 @@ export async function checkLocalInstallation({
         "INVOCATION_HISTORY",
         legacy ? "warning" : "passed",
         legacy
-          ? `${legacy} older request(s) are preserved. Runtime can start; check ./run status after unlocking Wallet.`
+          ? `${legacy} older request(s) are preserved. Runtime can start; check agentpay status after unlocking Wallet.`
           : "Local invocation history can be inspected without migration",
       );
     } catch {
@@ -239,6 +196,6 @@ export async function checkLocalInstallation({
     scope: "read_only_installation_preflight",
     networkChecked: false,
     message:
-      "This checks local prerequisites only; versions of installed dependencies, build freshness, keys, Policy and runtime readiness are not verified",
+      "This checks local prerequisites only; Wallet package compatibility is checked; keys, Policy and running-process readiness are not verified",
   };
 }

@@ -1,3 +1,4 @@
+import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -25,7 +26,7 @@ export async function controlWallet(
   if (!["unlock", "lock", "status"].includes(action))
     throw Error("Unsupported Wallet action");
   if (args.length > 1 || args[0]?.startsWith("-")) {
-    write(`Usage: ./run ${action} [User data directory]`);
+    write(`Usage: agentpay ${action} [User data directory]`);
     return args.length === 1 && args[0] === "--help" ? 0 : 2;
   }
   if (action === "unlock" && !terminal) {
@@ -44,14 +45,12 @@ export async function controlWallet(
     return 1;
   }
   const walletDir = join(dataDir, "wallet"),
-    walletCli = fileURLToPath(
-      new URL("../../wallet/dist/src/cli.js", import.meta.url),
-    );
+    walletCli = walletCliPath();
   try {
     if (!(await inspect(walletCli)).isFile()) throw Error();
   } catch {
     write(
-      "Wallet executable could not be found or read. Complete ./run install --market YOUR_MARKET_URL first.",
+      "Wallet executable could not be found or read. Complete agentpay install --market YOUR_MARKET_URL first.",
     );
     return 1;
   }
@@ -73,7 +72,7 @@ export async function controlWallet(
         : `Cannot safely read Wallet setup in: ${walletDir}`,
     );
     write(
-      `If you selected the wrong installation: ./run ${action} '/your/existing/User data directory'`,
+      `If you selected the wrong installation: agentpay ${action} '/your/existing/User data directory'`,
     );
     return 1;
   }
@@ -83,7 +82,7 @@ export async function controlWallet(
   } catch (error) {
     write(
       error.code === "ENOENT"
-        ? "No Wallet socket was found for this installation. Run ./run service start, then ./run status."
+        ? "No Wallet socket was found for this installation. Run agentpay service start, then agentpay status."
         : "The Wallet socket could not be safely inspected. Check the selected data directory and socket ownership.",
     );
     return 1;
@@ -91,13 +90,13 @@ export async function controlWallet(
   try {
     if (!(await probe(join(walletDir, "wallet.sock")))) {
       write(
-        "No Wallet is listening on the saved socket (stale socket). Run ./run service start, then ./run status.",
+        "No Wallet is listening on the saved socket (stale socket). Run agentpay service start, then agentpay status.",
       );
       return 1;
     }
   } catch {
     write(
-      "Could not check the Wallet connection. Run ./run status; inspect ./run service logs wallet if it remains unavailable.",
+      "Could not check the Wallet connection. Run agentpay status; inspect agentpay service logs wallet if it remains unavailable.",
     );
     return 1;
   }
@@ -158,7 +157,7 @@ export async function controlWallet(
         ? `Wallet: running (${result.locked ? "locked" : "unlocked"}).`
         : action === "lock"
           ? "Wallet locked. Your on-chain spending permission is unchanged."
-          : "Wallet unlocked. Order checks will continue. Use ./run status before resuming your original Skill request.",
+          : "Wallet unlocked. Order checks will continue. Use agentpay status before resuming your original Skill request.",
     );
     return 0;
   }
@@ -173,7 +172,7 @@ export async function controlWallet(
   };
   write(
     messages[error?.code] ||
-      `Wallet did not confirm ${action}. Run ./run status, then ./run service logs wallet for the cause.`,
+      `Wallet did not confirm ${action}. Run agentpay status, then agentpay service logs wallet for the cause.`,
   );
   if (error?.code && !messages[error.code])
     write(

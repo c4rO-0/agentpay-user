@@ -1,17 +1,22 @@
 # User command reference
 
-Run from the User folder. `./run` uses your Node on PATH, or the absolute executable
-selected with `AGENTPAY_NODE`. Git and ZIP installations share the same commands.
+Use `agentpay` after installing the package or linking a source checkout with
+`npm link`. From a source folder, `./run` is the same entry; it uses Node on PATH
+or `AGENTPAY_NODE`.
 
 ```sh
-./run help
-./run status
+agentpay help
+agentpay status
 ```
 
-Top-level operations are `install --market URL`, `setup`, `repair [-f]` and `uninstall`.
-Repair applies already downloaded User/Wallet code and confirms local changes before
-service interruption. Its `-f` skips that prompt only. Uninstall confirms full local
-data removal and does not revoke on-chain spending permission.
+Top-level operations are `install --market URL`, `setup`, `repair [-f]`,
+`update [-f]`, `uninstall [--delete-data]` and `status`.
+Update checks npm and installs User with its pinned Wallet, then checks the official
+test Skill. It asks before changes unless `-f` is given. Source/npm-link installations
+use manual source updates followed by repair. Repair checks installed packages and
+confirms service interruption; `-f` skips that prompt only. Uninstall removes
+services and keeps data unless `--delete-data` is explicitly confirmed. Neither
+operation revokes on-chain permission.
 
 | Group | Operations |
 | --- | --- |
@@ -31,21 +36,21 @@ no longer accepted; use the grouped forms shown here.
 ## Common tasks
 
 ```sh
-./run service start
-./run wallet unlock
-./run status
-./run payment test
+agentpay service start
+agentpay wallet unlock
+agentpay status
+agentpay payment test
 
-./run policy renew
-./run policy revoke
+agentpay policy renew
+agentpay policy revoke
 
-./run orders list
-./run orders details ORDER_ID
-./run orders retrieve ORDER_ID
+agentpay orders list
+agentpay orders details ORDER_ID
+agentpay orders retrieve ORDER_ID
 
-./run service autostart off
-./run service stop
-./run service logs runtime
+agentpay service autostart off
+agentpay service stop
+agentpay service logs runtime
 ```
 
 `policy renew` covers expired renewal and active replacement. Revoking permission
@@ -76,9 +81,9 @@ follows the Order’s settlement schedule; success does not claim final payout.
 
 ### Order status sources
 
-`./run orders status ID` reads the current Settlement record through Wallet.
+`agentpay orders status ID` reads the current Settlement record through Wallet.
 It displays retrieval time and the record update time when available; it does not
 independently query the chain. If querying fails, the command labels the last
 local record and its saved check time. A successful query does not rewrite local
 history; Runtime maintains its own recovery observations. Use
-`./run orders details ID` for the saved local record.
+`agentpay orders details ID` for the saved local record.

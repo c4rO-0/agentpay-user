@@ -62,7 +62,7 @@ async function save(path, value) {
 }
 async function askTerminal(prompt) {
   if (!process.stdin.isTTY)
-    throw Error("Run ./run policy renew in your terminal.");
+    throw Error("Run agentpay policy renew in your terminal.");
   const t = createInterface({ input: process.stdin, output: process.stdout });
   try {
     return await t.question(
@@ -123,11 +123,11 @@ export async function renewPolicy({
       );
       await connect(["--market", previous.marketOrigin], { dataDir, write });
       write(
-        "If Market connection is unfinished, retry with ./run market connect. Your renewal is complete.",
+        "If Market connection is unfinished, retry with agentpay market connect. Your renewal is complete.",
       );
     } catch {
       write(
-        "Spending permission is renewed. Market connection could not finish. Retry: ./run market connect",
+        "Spending permission is renewed. Market connection could not finish. Retry: agentpay market connect",
       );
     }
   }
@@ -136,7 +136,7 @@ export async function renewPolicy({
     const path = join(dataDir, "runtime/policy-renewal-guide.json");
     let record = await readState(path);
     const current = await readState(join(dataDir, "wallet/policy.json"));
-    if (!current) throw Error("No existing permission. Run ./run setup first.");
+    if (!current) throw Error("No existing permission. Run agentpay setup first.");
     if (
       record?.sourcePolicyId !== current.policyId &&
       record?.config?.policyId !== current.policyId
@@ -173,7 +173,7 @@ export async function renewPolicy({
         await saveState(path, record);
         write("Renewal already completed and local settings verified.");
         await continueMarket();
-        write("Next: ./run status");
+        write("Next: agentpay status");
         return 0;
       }
       await saveState(
@@ -201,7 +201,7 @@ export async function renewPolicy({
         });
       write("Renewal already completed.");
       await continueMarket();
-      write("Next: ./run status");
+      write("Next: agentpay status");
       return 0;
     }
     const { address } = await call(dataDir, "getAddress");
@@ -520,7 +520,7 @@ export async function renewPolicy({
         "Spending permission renewed and verified by Wallet. Original Order records were kept.",
       );
       await continueMarket();
-      write("Next: ./run status");
+      write("Next: agentpay status");
       return 0;
     }
   } catch (e) {
@@ -528,11 +528,11 @@ export async function renewPolicy({
       e.code === "CANCELLED"
         ? "Renewal paused. Your choices are kept."
         : e.code === "METHOD_NOT_ALLOWED"
-          ? "Wallet needs the renewal update. Run ./run repair, then ./run policy renew."
+          ? "Wallet needs the renewal update. Run agentpay repair, then agentpay policy renew."
           : e.message || "Renewal could not finish.",
     );
     write(
-      "Retry: ./run policy renew. Keep your keys and existing Order records.",
+      "Retry: agentpay policy renew. Keep your keys and existing Order records.",
     );
     return e.code === "CANCELLED" ? 0 : 1;
   } finally {
@@ -592,12 +592,12 @@ export async function revokePolicy({
       checkedAtMs: Date.now(),
     });
     write(
-      "Spending permission revoked on-chain. Existing Orders were kept.\nNext: ./run status",
+      "Spending permission revoked on-chain. Existing Orders were kept.\nNext: agentpay status",
     );
     return 0;
   } catch (e) {
     write(e.message || "Revocation could not be confirmed.");
-    write("Retry: ./run policy revoke");
+    write("Retry: agentpay policy revoke");
     return 1;
   } finally {
     rpc?.destroy();

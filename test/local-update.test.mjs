@@ -41,7 +41,7 @@ function fixture() {
     runtime: async () => ({ role: "user-runtime" }),
     prepare: async (options) => {
       assert.equal(options.prepareOnly, true);
-      assert.equal(options.forceWalletBuild, true);
+      assert.equal(options.forceWalletBuild, undefined);
       assert.equal(options.market, undefined);
       if ((await options.beforePrepare(context)) === false)
         return { completed: true, skipped: true };
@@ -55,8 +55,8 @@ function fixture() {
 test("local update orchestrates build and restart, with no Git or Market step or automatic unlock", async () => {
   const f = fixture();
   assert.equal(await applyLocalUpdate(f.opts), 0);
-  assert.deepEqual(f.calls, ["prepare", "stop", "build", "start"]);
-  assert.match(f.lines.join("\n"), /Next: .\/run wallet unlock/);
+  assert.deepEqual(f.calls, ["prepare-repair", "stop", "build", "start"]);
+  assert.match(f.lines.join("\n"), /Next: agentpay wallet unlock/);
   assert.doesNotMatch(f.calls.join(","), /enable|disable|unlock/);
 });
 test("mismatched pair, unsupported platform and installer contention never pause services", async () => {
@@ -86,9 +86,9 @@ test("failed build leaves services stopped and gives one retry command", async (
     throw Error("build error");
   };
   assert.equal(await applyLocalUpdate(f.opts), 1);
-  assert.deepEqual(f.calls, ["prepare", "stop"]);
+  assert.deepEqual(f.calls, ["prepare-repair", "stop"]);
   assert.match(f.lines.join("\n"), /remain stopped/);
-  assert.match(f.lines.join("\n"), /run repair again/);
+  assert.match(f.lines.join("\n"), /agentpay repair again/);
   assert.doesNotMatch(f.lines.join("\n"), /Repair complete/);
 });
 test("failed stop never reaches build; unhealthy restart never claims completion", async () => {
@@ -98,7 +98,7 @@ test("failed stop never reaches build; unhealthy restart never claims completion
     if (action === "stop") throw Error("stop failed");
   };
   assert.equal(await applyLocalUpdate(f.opts), 1);
-  assert.deepEqual(f.calls, ["prepare", "stop"]);
+  assert.deepEqual(f.calls, ["prepare-repair", "stop"]);
   assert.match(f.lines.join("\n"), /could not be confirmed/);
   const g = fixture();
   g.opts.runtime = async () => {
@@ -111,9 +111,10 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
   const dir = await mkdtemp(join(tmpdir(), "update-pair-"));
   try {
     const user = join(dir, "user"),
-      wallet = join(dir, "wallet");
+      wallet = join(dir, "user/node_modules/@c4roa0/agentpay-wallet");
     await mkdir(user);
-    await mkdir(wallet);
+    await mkdir(join(wallet,"bin"),{recursive:true});
+    await writeFile(join(wallet,"bin/agentpay-wallet.mjs"), "// fixture");
     const types = "0.14.3";
     await writeFile(
       join(user, "update-pair.json"),
@@ -127,13 +128,14 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
     await writeFile(
       join(user, "package.json"),
       JSON.stringify({
-        name: "@agentpay/user-runtime",
+        name: "@c4roa0/agentpay-user",
         version: "1.0.0",
-        dependencies: { "@c4roa0/agentpay-protocol": types },
+        dependencies: { "@c4roa0/agentpay-protocol": types, "@c4roa0/agentpay-wallet":"0.5.0" },
       }),
     );
     const pkg = {
-      name: "agentpay-wallet",
+      name: "@c4roa0/agentpay-wallet",
+      exports: {"./package.json":"./package.json","./cli":"./bin/agentpay-wallet.mjs"},
       version: "0.5.0",
       dependencies: { "@c4roa0/agentpay-protocol": types },
     };
@@ -146,13 +148,13 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
       join(wallet, "package.json"),
       JSON.stringify({ ...pkg, version: "0.4.0" }),
     );
-    await assert.rejects(checkUpdatePair(user), /do not match/);
+    await assert.rejects(checkUpdatePair(user), /does not match|do not match/);
     for (const dependencies of [
       { "@c4roa0/agentpay-protocol": "0.14.2" },
       { "@agentpay/types": "file:vendor/protocol/agentpay-types-0.14.1.tgz" },
     ]) {
       await writeFile(join(wallet, "package.json"), JSON.stringify({ ...pkg, dependencies }));
-      await assert.rejects(checkUpdatePair(user), /do not match/);
+      await assert.rejects(checkUpdatePair(user), /does not match|do not match/);
     }
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -217,9 +219,9 @@ test("update detection includes same-version source and generated Wallet changes
   const dir = await mkdtemp(join(tmpdir(), "update-snapshot-"));
   try {
     const user = join(dir, "user"),
-      wallet = join(dir, "wallet");
+      wallet = join(dir, "user/node_modules/@c4roa0/agentpay-wallet");
     for (const root of [user, wallet])
-      for (const sub of ["src", "scripts", "dist/src"])
+      for (const sub of ["src", "scripts", "lib", "bin"])
         await mkdir(join(root, sub), { recursive: true });
     for (const name of [
       "package.json",
@@ -228,19 +230,20 @@ test("update detection includes same-version source and generated Wallet changes
       "run",
     ])
       await writeFile(join(user, name), "fixture");
-    for (const name of ["package.json", "pnpm-lock.yaml", "tsconfig.json"])
-      await writeFile(join(wallet, name), "fixture");
+    await writeFile(join(user,'package.json'),JSON.stringify({name:'@c4roa0/agentpay-user',dependencies:{'@c4roa0/agentpay-wallet':'0.3.0','@c4roa0/agentpay-protocol':'0.14.3'}}));
+    await writeFile(join(wallet,'package.json'),JSON.stringify({name:'@c4roa0/agentpay-wallet',version:'0.3.0',dependencies:{'@c4roa0/agentpay-protocol':'0.14.3'},exports:{'./package.json':'./package.json','./cli':'./bin/agentpay-wallet.mjs'}}));
+    await writeFile(join(wallet,'bin/agentpay-wallet.mjs'),'// fixture');
     await writeFile(join(user, "src/example.mjs"), "before");
-    await writeFile(join(wallet, "dist/src/cli.js"), "built");
+    await writeFile(join(wallet, "lib/cli.js"), "built");
     const a = await updateSnapshot(user);
     assert.deepEqual(await updateSnapshot(user), a);
     await writeFile(join(user, "src/example.mjs"), "after");
     const b = await updateSnapshot(user);
     assert.notEqual(b.inputs, a.inputs);
     assert.equal(b.outputs, a.outputs);
-    await writeFile(join(wallet, "dist/src/cli.js"), "modified");
+    await writeFile(join(wallet, "lib/cli.js"), "modified");
     const c = await updateSnapshot(user);
-    assert.equal(c.inputs, b.inputs);
+    assert.notEqual(c.inputs, b.inputs);
     assert.notEqual(c.outputs, b.outputs);
   } finally {
     await rm(dir, { recursive: true, force: true });
@@ -275,10 +278,10 @@ test("repair checks client connection even with unchanged source; conflicts stop
     checks++;
   };
   await applyLocalUpdate(f.opts);
-  assert.equal(checks, 1);
+  assert.equal(checks, 2);
   f.calls.length = 0;
   assert.equal(await applyLocalUpdate(f.opts), 0);
-  assert.equal(checks, 2);
+  assert.equal(checks, 3);
   assert.deepEqual(f.calls, []);
   const g = fixture();
   g.opts.connection = async () => {

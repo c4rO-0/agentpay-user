@@ -63,7 +63,7 @@ test("help works at every group without loading keys or running operations", asy
     "payment",
   ]) {
     await runUserCli([group], opts);
-    assert.match(text, new RegExp("run " + group));
+    assert.match(text, new RegExp("agentpay " + group));
     await runUserCli([group, "help"], opts);
   }
   await runUserCli(["service", "autostart", "help"], opts);
@@ -113,7 +113,7 @@ test("failed service preparation prevents start", async () => {
   assert.equal(calls, 1);
 });
 
-test("help explains Git and ZIP updates and old update cannot change services", async () => {
+test("help and routing distinguish npm update from local repair", async () => {
   let text = "",
     calls = 0;
   const opts = {
@@ -124,12 +124,12 @@ test("help explains Git and ZIP updates and old update cannot change services", 
     },
   };
   await runUserCli(["help"], opts);
-  assert.match(text, /git pull --ff-only/);
-  assert.match(text, /ZIP:/);
+  assert.match(text, /agentpay update/);
+  assert.match(text, /Source checkout:/);
   assert.doesNotMatch(text, /does not download/);
-  assert.match(text, /run repair/);
-  assert.equal(await runUserCli(["update"], opts), 2);
-  assert.equal(calls, 0);
+  assert.match(text, /agentpay repair/);
+  assert.equal(await runUserCli(["update"], opts), 0);
+  assert.equal(calls, 1);
   await runUserCli(["repair", "-f"], {
     ...opts,
     run: async (args) => {

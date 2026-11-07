@@ -16,11 +16,11 @@ import { controlWallet } from "./wallet-control.mjs";
 import { displaySeconds } from "./local-time.mjs";
 export const restoreMessages = {
   METHOD_NOT_ALLOWED:
-    "This Wallet build does not support restoration. Install compatible User and Wallet versions, then retry ./run wallet restore.",
+    "This Wallet build does not support restoration. Install compatible User and Wallet versions, then retry agentpay wallet restore.",
   RESTORE_CONTRACT_MISSING:
     "A required contract is missing. Check the network, Safe and Module addresses.",
   RESTORE_CHAIN_UNAVAILABLE:
-    "The chain could not be read. Check your RPC connection and retry ./run wallet restore.",
+    "The chain could not be read. Check your RPC connection and retry agentpay wallet restore.",
   RESTORE_TARGET_INVALID:
     "Check the network, Module, Safe and original Policy ID.",
   POLICY_KEY_MISMATCH:
@@ -44,7 +44,7 @@ export const restoreMessages = {
 };
 async function askTerminal(message) {
   if (!process.stdin.isTTY)
-    throw Error("Run ./run wallet restore in an interactive terminal.");
+    throw Error("Run agentpay wallet restore in an interactive terminal.");
   const r = createInterface({ input: process.stdin, output: process.stderr });
   try {
     return await r.question(message + "\n> ");
@@ -67,7 +67,7 @@ async function run(script, args, dataDir) {
   });
   if (code !== 0)
     throw Error(
-      "Local preparation did not finish. Retry ./run wallet restore.",
+      "Local preparation did not finish. Retry agentpay wallet restore.",
     );
 }
 export async function restoreExistingPolicy({
@@ -107,7 +107,7 @@ export async function restoreExistingPolicy({
     }
   }
   if (!status)
-    throw Error("Wallet did not start. Run ./run status before retrying.");
+    throw Error("Wallet did not start. Run agentpay status before retrying.");
   if (
     status.locked &&
     (await services.unlock("unlock", { args: [dataDir], write })) !== 0
@@ -124,7 +124,7 @@ export async function restoreExistingPolicy({
     )
   )
     throw Error(
-      "This Policy uses another deployment. Use ./run wallet restore separately; the current setup test cannot use it.",
+      "This Policy uses another deployment. Use agentpay wallet restore separately; the current setup test cannot use it.",
     );
   if (previewOnly) return preview;
   write(
@@ -201,7 +201,7 @@ export async function runWalletRestore({
       }
     };
     write(
-      "Find your original Policy ID in Market → Wallets, or your saved ./run wallet info.",
+      "Find your original Policy ID in Market → Wallets, or your saved agentpay wallet info.",
     );
     const chainId = await field("Network chain ID (for example 31337)", (v) => {
       const n = Number(v);
@@ -241,14 +241,14 @@ export async function runWalletRestore({
       ops,
     });
     write(
-      "Restore finished. Use ./run status to check services and retained Orders.",
+      "Restore finished. Use agentpay status to check services and retained Orders.",
     );
     return 0;
   } catch (e) {
     write(
       restoreMessages[e.code] ||
         e.message ||
-        "Restoration could not complete. Check the network and retry ./run wallet restore; existing data was kept.",
+        "Restoration could not complete. Check the network and retry agentpay wallet restore; existing data was kept.",
     );
     return e.code === "CANCELLED" ? 0 : 1;
   }

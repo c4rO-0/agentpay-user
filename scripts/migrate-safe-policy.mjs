@@ -5,7 +5,7 @@
 import { readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
-import { callWallet, readCapability } from "../../wallet/dist/src/ipc.js";
+import { callWallet, readCapability } from "@c4roa0/agentpay-wallet";
 import {
   migrationSummary,
   migratedPublicPolicy,

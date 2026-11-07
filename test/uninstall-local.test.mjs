@@ -1,3 +1,5 @@
+import { isolateState } from "./helpers/installed-user.mjs";
+import { installationDirectory } from "../src/installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -22,18 +24,21 @@ import {
 import { autostartFiles } from "../src/autostart-files.mjs";
 async function fixture(t) {
   const home = await mkdtemp(join(tmpdir(), "agentpay-uninstall-"));
+  isolateState(t, home);
+  await mkdir(join(home, "state/agentpay"),{recursive:true});
   t.after(() => rm(home, { recursive: true, force: true }));
   const userDir = join(home, "repos/user"),
     dataDir = join(home, "data");
   for (const path of [userDir, join(home, "repos/wallet"), dataDir])
     await mkdir(path, { recursive: true, mode: 0o700 });
   await writeFile(join(dataDir, "session-key"), "fixture");
-  return { home, userDir, dataDir };
+  return { home, userDir, dataDir, removeData:true };
 }
 test("explicit confirmation required; cancellation does not stop services", async () => {
   let removed = 0;
   const opts = {
     terminal: true,
+    removeData: true,
     plan: async () => ({ targets: [], units: [] }),
     remove: async () => {
       removed++;
@@ -67,7 +72,7 @@ test("unsafe roots, symlinks, concurrent installer and foreign services are refu
   await assert.rejects(uninstallPlan({ ...f, dataDir: f.home }));
   await symlink(f.dataDir, join(f.home, "alias"));
   await assert.rejects(uninstallPlan({ ...f, dataDir: join(f.home, "alias") }));
-  const install = join(f.home, "repos/.agentpay-install");
+  const install = installationDirectory();
   await mkdir(install, { mode: 0o700 });
   await writeFile(join(install, "install.lock"), "busy");
   await assert.rejects(uninstallPlan(f), /installer lock/);
@@ -114,7 +119,7 @@ test("active external listeners preserve data; managed units stop before deletio
 test("installation checkpoint and exported settings are cleaned; unrelated repository files remain", async (t) => {
   const f = await fixture(t),
     parent = join(f.home, "repos"),
-    install = join(parent, ".agentpay-install");
+    install = installationDirectory();
   await mkdir(install, { mode: 0o700 });
   await writeFile(
     join(install, "state.json"),
@@ -126,14 +131,36 @@ test("installation checkpoint and exported settings are cleaned; unrelated repos
     "anvil-onboarding.json",
     "keep.txt",
   ])
-    await writeFile(join(parent, name), "fixture", { mode: 0o600 });
+    await writeFile(join(name === "keep.txt" ? parent : f.dataDir, name), "fixture", { mode: 0o600 });
   const plan = await uninstallPlan(f);
   await removeInstallation(plan, { probe: async () => false });
   for (const path of [
     install,
-    join(parent, "user-deployment.json"),
-    join(parent, "anvil-onboarding.json"),
+    join(f.dataDir, "user-deployment.json"),
+    join(f.dataDir, "anvil-onboarding.json"),
   ])
     await assert.rejects(lstat(path), { code: "ENOENT" });
   assert.equal(await readFile(join(parent, "keep.txt"), "utf8"), "fixture");
+});
+
+test('ordinary uninstall keeps keys and history',async t=>{
+ const f=await fixture(t);const plan=await uninstallPlan({...f,removeData:false});
+ await removeInstallation(plan,{probe:async()=>false});
+ assert.equal(await readFile(join(f.dataDir,'session-key'),'utf8'),'fixture');
+});
+
+test("explicit purge retires only matching legacy configuration and cannot reimport it", async t => {
+  const f = await fixture(t);
+  const {dirname} = await import('node:path');
+  const {rememberUserDataDir,resolveUserDataDir} = await import('../src/local-data-directory.mjs');
+  const {importSetupFiles} = await import('../src/installation-paths.mjs');
+  const legacy = join(dirname(f.userDir),'.agentpay-install');
+  await mkdir(legacy,{mode:0o700});
+  await writeFile(join(legacy,'state.json'),JSON.stringify({version:1,dataDir:f.dataDir}),{mode:0o600});
+  await writeFile(join(dirname(f.userDir),'anvil-onboarding.json'),'{}',{mode:0o600});
+  await rememberUserDataDir(f);
+  await removeInstallation(await uninstallPlan(f),{probe:async()=>false});
+  assert.notEqual(await resolveUserDataDir({userDir:f.userDir,env:{}}),f.dataDir);
+  await importSetupFiles(f.dataDir,f.userDir);
+  await assert.rejects(readFile(join(f.dataDir,'anvil-onboarding.json')),{code:'ENOENT'});
 });

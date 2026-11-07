@@ -1,5 +1,6 @@
-// Apply already-downloaded source. Preserve identity/history and startup preferences;
-// build failure must not silently enable a mismatched Wallet/Runtime pair.
+import { walletPackage } from "./wallet-package.mjs";
+// Apply installed packages. Preserve identity/history and startup preferences;
+// preparation failure must not enable a mismatched Wallet/Runtime pair.
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -31,7 +32,7 @@ async function json(path) {
 // The v1 metadata field typesDependency now pins the public npm Protocol package.
 // Keep exact pair checks until the separate compatibility-range design is implemented.
 export async function checkUpdatePair(userDir) {
-  const walletDir = join(dirname(userDir), "wallet");
+  const { directory: walletDir } = walletPackage(userDir);
   const [pair, user, wallet] = await Promise.all([
     json(join(userDir, "update-pair.json")),
     json(join(userDir, "package.json")),
@@ -43,21 +44,21 @@ export async function checkUpdatePair(userDir) {
     !/^\d+\.\d+\.\d+$/.test(pair.walletVersion) ||
     typeof pair.typesDependency !== "string" ||
     !pair.typesDependency ||
-    user.name !== "@agentpay/user-runtime" ||
-    wallet.name !== "agentpay-wallet" ||
+    user.name !== "@c4roa0/agentpay-user" ||
+    wallet.name !== "@c4roa0/agentpay-wallet" ||
     user.version !== pair.userVersion ||
     wallet.version !== pair.walletVersion ||
     user.dependencies?.["@c4roa0/agentpay-protocol"] !== pair.typesDependency ||
     wallet.dependencies?.["@c4roa0/agentpay-protocol"] !== pair.typesDependency
   ) {
     throw Error(
-      "User and Wallet do not match the downloaded update. Get the documented pair from the release page, then retry ./run repair.",
+      "User and Wallet do not match the downloaded update. Reinstall the reviewed User package version, then retry agentpay repair.",
     );
   }
   return pair;
 }
 export async function updateSnapshot(userDir) {
-  const walletDir = join(dirname(userDir), "wallet");
+  const { directory: walletDir } = walletPackage(userDir);
   const inputs = createHash("sha256")
     .update(
       JSON.stringify([
@@ -66,24 +67,21 @@ export async function updateSnapshot(userDir) {
         process.versions.node,
         await fingerprint(userDir, [
           "package.json",
-          "package-lock.json",
           "update-pair.json",
-          "run",
           "src",
           "scripts",
         ]),
         await fingerprint(walletDir, [
           "package.json",
-          "pnpm-lock.yaml",
-          "tsconfig.json",
-          "src",
+          "lib",
+          "bin",
         ]),
       ]),
     )
     .digest("hex");
   let outputs = null;
   try {
-    outputs = await fingerprint(walletDir, ["dist/src"]);
+    outputs = await fingerprint(walletDir, ["lib", "bin"]);
   } catch (e) {
     if (e.code !== "ENOENT") throw e;
   }
@@ -92,7 +90,7 @@ export async function updateSnapshot(userDir) {
 async function askUpdate(prompt) {
   if (!process.stdin.isTTY)
     throw Error(
-      "Run ./run repair in a terminal to confirm, or use ./run repair -f to skip confirmation.",
+      "Run agentpay repair in a terminal to confirm, or use agentpay repair -f to skip confirmation.",
     );
   const terminal = createInterface({
     input: process.stdin,
@@ -156,7 +154,7 @@ export async function applyLocalUpdate({
       "\n------------------------------------------------------------\n> Repair User and Wallet\n------------------------------------------------------------",
     );
     write(
-      "Rebuilds from local User and Wallet code, then checks the official test Skill.",
+      "Checks the installed User and Wallet packages, refreshes service paths and checks the official test Skill.",
     );
     if (platform !== "linux")
       throw Error(
@@ -173,7 +171,7 @@ export async function applyLocalUpdate({
       userDir,
       dataDir,
       prepareOnly: true,
-      forceWalletBuild: true,
+
       write: () => {},
       beforePrepare: async (context) => {
         logPath = context.logPath;
@@ -197,10 +195,10 @@ export async function applyLocalUpdate({
         write(
           applied?.status === "pending"
             ? "A previous repair did not finish. Retry preparation."
-            : "Local code or build changes need to be applied.",
+            : "Installed program changes need to be applied.",
         );
         write(
-          "Wallet and Runtime will pause, rebuild and restart. Wallet will need unlocking afterwards.",
+          "Wallet and Runtime will pause, verify installed files and restart. Wallet will need unlocking afterwards.",
         );
         if (!force) {
           while (true) {
@@ -221,18 +219,18 @@ export async function applyLocalUpdate({
         const confirmed = await snapshot(userDir);
         if (JSON.stringify(confirmed) !== JSON.stringify(selected))
           throw Error(
-            "Local files changed during confirmation. Run ./run repair again.",
+            "Local files changed during confirmation. Run agentpay repair again.",
           );
-        await connection({ dataDir, write });
+        await connection({ dataDir, write, refreshClientModule: true, checkOnly: true });
         context.state.localUpdate = {
           status: "pending",
           inputs: selected.inputs,
         };
         await context.saveState();
-        await service("prepare", { userDir, dataDir, logPath });
+        await service("prepare-repair", { userDir, dataDir, logPath });
         phase = "stopping";
         write(
-          "2/3 Pause background services and rebuild local code. This may take a few minutes.",
+          "2/3 Pause background services and check installed packages. This may take a few minutes.",
         );
         await service("stop", { userDir, dataDir, logPath });
         phase = "building";
@@ -241,7 +239,8 @@ export async function applyLocalUpdate({
         logPath = context.logPath;
         const built = await snapshot(userDir);
         if (built.inputs !== selected.inputs)
-          throw Error("Local source changed during the build.");
+          throw Error("Installed files changed during repair.");
+        await connection({ dataDir, write, refreshClientModule: true });
         phase = "starting";
         write("3/3 Start Wallet and Runtime.");
         await service("start", { userDir, dataDir, logPath });
@@ -286,7 +285,7 @@ export async function applyLocalUpdate({
       "Keys, spending permission and Order records were kept. Login startup preference is unchanged.",
     );
     await officialTest({ userDir, dataDir, write });
-    write("Next: ./run wallet unlock\nThen: ./run status");
+    write("Next: agentpay wallet unlock\nThen: agentpay status");
     return 0;
   } catch (error) {
     if (phase === "preflight")
@@ -297,11 +296,11 @@ export async function applyLocalUpdate({
       );
     else
       write(
-        "Service changes could not be confirmed. Check ./run status and ./run service logs runtime before retrying.",
+        "Service changes could not be confirmed. Check agentpay status and agentpay service logs runtime before retrying.",
       );
     const log = error.logPath || logPath;
     if (log) write("Details: " + log);
-    write("After resolving the problem, run ./run repair again.");
+    write("After resolving the problem, run agentpay repair again.");
     return 1;
   }
 }

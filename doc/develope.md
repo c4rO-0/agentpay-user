@@ -2,17 +2,7 @@
 
 ## Independent checkout
 
-Read [README](../README.md) and keep User and Wallet as siblings. A developer needs
-Node.js 22.22.3 or newer, npm and Corepack. If Corepack is absent, install it with
-`npm install --global corepack` using your Node installation. The commands below
-select Wallet’s pinned pnpm version through Corepack. In Wallet:
-
-```sh
-corepack pnpm@10.0.0 install --frozen-lockfile
-corepack pnpm@10.0.0 build
-```
-
-Then in User:
+Read [README](../README.md). Use Node.js 22.22.3 or newer and npm in User:
 
 ```sh
 npm ci
@@ -47,7 +37,7 @@ Do not run install/setup against your personal state to prepare unit-test fixtur
 5. `owner-signer.mjs`, `safe-policy-plan.mjs` and the browser page before changing
    owner approval; inspect Wallet's authority checks separately.
 
-Use [documentation by role](README.md) and the [test map](../test/README.md) to find
+Use [documentation by role](README.md) and the [test map](https://github.com/c4rO-0/agentpay-user/blob/main/test/README.md) to find
 more focused material. Plans describe future work; local reference documents and
 current source describe implemented behavior.
 
@@ -72,7 +62,7 @@ recovery ordering. Avoid comments that repeat statements. Preserve canonical byt
 wire names and public errors during formatting. Prefer one focused regression over
 several assertions about implementation shape.
 
-User's current Wallet internals/version-pair coupling is tracked in the
-[distribution plan](plans/user-wallet-distribution.md); do not claim that it is
-already a stable independently versioned client. No automatic source downloads are
+User consumes Wallet through its public package exports and exact reviewed version.
+Running-process compatibility negotiation remains in the
+[distribution plan](plans/user-wallet-distribution.md). No automatic source downloads are
 introduced by repair. Keep private platform experiments outside this repository.

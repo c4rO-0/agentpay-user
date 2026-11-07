@@ -7,7 +7,7 @@ import { join } from "node:path";
 import {
   assertPrivateFile,
   atomicWritePrivate,
-} from "../../wallet/dist/src/files.js";
+} from "./private-journal-files.mjs";
 // Public user-facing projection. Chain verification and local switching belong to Wallet.
 export function migrationSummary(plan) {
   return {

@@ -118,7 +118,7 @@ export async function showLocalInfo({
     divider,
     "> Wallet information",
     divider,
-    "Saved settings · live status: ./run status",
+    "Saved settings · live status: agentpay status",
     ...section("Wallet & authorization"),
     `  Network: ${Number.isSafeInteger(policy?.chainId) && policy.chainId > 0 ? `eip155:${policy.chainId}` : "Not recorded"}`,
     ...field("Safe account", address(policy?.safe)),
@@ -146,7 +146,7 @@ export async function showLocalInfo({
     "    runtime/invocations.json       Order history",
     "    runtime/invocations.json.results/  Verified result records",
     "    runtime/invocations.json.pending-results/  Results awaiting verification",
-    "    runtime/invocations.json.files/  Saved file copies · ./run orders files ORDER_ID",
+    "    runtime/invocations.json.files/  Saved file copies · agentpay orders files ORDER_ID",
     ...section("Service connections"),
     ...field(
       "Local Runtime · Skills connect here",
@@ -165,7 +165,7 @@ export async function showLocalInfo({
       ...field("Saved connection ID", text(market.connection?.id)),
       "  Current connection status is shown on the website.",
     );
-  else lines.push("  No saved connection. To connect: ./run market connect");
+  else lines.push("  No saved connection. To connect: agentpay market connect");
   lines.push(
     ...section("Backup"),
     "  Keep a private backup of this data folder and your unlock password.",

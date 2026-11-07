@@ -1,3 +1,4 @@
+import { deploymentFilePath, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -52,7 +53,7 @@ export async function loadCurrentDeployment({
   fresh = false,
 } = {}) {
   const local = await readPrivateJson(
-    join(dirname(userDir), "user-deployment.json"),
+    await deploymentFilePath(dataDir, userDir, "user-deployment.json"),
   );
   const receipt = await readPrivateJson(
     join(dataDir, "market-connection.json"),
@@ -162,7 +163,8 @@ export async function syncSetupDeployment({
   const policy = await readPrivateJson(join(dataDir, "wallet/policy.json"));
   if (!policy || deploymentChanges(policy, config).length)
     throw Error("Verified Wallet binding does not match deployment settings.");
-  const parent = dirname(userDir),
+  await importSetupFiles(dataDir, userDir);
+  const parent = dataDir,
     path = join(parent, "anvil-onboarding.json"),
     saved = await readPrivateJson(path);
   // Preserve owner selection, Safe, Runtime address, recovery drafts and test requests.

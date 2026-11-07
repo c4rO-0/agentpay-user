@@ -13,12 +13,10 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
-import {
-  initializeCapabilities,
-  startWalletServer,
-  callWallet,
-} from "../../wallet/dist/src/ipc.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
+import { initializeCapabilities } from "@c4roa0/agentpay-wallet/local";
+import { callWallet } from "@c4roa0/agentpay-wallet";
+import { startWalletServer } from "./helpers/wallet-process.mjs";
 import { runAnvilOnboarding, saveNewDraft } from "../src/anvil-onboarding.mjs";
 import { buildSafePolicyPlan } from "../src/safe-policy-plan.mjs";
 import { sameWalletPolicy } from "../src/anvil-onboarding-state.mjs";

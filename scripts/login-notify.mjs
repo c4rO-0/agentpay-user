@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -12,9 +13,7 @@ const execute = promisify(execFile);
 try {
   if (process.argv.length > 3) throw Error();
   const dataDir = await resolveUserDataDir({ argument: process.argv[2] });
-  const cli = fileURLToPath(
-    new URL("../../wallet/dist/src/cli.js", import.meta.url),
-  );
+  const cli = walletCliPath();
   await remindLockedWallet({
     status: async () => {
       const { stdout } = await execute(
@@ -30,7 +29,7 @@ try {
         [
           "--app-name=AgentPay",
           "AgentPay Wallet is locked",
-          "To resume payments, open the User folder in a terminal and run: ./run wallet unlock",
+          "To resume payments, open the User folder in a terminal and run: agentpay wallet unlock",
         ],
         { timeout: 5000, maxBuffer: 4096 },
       ),

@@ -50,7 +50,7 @@ test("order cards distinguish warning, completed and archived with readable narr
 test("empty list has a clear completion and no action commands", () => {
   const out = renderOrderList([], {}, {});
   assert.match(out, /No saved Orders/);
-  assert.doesNotMatch(out, /\.\/run order/);
+  assert.doesNotMatch(out, /agentpay order/);
 });
 
 test("paid-out record separates local result warning from saved online check time", () => {

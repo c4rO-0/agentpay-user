@@ -8,7 +8,7 @@ Run from User after Wallet setup:
 
 Enter your Market HTTPS address, sign in with your Market account, and choose a
 Wallet nickname. Private rehearsals may use an arranged loopback HTTP address.
-If preparation is needed, the command asks once, rebuilds downloaded Wallet code,
+If preparation is needed, the command asks once, verifies the installed Wallet package,
 restarts local services and continues. Unlock when prompted; input is hidden.
 Keys, spending permission and Order records are preserved.
 

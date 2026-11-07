@@ -154,7 +154,7 @@ test("details lead with uncertainty and safe actions, with identifiers separated
   assert.ok(plain.indexOf("> What to do") < plain.indexOf("> Reference IDs"));
   assert.match(plain, /No local record/);
   assert.match(plain, /do not prove/);
-  assert.match(plain, /\.\/run orders archive 0x0000000000/);
+  assert.match(plain, /agentpay orders archive 0x0000000000/);
   assert.doesNotMatch(
     plain,
     /Financial state:|Preparation request:|Check:| status/,

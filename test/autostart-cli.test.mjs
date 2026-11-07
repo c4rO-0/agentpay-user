@@ -18,6 +18,8 @@ import { fileURLToPath } from "node:url";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { saveServiceSettings } from "../src/local-services.mjs";
+import { ensureRuntimeConnection } from "../src/runtime-connection-settings.mjs";
+import { autostartFiles } from "../src/autostart-files.mjs";
 const execute = promisify(execFile);
 test("CLI enables without starting, refuses foreign files and removes only managed files", async (t) => {
   const root = await mkdtemp(join(tmpdir(), "autostart-cli-"));
@@ -77,6 +79,17 @@ test("CLI enables without starting, refuses foreign files and removes only manag
   ]);
   const file = join(root, ".config/systemd/user/agentpay-local-wallet.service"),
     original = await readFile(file, "utf8");
+  const connectionPath = join(dataDir, "runtime/connection.json");
+  const oldConnection = JSON.parse(await readFile(connectionPath, "utf8"));
+  oldConnection.clientModule = "/previous/user/src/runtime-client.mjs";
+  await writeFile(connectionPath, JSON.stringify(oldConnection), {mode:0o600});
+  await writeFile(file, autostartFiles({node:process.execPath,userDir:"/previous/user",dataDir})["agentpay-local-wallet.service"]);
+  await assert.rejects(run("prepare"));
+  await run("prepare-repair");
+  assert.equal(JSON.parse(await readFile(connectionPath)).clientModule,oldConnection.clientModule);
+  assert.equal(await readFile(file,"utf8"),original);
+  await ensureRuntimeConnection({dataDir,refreshClientModule:true});
+  await run("prepare");
   await writeFile(file, "foreign");
   await assert.rejects(run("enable"));
   assert.equal(await readFile(file, "utf8"), "foreign");

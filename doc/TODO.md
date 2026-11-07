@@ -1,16 +1,25 @@
 # User TODO
 
+## npm update follow-up — 2026-11-07
+
+- [x] Implement confirmed `agentpay update [-f]`, exact User target and matching Wallet; invoke new repair and pinned official Skill check.
+- [x] Fix relocation preparation ordering, matching legacy purge and packaged document links.
+- [x] Complete update/migration regressions (374 full-suite and 35 final targeted checks) and real npm replacement of local candidate artifacts; controlled service/registry dependencies.
+- [ ] After User release, verify a real published-version npm upgrade and participant service recovery.
+
 ## npm client distribution — 2026-11-07
 
 - [x] Record npm-first plan; combined source ZIP is optional, not the primary installer.
 - [x] Step 1: commit verified User/Wallet Protocol dependency migration baseline.
 - [x] Step 2: prepare Wallet public entry points, compiled npm artifact and standalone acceptance (29 behavioral tests plus installed-package CLI/IPC lifecycle).
 - [x] Review step 2: guard normal packing against missing/stale builds, correct public-interface docs and verify a standalone TypeScript consumer.
-- [ ] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions.
-- [ ] Step 4: installed/running compatibility, upgrade recovery and explicit uninstall modes.
+- [x] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions; isolated tarball/process acceptance passed.
+- [x] Step 4a: exact installed-package checks, service-path/client relocation, installer lock, recovery-safe preparation and explicit uninstall modes.
+- [ ] Step 4b: running-daemon version/interface negotiation and participant upgrade/interruption acceptance.
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
   - [x] Wallet 0.3.0 first Token publication; registry integrity/latest and fresh public install/CLI/IPC verified.
-  - [ ] Configure Wallet npm Trusted Publisher and validate with a later reviewed OIDC release. User publication and Market guide updates remain pending.
+  - [x] Owner configured Wallet npm Trusted Publisher (pending validation).
+  - [ ] Validate Wallet OIDC with a later reviewed release. User publication and Market guide updates remain pending.
 - [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
 
 

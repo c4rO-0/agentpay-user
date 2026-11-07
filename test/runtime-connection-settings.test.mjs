@@ -101,11 +101,22 @@ test("missing connection gives a repair action; malformed content has a distinct
   const f = await fixture(t);
   await assert.rejects(
     loadRuntimeConnection({ dataDir: f.dataDir }),
-    /missing.*run repair/,
+    /missing.*agentpay repair/,
   );
   await writeFile(f.path, "invalid", { mode: 0o600 });
   await assert.rejects(
     loadRuntimeConnection({ dataDir: f.dataDir }),
     /could not be read safely/,
   );
+});
+
+test('explicit repair relocates only the client module, preserving routing and credentials', async t => {
+  const f=await fixture(t);
+  await ensureRuntimeConnection(f);
+  const current=JSON.parse(await readFile(f.path,'utf8'));
+  await writeFile(f.path,JSON.stringify({...current,clientModule:'/old/user/src/runtime-client.mjs'}));
+  await ensureRuntimeConnection({...f,refreshClientModule:true});
+  assert.deepEqual(JSON.parse(await readFile(f.path,'utf8')),current);
+  await writeFile(f.path,JSON.stringify({...current,runtimeUrl:'http://127.0.0.1:6599/',clientModule:'/old/user/src/runtime-client.mjs'}));
+  await assert.rejects(ensureRuntimeConnection({...f,refreshClientModule:true}),/kept for review/);
 });

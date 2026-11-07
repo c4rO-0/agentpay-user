@@ -65,7 +65,7 @@ export async function inspectLocalUserSetup(dataDir) {
 }
 
 // Legacy preview entry: local initialization and read-only authorization preview.
-// The public ./run setup command uses runGuidedEntry for the complete flow,
+// The public agentpay setup command uses runGuidedEntry for the complete flow,
 // with explicit external-owner or guarded Anvil signer selection.
 export async function runUserSetupGuide({
   ask,
@@ -135,7 +135,7 @@ export async function runUserSetupGuide({
     }
     if (action === "uninstall") {
       write(
-        "To uninstall, quit this guide and run ./run uninstall. It requires confirmation before deleting local keys and history; Safe permissions remain unchanged.",
+        "To uninstall, quit this guide and run agentpay uninstall. It requires confirmation before deleting local keys and history; Safe permissions remain unchanged.",
       );
       continue;
     }

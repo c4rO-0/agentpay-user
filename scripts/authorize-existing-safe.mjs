@@ -7,7 +7,7 @@ import { readFile, stat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { createInterface } from "node:readline/promises";
 import { Contract, getAddress, JsonRpcProvider } from "ethers";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import {
   buildSafePolicyPlan,
   inspectSafePolicy,

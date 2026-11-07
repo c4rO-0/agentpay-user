@@ -165,7 +165,7 @@ export async function assertNotArchived(statePath, entry) {
   )
     throw Object.assign(
       Error(
-        "This request is archived locally. Review it with ./run orders details " +
+        "This request is archived locally. Review it with agentpay orders details " +
           entry.invocationId +
           "; unarchive it before continuing the original request.",
       ),
@@ -174,7 +174,7 @@ export async function assertNotArchived(statePath, entry) {
 }
 export function findLocalOrder(inventory, selector) {
   if (!/^0x[0-9a-f]{10,64}$/i.test(selector || ""))
-    throw Error("Use an Order or request ID from ./run orders list.");
+    throw Error("Use an Order or request ID from agentpay orders list.");
   const key = selector.toLowerCase(),
     matches = Object.values(inventory).filter(
       (v) => v.invocationId.startsWith(key) || v.orderId?.startsWith(key),
@@ -182,8 +182,8 @@ export function findLocalOrder(inventory, selector) {
   if (matches.length !== 1)
     throw Error(
       matches.length
-        ? "That shortened ID matches multiple records. Use the full ID from ./run orders list."
-        : "No matching local record. Run ./run orders list.",
+        ? "That shortened ID matches multiple records. Use the full ID from agentpay orders list."
+        : "No matching local record. Run agentpay orders list.",
     );
   return matches[0];
 }
@@ -270,12 +270,12 @@ export function localReviewDetails(
     text(
       "Check your original Agent conversation or ask the Provider for the original result. Do not pay again.",
     );
-    text(`./run orders retrieve ${selector}`, "36");
+    text(`agentpay orders retrieve ${selector}`, "36");
   } else if (o?.financialState === "terminal")
     text("No further payment is needed for this record.");
   else text("Refresh the saved status through Wallet:");
   if (!unknownOriginal && !unavailable && o?.financialState !== "terminal")
-    text(`./run orders status ${selector}`, "36");
+    text(`agentpay orders status ${selector}`, "36");
   if (review?.archived) {
     text(
       summary.changed
@@ -283,10 +283,10 @@ export function localReviewDetails(
         : "Archived locally. The original record is kept.",
     );
     text("Restore the reminder:");
-    text(`./run orders unarchive ${selector}`, "36");
+    text(`agentpay orders unarchive ${selector}`, "36");
   } else {
     text("After reviewing, add a note and archive this reminder:");
-    text(`./run orders archive ${selector}`, "36");
+    text(`agentpay orders archive ${selector}`, "36");
     text(
       "Archiving keeps the record. It does not resolve or cancel the Order.",
       "2",

@@ -5,6 +5,6 @@
 import { applyLocalUpdate } from "../src/local-update.mjs";
 const args = process.argv.slice(2);
 if (args.length > 1 || (args.length === 1 && args[0] !== "-f")) {
-  console.error("Usage: ./run repair [-f]");
+  console.error("Usage: agentpay repair [-f]");
   process.exitCode = 2;
 } else process.exitCode = await applyLocalUpdate({ force: args[0] === "-f" });

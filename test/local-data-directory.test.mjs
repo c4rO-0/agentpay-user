@@ -1,3 +1,5 @@
+import { isolateState } from "./helpers/installed-user.mjs";
+import { installationDirectory } from "../src/installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -21,10 +23,12 @@ import {
 } from "../src/local-data-directory.mjs";
 async function fixture(t) {
   const root = await mkdtemp(join(tmpdir(), "user-location-"));
+  isolateState(t, root);
+  await mkdir(join(root, "state/agentpay"), {recursive:true});
   t.after(() => rm(root, { recursive: true, force: true }));
   return {
     userDir: join(root, "user"),
-    directory: join(root, ".agentpay-install"),
+    directory: installationDirectory(),
   };
 }
 test("installation location survives rereads and preserves build checkpoints", async (t) => {
@@ -97,4 +101,16 @@ test("active installation lock prevents checkpoint overwrite", async (t) => {
     /installation/,
   );
   assert.equal(await resolveUserDataDir({ ...f, env: {} }), "/first");
+});
+
+test("legacy source location is retained in canonical state without rewriting the old record", async t => {
+  const f = await fixture(t);
+  const legacy = join(f.userDir, '..', '.agentpay-install');
+  await mkdir(legacy, {mode:0o700});
+  const saved = JSON.stringify({version:1,dataDir:'/custom/private',oldCheckpoint:'keep'});
+  await writeFile(join(legacy,'state.json'), saved, {mode:0o600});
+  assert.equal(await resolveUserDataDir({...f,env:{}}), '/custom/private');
+  await rememberUserDataDir({...f,dataDir:'/custom/private'});
+  assert.equal(JSON.parse(await readFile(join(f.directory,'state.json'))).oldCheckpoint,'keep');
+  assert.equal(await readFile(join(legacy,'state.json'),'utf8'), saved);
 });

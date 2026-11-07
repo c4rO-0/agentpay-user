@@ -25,7 +25,7 @@ export async function installAndSetup({
 }
 function startGuide({ userDir, dataDir }) {
   return new Promise((resolve, reject) => {
-    // Start only after dependencies and Wallet build exist. Keeping imports in the
+    // Start only after the installed packages are verified. Keeping imports in the
     // child avoids requiring ethers before the installer has installed it.
     const child = spawn(
       process.execPath,

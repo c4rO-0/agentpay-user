@@ -14,7 +14,7 @@ import {
   invokeService,
   completeInvocation,
 } from "../src/runtime-client.mjs";
-import { callWallet } from "../../wallet/dist/src/ipc.js";
+import { callWallet } from "@c4roa0/agentpay-wallet";
 
 const [mode, dataArg, settlementArg, userArg] = process.argv.slice(2);
 if (

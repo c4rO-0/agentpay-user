@@ -389,7 +389,7 @@ test("fresh guided path connects every action and reaches completion without ope
     if (args[0] === "unlock") f.state.unlocked = true;
   };
   f.operations.startLocal = async (script) => {
-    if (script.endsWith("cli.js")) f.state.walletLive = true;
+    if (script.endsWith("agentpay-wallet.mjs")) f.state.walletLive = true;
     else f.state.runtime = true;
   };
   const result = await f.run([

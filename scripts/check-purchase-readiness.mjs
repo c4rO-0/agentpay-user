@@ -8,8 +8,8 @@ import { serviceUrl } from "../src/service-url.mjs";
 import { readFile, lstat } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { Contract, JsonRpcProvider } from "ethers";
-import { Phase0Wallet } from "../../wallet/dist/src/wallet.js";
-import { callWallet } from "../../wallet/dist/src/ipc.js";
+import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
+import { callWallet } from "@c4roa0/agentpay-wallet";
 import {
   buildSafePolicyPlan,
   inspectSafePolicy,

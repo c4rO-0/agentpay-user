@@ -19,7 +19,7 @@ const model = {
 test("live locked Wallet takes precedence over an older unavailable Runtime observation", () => {
   const p = renderStatusPanel(model);
   assert.match(p.text, /Waiting for unlock/);
-  assert.match(p.text, /> Next\n  .\/run wallet unlock/);
+  assert.match(p.text, /> Next\n  agentpay wallet unlock/);
   assert.doesNotMatch(
     p.text,
     /Wallet is unavailable|Wallet status unavailable|\x1b/,
@@ -32,14 +32,14 @@ test("history blocker outranks unlock prompt and failed Runtime gives a start ac
     runtime: { ...model.runtime, inventory: "blocked" },
   });
   assert.match(bad.text, /History needs attention/);
-  assert.doesNotMatch(bad.text, /.\/run wallet unlock/);
+  assert.doesNotMatch(bad.text, /agentpay wallet unlock/);
   const stopped = renderStatusPanel({
     ...model,
     runtime: null,
     runtimeService: { ActiveState: "failed" },
   });
   assert.match(stopped.text, /Runtime is not running/);
-  assert.match(stopped.text, /.\/run service start/);
+  assert.match(stopped.text, /agentpay service start/);
 });
 test("colors are optional and are never needed to interpret status", async () => {
   const colored = renderStatusPanel(model, { color: true }),
@@ -131,9 +131,9 @@ test("terminal missing results end the check instead of asking users to poll or 
   });
   assert.match(p.text, /Payment complete; local result unavailable/);
   assert.match(p.text, /\[WAIT\] 1 local result needs recovery/);
-  assert.match(p.text, /.\/run orders/);
+  assert.match(p.text, /agentpay orders/);
   assert.doesNotMatch(p.text, /0xaaaaaaaaaa|retrieve/);
-  assert.doesNotMatch(p.text, /.\/run status/);
+  assert.doesNotMatch(p.text, /agentpay status/);
 });
 
 test("temporary errors, conflicts and pending work get different safe next steps", () => {
@@ -152,7 +152,7 @@ test("temporary errors, conflicts and pending work get different safe next steps
   });
   const retry = renderStatusPanel(state("ORDER_CHECK_UNAVAILABLE")).text;
   assert.match(retry, /retries automatically/);
-  assert.match(retry, /.\/run orders/);
+  assert.match(retry, /agentpay orders/);
   assert.doesNotMatch(retry, /Contact AgentPay support/);
   for (const code of [
     "ORDER_NOT_FOUND",
@@ -164,9 +164,9 @@ test("temporary errors, conflicts and pending work get different safe next steps
     "UNKNOWN",
   ]) {
     const p = renderStatusPanel(state(code)).text;
-    assert.match(p, /.\/run orders/);
+    assert.match(p, /agentpay orders/);
     assert.doesNotMatch(p, /0xaaaaaaaaaa|run order /);
-    assert.doesNotMatch(p, /.\/run status/);
+    assert.doesNotMatch(p, /agentpay status/);
   }
   const truncated = renderStatusPanel(
     state("ORDER_CHECK_UNAVAILABLE", {
@@ -236,7 +236,7 @@ test("expired spending permission is prominent even when Wallet is locked or Run
     );
     assert.match(p.text, /Spending permission expired/);
     assert.match(p.text, /New payments are blocked/);
-    assert.match(p.text, /\.\/run policy renew/);
+    assert.match(p.text, /agentpay policy renew/);
     assert.equal(p.code, 1);
   }
   const valid = renderStatusPanel(
@@ -271,7 +271,7 @@ test("Policy section is always visible and distinguishes saved validity, revocat
   assert.match(valid.text, /Valid until:/);
   const revoked = render({}, { ...p, revoked: true });
   assert.match(revoked.text, /Revoked \(last verified\)/);
-  assert.match(revoked.text, /run policy renew/);
+  assert.match(revoked.text, /agentpay policy renew/);
   assert.match(
     render({ policyRenewalPending: true }).text,
     /Renewal incomplete/,
@@ -302,7 +302,7 @@ test("Market renewal warning is visible alongside higher priority problems", () 
   const panel = renderStatusPanel(ready);
   assert.equal(panel.code, 1);
   assert.match(panel.text, /Market connection needs updating/);
-  assert.match(panel.text, /> Next\n  .\/run market connect/);
+  assert.match(panel.text, /> Next\n  agentpay market connect/);
   assert.match(panel.text, /\[OK\] Enabled for both services/);
   const locked = renderStatusPanel({
     ...ready,
@@ -310,7 +310,7 @@ test("Market renewal warning is visible alongside higher priority problems", () 
   });
   assert.match(locked.text, /Waiting for unlock/);
   assert.match(locked.text, /Current Policy not connected/);
-  assert.match(locked.text, /Continue: .\/run market connect/);
+  assert.match(locked.text, /Continue: agentpay market connect/);
   assert.equal(
     renderStatusPanel({ ...ready, market: { state: "none" } }).code,
     0,
@@ -381,7 +381,7 @@ test("deployment change outranks missing results and unknown compatibility is ex
     deployment: { state: "changed", changed: ["factory"] },
   });
   assert.match(changed.text, /Spending permission needs updating/);
-  assert.match(changed.text, /run policy renew/);
+  assert.match(changed.text, /agentpay policy renew/);
   assert.match(changed.text, /local result needs recovery/);
   const unknown = renderStatusPanel({
     ...base,

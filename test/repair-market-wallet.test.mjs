@@ -13,19 +13,22 @@ function fixture() {
     dataDir: "/private/user",
     userDir: "/repositories/user",
     write: (m) => lines.push(m),
-    inspectSource: async () => "marketConnectionScope",
+    inspectPackage: async () => ({}),
     checkDirectory: async () => {},
     ensureSettings: async () => {},
+    connection: async () => {},
     pause: async () => {},
     manage: async (action, context) => {
       assert.equal(context.dataDir, "/private/user");
       calls.push(action);
     },
     prepare: async (input) => {
-      calls.push("build");
+      await input.beforePrepare();
+      calls.push("verify");
       assert.equal(input.prepareOnly, true);
-      assert.equal(input.forceWalletBuild, true);
+      assert.equal(input.forceWalletBuild, undefined);
       assert.equal(input.market, undefined);
+      await input.afterPrepare();
     },
     wallet: async (dir, method) => {
       if (method === "status" && notRunning-- > 0)
@@ -42,29 +45,30 @@ function fixture() {
   };
   return { calls, lines, options };
 }
-test("preparation pauses services, rebuilds, waits for the new Wallet, unlocks and returns to connection", async () => {
+test("preparation pauses services, verifies packages, waits for the new Wallet, unlocks and returns to connection", async () => {
   const f = fixture();
   assert.equal(await repairMarketWallet(f.options), true);
-  assert.deepEqual(f.calls, ["prepare", "stop", "build", "start", "unlock"]);
+  assert.deepEqual(f.calls, ["prepare-repair", "stop", "verify", "start", "unlock"]);
   assert.match(f.lines.at(-1), /Continuing your Market connection/);
 });
 test("failed build keeps the original state and shows a log plus the same retry command", async () => {
   const f = fixture();
-  f.options.prepare = async () => {
+  f.options.prepare = async (input) => {
+    await input.beforePrepare();
     throw Object.assign(Error("private build diagnostics"), {
       logPath: "/private/build.log",
     });
   };
   assert.equal(await repairMarketWallet(f.options), false);
-  assert.deepEqual(f.calls, ["prepare", "stop"]);
-  assert.match(f.lines.join("\n"), /\.\/run market connect/);
+  assert.deepEqual(f.calls, ["prepare-repair", "stop"]);
+  assert.match(f.lines.join("\n"), /agentpay market connect/);
   assert.match(f.lines.join("\n"), /\/private\/build.log/);
   assert.match(f.lines.join("\n"), /Wallet and Runtime remain stopped/);
   assert.doesNotMatch(f.lines.join("\n"), /private build diagnostics/);
 });
 test("source lacking connection capability never stops services; failed unlock never claims success", async () => {
   const old = fixture();
-  old.options.inspectSource = async () => "old source";
+  old.options.inspectPackage = async () => { throw Error("CURRENT_SOURCE_REQUIRED"); };
   assert.equal(await repairMarketWallet(old.options), false);
   assert.deepEqual(old.calls, []);
   const f = fixture();
@@ -87,4 +91,15 @@ test("a dependency verification failure is explained before the retry and log gu
     /Wallet dependencies could not be verified: example/,
   );
   assert.doesNotMatch(f.lines.join("\n"), /internal details/);
+});
+
+test("a competing installer cannot pause services; connection conflict fails before stop", async () => {
+  const busy = fixture();
+  busy.options.prepare = async () => { throw Error('installer locked'); };
+  assert.equal(await repairMarketWallet(busy.options), false);
+  assert.deepEqual(busy.calls, []);
+  const conflict = fixture();
+  conflict.options.connection = async () => { throw Error('connection conflict'); };
+  assert.equal(await repairMarketWallet(conflict.options), false);
+  assert.deepEqual(conflict.calls, []);
 });

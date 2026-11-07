@@ -34,3 +34,17 @@ export function autostartFiles({ node, userDir, dataDir }) {
     `# Managed by AgentPay User\n[Unit]\nDescription=AgentPay Wallet login reminder\nPartOf=graphical-session.target\nAfter=graphical-session-pre.target agentpay-local-wallet.service\n\n[Service]\nType=oneshot\nExecStart=${[node, join(userDir, "scripts/login-notify.mjs"), dataDir].map(unitArg).join(" ")}\nRemainAfterExit=yes\nTimeoutStartSec=90\nUMask=0077\n\n[Install]\nWantedBy=graphical-session.target\n`;
   return entries;
 }
+
+// Accept only an exact previously generated unit for this same private directory.
+// This lets repair relocate program/Node paths without accepting custom unit bodies.
+export function isManagedUnit(body, name, dataDir) {
+  try {
+    const line = body.split('\n').find(line => line.startsWith('ExecStart='));
+    const quoted = [...line.matchAll(/"(?:\\.|[^"\\])*"/g)].map(([text]) => JSON.parse(text).replaceAll('%%','%').replaceAll('$$','$'));
+    const [node, script] = quoted;
+    const suffix = name === reminderUnit ? '/scripts/login-notify.mjs' : '/scripts/local-service.mjs';
+    if (!script.endsWith(suffix)) return false;
+    const userDir = script.slice(0, -suffix.length);
+    return autostartFiles({node, userDir, dataDir})[name] === body;
+  } catch { return false; }
+}

@@ -1,5 +1,53 @@
 # AgentPay User progress
 
+## User 0.3.0 first publication prepared — 2026-11-07
+
+Owner authorized the first npm publication. The package's private gate is removed;
+README now describes the npm entry and exact Wallet dependency. GitHub `publish.yml`
+uses the `npm-publish` environment and OIDC for subsequent releases. Initial Token
+upload, public-registry verification and Trusted Publisher validation are pending.
+No published-success claim is made by the prepared package or workflow.
+
+
+## npm update and migration review fixes — 2026-11-07
+
+Approved `agentpay update [-f]`: query npm, confirm the exact User release and its
+pinned Wallet, check requirements, stop managed services, install and invoke the new
+repair/official-test digest. Other Skills, original test requests, Policies and keys
+are preserved. No paid test is triggered. Source/npm-link checkouts are not replaced.
+
+Review fixes: relocation-aware preparation validates without rewriting the client
+path before services stop; explicit data purge also retires matching legacy source
+checkpoints/configuration; packaged documentation includes its referenced public
+entry files. Independent regression suite: 374 passed; final targeted checks: 35
+passed. Real npm replacement between two local unpublished tarballs and new-process
+repair passed with controlled registry metadata/service readiness. User npm release
+and real published-version upgrade acceptance remain pending; no participant services changed.
+
+
+## User npm integration candidate complete — 2026-11-07
+
+User 0.3.0 now pins public Wallet 0.3.0 and Protocol 0.14.3, resolves public Wallet
+exports and exposes `agentpay`. Installer/setup, managed service paths, repair and
+explicit uninstall modes no longer require sibling Wallet source or a compiler.
+Private data remains outside program files. Old custom data selections are retained;
+repair can refresh a moved client-module path only with matching URL/credential.
+Service changes are covered by the installer lock.
+
+Independent User tests passed (366 in the complete suite, followed by targeted
+migration/concurrency regressions). A packed User installed from its tarball with
+public dependencies and passed real isolated Wallet/Runtime restart checks without
+sibling source. No participant service, Policy, key or Order was changed. User is
+still `private: true`; no User npm upload or Market guide deployment occurred.
+See the [User package integration record](doc/reference/npm-integration-verification.md) for evidence and remaining limits.
+
+Next: review the candidate, then participant install/upgrade/restart/uninstall
+acceptance. Running-daemon version negotiation, User OIDC publication and Market
+install instructions remain open. Wallet Trusted Publisher is configured by the
+owner and pending its first OIDC publication. Earlier sections below are historical
+milestones; their sibling-build and unpublished-Wallet statements are superseded.
+
+
 ## Wallet first npm publication complete — 2026-11-07
 
 `@c4roa0/agentpay-wallet@0.3.0` is public; npm `latest` is 0.3.0. The owner

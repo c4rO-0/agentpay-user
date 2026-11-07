@@ -84,13 +84,13 @@ verification before binding. A lost response resumes the original plan.
 
 ## External dependencies and development boundary
 
-User currently requires a sibling built Wallet repository. Some integrations still
-use its compiled internal modules; compatibility work must formalize that boundary
-before claiming independent version support. User imports ethers from its own
-declared dependency. The pinned public Protocol archive provides types, hashes and
+User resolves the installed Wallet package through public client, local-administration
+and CLI exports. Exact reviewed dependency versions are checked; independent
+running-process compatibility negotiation remains planned. User imports ethers from its own
+declared dependency. The pinned public Protocol package provides types, hashes and
 fixtures. No Agent, Protocol source checkout or private platform repository is
 required for the local test suite.
 
 Tests use public interfaces and controlled remote responses. The explicit fault
 loader only instruments a spawned test Runtime; production startup contains no
-crash-test switch. See [test guide](../test/README.md) for evidence limits.
+crash-test switch. See [test guide](https://github.com/c4rO-0/agentpay-user/blob/main/test/README.md) for evidence limits.

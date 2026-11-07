@@ -63,7 +63,7 @@ test("unlock inherits only stdin, forwards hidden prompt and formats success", a
   assert.equal(await controlWallet("unlock", f.options), 0);
   const [node, args, options] = f.calls[0];
   assert.equal(node, process.execPath);
-  assert(args[0].endsWith("/wallet/dist/src/cli.js"));
+  assert(args[0].endsWith("/bin/agentpay-wallet.mjs"));
   assert.deepEqual(args.slice(1), [
     "unlock",
     join(homedir(), ".local/share/agentpay/user/wallet"),
@@ -97,7 +97,7 @@ test("missing setup fails before password or child process", async () => {
     await controlWallet("unlock", {
       ...f.options,
       inspect: async (p) => {
-        if (p.endsWith("cli.js")) return { isFile: () => true };
+        if (p.endsWith("agentpay-wallet.mjs")) return { isFile: () => true };
         throw Object.assign(Error("missing"), { code: "ENOENT" });
       },
     }),

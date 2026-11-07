@@ -10,51 +10,55 @@ without silently creating a replacement purchase.
 
 ## Install
 
-Use Linux with Node.js 22.22.3 or newer, npm and Corepack. If Corepack is missing,
-install it with `npm install --global corepack` using your Node installation.
-The installer uses Corepack to run Wallet’s pinned pnpm version. User and Wallet
-install their shared Protocol dependency from npm; no Protocol checkout is needed.
-Keep the two source repositories in
-one parent folder, named `user` and `wallet`:
+Use Linux with Node.js 22.22.3 or newer and npm. Install User; its reviewed Wallet
+and Protocol dependencies are included automatically:
 
 ```sh
-mkdir agentpay-local
-cd agentpay-local
+npm install --global @c4roa0/agentpay-user@0.3.0
+agentpay install --market https://YOUR_MARKET_ORIGIN
+```
+
+Replace the Market URL with your platform's address. Use a user-owned Node/npm
+installation with Node and npm's executable directory on PATH. No Wallet checkout,
+Corepack, pnpm or TypeScript build is needed.
+
+For contributors or source ZIP users:
+
+```sh
 git clone https://github.com/c4rO-0/agentpay-user.git user
-git clone https://github.com/c4rO-0/agentpay-wallet.git wallet
 cd user
-./run install --market https://YOUR_MARKET_ORIGIN
+npm ci
+npm link
+agentpay help
 ```
 
-Replace the Market address with your platform's address. For ZIP downloads, extract
-both projects into the same sibling layout. Use release instructions for compatible
-versions; the combined ZIP and independent compatibility checks are
-[planned](doc/plans/user-wallet-distribution.md), not available yet.
+`npm link` exposes the command from your checkout. Without linking, `./run` (or
+`sh run`) provides the same commands; `AGENTPAY_NODE` can select your Node executable.
 
-Install prepares dependencies and Wallet, downloads public settings and continues
-setup. You choose the Safe and spending limits, then approve with its owner wallet.
-The optional official payment test requires explicit cost confirmation. Never enter
-an owner private key into AgentPay. See [installation and first use](doc/runbooks/user-onboarding.md).
+Install verifies dependencies, downloads public settings and continues setup.
+You choose the Safe and spending limits, then approve with its owner wallet.
+The optional official payment test asks before spending. Never enter an owner
+private key into AgentPay. See [installation and first use](doc/runbooks/user-onboarding.md).
 
-For ZIPs without executable permissions, use `sh run`. If Node is outside PATH:
-
-```sh
-export AGENTPAY_NODE="/absolute/path/to/node"
-./run help
-```
+Program files and private state are separate. Keys, Policies, Orders and cache
+normally live in `~/.local/share/agentpay/user`; an existing custom data directory
+is retained. Installation checkpoints use `~/.local/state/agentpay/user` (or
+`$XDG_STATE_HOME/agentpay/user`). Upgrading program files does not erase either.
 
 ## After setup
 
 ```sh
-./run status
-./run wallet unlock
-./run orders list
-./run market connect
+agentpay status
+agentpay wallet unlock
+agentpay orders list
+agentpay market connect
 ```
 
 Linux background services use your systemd user session. Wallet starts locked after
-a restart. `./run service help` explains startup, stop and logs; `./run help` lists
-all groups. [Commands](doc/runbooks/commands.md) · [Updates](doc/runbooks/local-update.md)
+a restart. `agentpay service help` explains startup, stop and logs; `agentpay help` lists
+all groups. Global npm installations use `agentpay update` to review and install a
+new User version with its matching Wallet and official test Skill. Source checkouts
+update their files, run `npm ci`, then `agentpay repair`. [Commands](doc/runbooks/commands.md) · [Updates](doc/runbooks/local-update.md)
 · [Backup and restore](doc/runbooks/wallet-identity.md).
 
 ## Develop or integrate

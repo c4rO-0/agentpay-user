@@ -1,3 +1,4 @@
+import { deploymentFilePath, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -69,7 +70,7 @@ export async function prepareOfficialTestUpdate({
   try {
     let source;
     for (const name of ["anvil-onboarding.json", "user-deployment.json"]) {
-      const saved = await readJson(join(dirname(userDir), name));
+      const saved = await readJson(await deploymentFilePath(dataDir, userDir, name));
       if (saved?.marketBundleMetadataUrl) {
         source = saved.marketBundleMetadataUrl;
         break;
@@ -94,7 +95,7 @@ export async function prepareOfficialTestUpdate({
     }
     if (!source) {
       write(
-        "Not checked: no saved Market test source. Continue ./run setup when ready.",
+        "Not checked: no saved Market test source. Continue agentpay setup when ready.",
       );
       return { status: "unconfigured" };
     }
@@ -151,7 +152,7 @@ export async function prepareOfficialTestUpdate({
       );
     else
       write(
-        "Could not prepare the official test Skill. Check your Market connection and retry ./run repair.",
+        "Could not prepare the official test Skill. Check your Market connection and retry agentpay repair.",
       );
     write(
       "The software update is kept; existing test files and Orders were not replaced.",

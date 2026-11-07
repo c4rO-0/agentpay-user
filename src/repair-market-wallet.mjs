@@ -1,3 +1,5 @@
+import { ensureRuntimeConnection } from "./runtime-connection-settings.mjs";
+import { walletPackage } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -39,10 +41,11 @@ export async function repairMarketWallet({
   write = console.log,
   userDir = installedUserDir,
   prepare = runInstall,
+  connection = ensureRuntimeConnection,
   manage = service,
   wallet = localWalletAdmin,
   unlock = controlWallet,
-  inspectSource = readFile,
+  inspectPackage = walletPackage,
   checkDirectory = checkServiceDirectory,
   ensureSettings = ensureLocalServices,
   pause = (ms) => new Promise((r) => setTimeout(r, ms)),
@@ -50,16 +53,9 @@ export async function repairMarketWallet({
   let logPath,
     servicesPaused = false;
   try {
-    // Rebuild the code the participant already downloaded. This does not change
-    // Git checkouts, deployment/Policy settings or original purchase records.
-    const source = await inspectSource(
-      join(dirname(userDir), "wallet/src/ipc.ts"),
-      "utf8",
-    );
-    if (!source.includes("marketConnectionScope"))
-      throw Error("CURRENT_SOURCE_REQUIRED");
+    await inspectPackage(userDir);
     await checkDirectory(dataDir);
-    await ensureSettings({ dataDir, userDir, write });
+    await ensureSettings({ dataDir, userDir, write, connectionOptions: { refreshClientModule: true, checkOnly: true } });
     logPath = join(
       dataDir,
       "runtime",
@@ -67,22 +63,27 @@ export async function repairMarketWallet({
     );
     const context = { userDir, dataDir, logPath };
     write("1/3 Prepare Wallet. Your background services will pause briefly.");
-    await manage("prepare", context);
-    await manage("stop", context);
-    servicesPaused = true;
-    write(
-      "2/3 Check dependencies and build Wallet. This may take a few minutes.",
-    );
     await prepare({
       userDir,
       dataDir,
       prepareOnly: true,
-      forceWalletBuild: true,
       write: () => {},
+      // The installer lock covers service changes as well as dependency checks.
+      // A competing repair must fail before pausing a running Wallet.
+      beforePrepare: async () => {
+        await connection({ dataDir, write, refreshClientModule: true, checkOnly: true });
+        await manage("prepare-repair", context);
+        await manage("stop", context);
+        servicesPaused = true;
+        write("2/3 Verify installed User and Wallet packages.");
+      },
+      afterPrepare: async () => {
+        await connection({ dataDir, write, refreshClientModule: true });
+        write("3/3 Start Wallet and Runtime.");
+        await manage("start", context);
+        servicesPaused = false;
+      },
     });
-    write("3/3 Start Wallet and Runtime.");
-    await manage("start", context);
-    servicesPaused = false;
     let ready = false;
     for (let attempt = 0; attempt < 30; attempt++) {
       try {
@@ -114,12 +115,12 @@ export async function repairMarketWallet({
   } catch (e) {
     if (e.message === "CURRENT_SOURCE_REQUIRED")
       write(
-        "Download the latest User and Wallet code, then run ./run market connect again.",
+        "Install the reviewed User package, then run agentpay market connect again.",
       );
     else {
       if (!logPath)
         write(
-          "Startup settings were not completed. Run ./run service start in your terminal, then retry this connection.",
+          "Startup settings were not completed. Run agentpay service start in your terminal, then retry this connection.",
         );
       if (e.preparationMessage) write(e.preparationMessage);
       if (servicesPaused)
@@ -127,7 +128,7 @@ export async function repairMarketWallet({
           "Wallet and Runtime remain stopped until preparation succeeds. Your keys and Order records are kept.",
         );
       write(
-        "Wallet preparation stopped. Run ./run market connect again after checking the log.",
+        "Wallet preparation stopped. Run agentpay market connect again after checking the log.",
       );
       if (e.logPath || logPath) write("Log: " + (e.logPath || logPath));
     }

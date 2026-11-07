@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -31,9 +32,7 @@ const walletDir = join(dataDir, "wallet");
 const runtimeDir = join(dataDir, "runtime");
 const credentialPath = join(runtimeDir, "caller.token");
 const keystore = join(walletDir, "session.keystore.json");
-const walletCli = fileURLToPath(
-  new URL("../../wallet/dist/src/cli.js", import.meta.url),
-);
+const walletCli = walletCliPath();
 const userRuntime = fileURLToPath(new URL("../src/index.mjs", import.meta.url));
 for (const file of [walletCli, userRuntime]) await stat(file);
 

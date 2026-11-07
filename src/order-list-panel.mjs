@@ -89,7 +89,7 @@ export function renderOrderList(
       });
     lines.push("");
     text("View details", { style: "1" });
-    text(`./run orders details ${selector}`, { style: "36" });
+    text(`agentpay orders details ${selector}`, { style: "36" });
     text(
       notes[e.invocationId]?.archived
         ? "Restore reminder"
@@ -97,7 +97,7 @@ export function renderOrderList(
       { style: "2" },
     );
     text(
-      `./run orders ${notes[e.invocationId]?.archived ? "unarchive" : "archive"} ${selector}`,
+      `agentpay orders ${notes[e.invocationId]?.archived ? "unarchive" : "archive"} ${selector}`,
       { style: "36" },
     );
   });

@@ -1,6 +1,6 @@
 # Private Anvil terminal onboarding
 
-Use this guide with the existing private chain (31337), an operator-reviewed public deployment config, an existing single-owner test Safe and the published official random Skill. User and Wallet are separate sibling repositories. User/Wallet access their own files and public or role-authorized APIs.
+Use this guide with the existing private chain (31337), an operator-reviewed public deployment config, an existing single-owner test Safe and the published official random Skill. User installs Wallet as a reviewed npm dependency; their processes remain separate. User/Wallet access their own files and public or role-authorized APIs.
 
 ## Start
 

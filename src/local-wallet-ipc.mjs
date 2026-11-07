@@ -39,7 +39,7 @@ export async function localWalletAdmin(dataDir, method, params = {}) {
       e ? reject(e) : resolve(value);
     };
     const timer = setTimeout(
-      () => finish(Error("Wallet did not respond. Run ./run status.")),
+      () => finish(Error("Wallet did not respond. Run agentpay status.")),
       30000,
     );
     socket.setEncoding("utf8");
@@ -47,7 +47,7 @@ export async function localWalletAdmin(dataDir, method, params = {}) {
       finish(
         Object.assign(
           Error(
-            "Start Wallet with ./run service start, then run ./run wallet unlock.",
+            "Start Wallet with agentpay service start, then run agentpay wallet unlock.",
           ),
           {
             code: ["ENOENT", "ECONNREFUSED"].includes(e.code)
@@ -74,7 +74,7 @@ export async function localWalletAdmin(dataDir, method, params = {}) {
     });
     socket.once("close", () => {
       if (!done)
-        finish(Error("Wallet closed the connection. Check ./run status."));
+        finish(Error("Wallet closed the connection. Check agentpay status."));
     });
     socket.once("end", () => {
       try {

@@ -1,3 +1,4 @@
+import { deploymentFilePath, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -43,7 +44,7 @@ async function optionalJson(path) {
 export async function askServiceSetting(prompt) {
   if (!process.stdin.isTTY)
     throw Error(
-      "Startup settings are incomplete. Run ./run service start in your terminal to finish configuration.",
+      "Startup settings are incomplete. Run agentpay service start in your terminal to finish configuration.",
     );
   const terminal = createInterface({
     input: process.stdin,
@@ -62,6 +63,7 @@ export async function ensureLocalServices({
   userDir = installedUserDir,
   ask = askServiceSetting,
   write = console.log,
+  connectionOptions = {},
 } = {}) {
   let saved;
   try {
@@ -70,14 +72,14 @@ export async function ensureLocalServices({
     if (e.code !== "ENOENT") throw e;
   }
   if (saved) {
-    await ensureRuntimeConnection({ dataDir, write });
+    await ensureRuntimeConnection({ dataDir, write, ...connectionOptions });
     return saved;
   }
   await checkServiceDirectory(dataDir);
   const key = await optionalJson(
     join(dataDir, "wallet", "session.keystore.json"),
   );
-  if (!key) throw Error("Wallet is not initialized. Run ./run setup first.");
+  if (!key) throw Error("Wallet is not initialized. Run agentpay setup first.");
   const connection = await optionalJson(
     join(dataDir, "runtime", "connection.json"),
   );
@@ -90,7 +92,7 @@ export async function ensureLocalServices({
       "The saved Runtime connection does not match this User directory. Review it before starting.",
     );
   const setup = await optionalJson(
-    join(dirname(userDir), "anvil-onboarding.json"),
+    await deploymentFilePath(dataDir, userDir, "anvil-onboarding.json"),
   );
   const policy = await optionalJson(join(dataDir, "wallet", "policy.json"));
   if (
@@ -135,7 +137,7 @@ export async function ensureLocalServices({
     );
   const settings = serviceSettings({ version: 1, runtimeUrl, settlementUrl });
   await saveServiceSettings({ dataDir, ...settings });
-  await ensureRuntimeConnection({ dataDir, write });
+  await ensureRuntimeConnection({ dataDir, write, ...connectionOptions });
   write("Startup settings saved. Login startup preference was not changed.");
   return settings;
 }

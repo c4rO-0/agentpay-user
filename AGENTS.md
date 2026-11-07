@@ -95,7 +95,7 @@ repository status.
 
 ## Development Rules
 
-- Keep participant interactions simple: one `./run` command should orchestrate
+- Keep participant interactions simple: one `agentpay` command should orchestrate
   required preparation and continue the original task. Ask only for meaningful
   decisions or secrets; do not make users assemble build/restart/unlock commands.
 - Use concise, human-readable progress, clear completion and a concrete retry
@@ -130,7 +130,7 @@ documentation. Update local links and the catalog when reorganizing documents.
 
 User's original code is MPL 2.0; preserve MIT notices on Protocol and attributed
 reference fixtures. Keep private platform scripts and operational records outside
-this repository. Normal local tests need only User and a built sibling Wallet;
+this repository. Normal local tests need only User with `npm ci`; Wallet comes from its pinned public package;
 load Protocol fixtures from the pinned public package, not a source checkout.
 Do not remove scripts merely because their name contains smoke or Anvil: some are
 current onboarding entries. Review callers first. Never weaken signer or payment
