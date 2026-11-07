@@ -23,7 +23,7 @@ const fixture = JSON.parse(
   await readFile(
     new URL(
       "../fixtures/agentpay-participant-order-v2/records.json",
-      import.meta.resolve("@agentpay/types"),
+      import.meta.resolve("@c4roa0/agentpay-protocol"),
     ),
     "utf8",
   ),

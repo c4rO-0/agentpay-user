@@ -15,6 +15,16 @@ Wallet runs separately and holds the encrypted Session Key. Safe/Module enforce
 on-chain permission. User owns orchestration and recovery, not Provider business
 logic or platform storage. No Settlement checkout or database access is required.
 
+## Shared Protocol dependency
+
+User and Wallet pin `@c4roa0/agentpay-protocol@0.14.3` from npm. Their lockfiles
+record integrity. The current repair gate still checks the exact repository versions
+and shared Protocol dependency in `update-pair.json`; `typesDependency` is the
+retained v1 field name for that npm version. It is not a compatibility range.
+Installation/repair fingerprints cover manifests and lockfiles rather than a vendor
+folder. Policy, Order and cached request identities are independent of this package
+name change. Independent-version compatibility remains a separate planned feature.
+
 ## Source map
 
 | Area | Main files | Responsibility |

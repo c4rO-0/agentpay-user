@@ -9,7 +9,7 @@ import { promisify } from "node:util";
 import { mkdtemp, rm, mkdir } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { hashServiceProfile } from "@agentpay/types";
+import { hashServiceProfile } from "@c4roa0/agentpay-protocol";
 import { packSkillFiles } from "./fixtures/skill-bundle.mjs";
 import { bundleDigest, installSkillBundle } from "../src/skill-bundle.mjs";
 const execute = promisify(execFile);

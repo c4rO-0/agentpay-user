@@ -7,8 +7,8 @@ this file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 Exceptions retain their own licenses:
 
-- `vendor/protocol/`: public AgentPay Protocol dependency, MIT; see its LICENSE
-  and provenance manifest. This does not include private Settlement source.
+- `@c4roa0/agentpay-protocol`: public npm dependency, MIT; its license ships
+  with the installed package. This does not include private Settlement source.
 - `test/fixtures/skill-zip.mjs` and `test/fixtures/random-skill/`: reference fixture
   snapshot from AgentPay Agent, MIT; see `test/fixtures/REFERENCE-SKILL-LICENSE`
   and its README for the source revision.

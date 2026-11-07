@@ -35,8 +35,7 @@ async function fixture() {
     user = join(parent, "user"),
     wallet = join(parent, "wallet");
   for (const dir of [user, wallet]) {
-    await mkdir(join(dir, "vendor"), { recursive: true });
-    await writeFile(join(dir, "vendor", "types.tgz"), "fixture");
+    await mkdir(dir, { recursive: true });
   }
   await writeFile(
     join(user, "package.json"),

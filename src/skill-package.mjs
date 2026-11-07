@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import { normalizeServiceReference } from "@agentpay/types";
+import { normalizeServiceReference } from "@c4roa0/agentpay-protocol";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 export function skillPackageDigest(bytes) {

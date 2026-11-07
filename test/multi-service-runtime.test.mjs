@@ -31,11 +31,11 @@ import {
   hashServiceProfile,
   hashServiceOutput,
   normalizeServiceInvocation,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 const load = async (path) =>
   JSON.parse(
     await readFile(
-      new URL(path, import.meta.resolve("@agentpay/types")),
+      new URL(path, import.meta.resolve("@c4roa0/agentpay-protocol")),
       "utf8",
     ),
   );

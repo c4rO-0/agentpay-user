@@ -12,7 +12,7 @@ import {
   hashPrivateRequest,
   hashServiceOutput,
   hashServiceProfile,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 import { runOrderSupport } from "../src/order-support.mjs";
 import { createInvocationStore } from "../src/invocation-store.mjs";
 import { invocationResults } from "../src/invocation-result.mjs";
@@ -23,7 +23,7 @@ const orderFixture = JSON.parse(
   await readFile(
     new URL(
       "../fixtures/agentpay-participant-order-v2/records.json",
-      import.meta.resolve("@agentpay/types"),
+      import.meta.resolve("@c4roa0/agentpay-protocol"),
     ),
     "utf8",
   ),

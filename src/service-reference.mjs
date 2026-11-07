@@ -6,7 +6,7 @@ import {
   canonicalizeServiceJson,
   normalizeServiceResult,
   AGENTPAY_SERVICE_INVOCATION_VERSION,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 export const SERVICE_REFERENCE_VERSION = "agentpay.service-reference.v1";
 export function parseServiceReference(value) {
   try {

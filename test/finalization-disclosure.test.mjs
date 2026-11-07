@@ -3,7 +3,7 @@
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { normalizeFinalizationDisclosure } from "@agentpay/types";
+import { normalizeFinalizationDisclosure } from "@c4roa0/agentpay-protocol";
 import { readFinalizationDisclosure } from "../src/finalization-disclosure.mjs";
 const schedule = {
   state: "awaiting_confirmation",

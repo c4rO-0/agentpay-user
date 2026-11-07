@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import { hashServiceProfile } from "@agentpay/types";
+import { hashServiceProfile } from "@c4roa0/agentpay-protocol";
 import assert from "node:assert/strict";
 import { createServer as createHttpServer } from "node:http";
 import { createServer as createNetServer } from "node:net";

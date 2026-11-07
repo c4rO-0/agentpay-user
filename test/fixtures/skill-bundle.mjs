@@ -5,7 +5,7 @@
 // Reference wrapper/ZIP writer are MIT; see REFERENCE-SKILL-LICENSE.
 import { readFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { normalizeServiceReference } from '@agentpay/types';
+import { normalizeServiceReference } from '@c4roa0/agentpay-protocol';
 import { writeSkillZip } from './skill-zip.mjs';
 export const RANDOM_SKILL_BUNDLE_VERSION = '1.2.0';
 export function packSkillFiles(files) { return writeSkillZip(Object.entries(files)); }

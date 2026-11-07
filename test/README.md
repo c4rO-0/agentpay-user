@@ -13,7 +13,9 @@ node --test test/runtime-client.test.mjs test/multi-service-runtime.test.mjs
 node --test test/owner-approval-server.test.mjs test/owner-approval-browser.test.mjs
 ```
 
-No private platform repository, database or real-chain setup is required. Keep the
+Protocol is installed from npm. Installation/repair fixtures intentionally have no
+`vendor` directory; the pair checks reject an older Protocol version or archive-based
+Wallet dependency. No private platform repository, database or real-chain setup is required. Keep the
 sibling Wallet requirement: some suites test real Wallet files and IPC. This is not
 the same as the explicitly paid `./run payment test` command.
 

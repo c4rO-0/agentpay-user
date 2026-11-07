@@ -11,7 +11,7 @@ import {
   validateOrderWaiting,
   validateOrderClosure,
   AGENTPAY_DELIVERY_RESULT_V2,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 
 // Keep integer timestamps inside Runtime; v1 is an explicit ingress adapter.
 export function readSettlementResult(value) {

@@ -13,7 +13,7 @@ import {
   rm,
 } from "node:fs/promises";
 import { join, dirname } from "node:path";
-import { normalizeServiceReference } from "@agentpay/types";
+import { normalizeServiceReference } from "@c4roa0/agentpay-protocol";
 export const bundleDigest = (bytes) =>
   createHash("sha256").update(bytes).digest("hex");
 export const skillArchiveLimits = Object.freeze({

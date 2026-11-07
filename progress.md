@@ -1,5 +1,38 @@
 # AgentPay User progress
 
+## npm client distribution plan — 2026-11-07
+
+Approved npm-first distribution for Protocol, Wallet and User; separate repositories
+and processes remain. Ordinary users will install User, which supplies a reviewed
+compiled Wallet dependency. Combined source ZIP is optional later work. See the
+local distribution plan for public entries, upgrades, service paths, private data
+and uninstall boundaries. Steps 1–2 are authorized: commit the verified Protocol
+dependency baseline, then prepare/test Wallet's public package. User package
+integration and npm uploads are later loops; present sibling installation remains
+until replaced and verified.
+
+
+## Public Protocol npm migration verified — 2026-11-06
+
+User now pins `@c4roa0/agentpay-protocol@0.14.3`; production imports, test fixtures
+and the public notice use that package. No unrelated locked dependencies changed.
+The v1 update-pair metadata retains its `typesDependency` field and pins 0.14.3;
+checks require both User and Wallet to use the new package at that exact version.
+Old archive-based Wallet and different Protocol versions are rejected. Version-range
+compatibility remains planned; no legacy alias or bypass was added.
+
+Installer/repair fingerprints no longer require a vendor directory. Manifests and
+lockfiles still bind dependency changes. Removed the old archive/license/manifest
+after independent verification; historical review records describe the earlier state.
+With only sibling User/Wallet source in a temporary directory, frozen Wallet install,
+Wallet build, User npm ci and all 364 tests passed (zero failures/skips). Real installer
+prepare-only execution also passed twice: first preparation ran the package managers
+and build, unchanged retry skipped them. Actual pair checks/snapshot reads passed
+without vendor directories. This proves preparation and controlled local behavior,
+not participant setup, owner approval or real-network payment acceptance.
+No running services, key files, Policies or Orders were modified.
+
+
 ## Public-source preparation — 2026-11-06
 
 User's original code is MPL 2.0, as selected by the owner; public Protocol and

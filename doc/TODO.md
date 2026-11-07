@@ -1,5 +1,25 @@
 # User TODO
 
+## npm client distribution — 2026-11-07
+
+- [x] Record npm-first plan; combined source ZIP is optional, not the primary installer.
+- [x] Step 1: commit verified User/Wallet Protocol dependency migration baseline.
+- [ ] Step 2: prepare Wallet public entry points, compiled npm artifact and standalone acceptance.
+- [ ] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions.
+- [ ] Step 4: installed/running compatibility, upgrade recovery and explicit uninstall modes.
+- [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
+- [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
+
+
+## Public npm Protocol dependency
+
+- [x] Pin npm core 0.14.3; migrate imports, fixtures, lockfile and notices.
+- [x] Update exact User/Wallet pair checks; reject mixed archive/npm or mismatched dependencies.
+- [x] Remove vendor-directory assumptions from install/repair fingerprints.
+- [x] Verify isolated sibling install/build, all 364 tests and real prepare-only retry; remove old archives.
+- [ ] Commit/push the matching User and Wallet revisions together before participant synchronization.
+
+
 ## Public-source preparation
 
 - [x] Inventory current source, archives, private harnesses and contributor prerequisites.
@@ -17,7 +37,7 @@
 
 - [ ] Define the supported Wallet client/IPC boundary and source/build/running compatibility requirements.
 - [ ] Replace exact version pairing with reviewed compatibility checks; preserve keys, Policies and recovery.
-- [ ] Produce a combined User/Wallet ZIP with provenance/licenses; retain standalone Wallet distribution.
+- [ ] Optional later: combined ZIP/platform assets after primary npm installation acceptance.
 - [ ] Verify fresh Git/ZIP installation and missing/incompatible/stale version recovery; update Market guidance.
 
 See [distribution plan](plans/user-wallet-distribution.md). These changes are not

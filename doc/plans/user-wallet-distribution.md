@@ -1,65 +1,71 @@
 # Independent User and Wallet distribution
 
-Approved direction: 2026-11-06. Planning only; current installation and version
-checks have not yet changed.
+Updated 2026-11-07. The approved primary distribution direction is npm for Protocol,
+Wallet and User. This replaces the 2026-11-06 combined-source-ZIP-first plan.
+Repositories, processes and releases remain separate; Node is still required.
 
-## Product and repository boundaries
+## Intended user experience
 
-Keep User and Wallet in separate repositories, processes and releases. Wallet is
-the bounded signing service; User owns AgentPay onboarding and Skill orchestration.
-Wallet must remain independently usable. Do not merge repositories or introduce
-submodules as an installation requirement.
+Ordinary users install `@c4roa0/agentpay-user` and run `agentpay setup`. User installs
+its reviewed Wallet dependency; both consume public Protocol. No sibling source
+folders, pnpm or local TypeScript build are required for the published User path.
+Wallet remains independently installable. Git checkouts are for contributors; keep
+current instructions until the package integration is implemented and verified.
+Combined ZIPs and platform binaries are optional later work, not a release prerequisite.
 
-## Installation choices
+npm installation only installs program files. Key creation, background-service
+configuration, owner approval and payments require explicit product commands.
+No postinstall hook may initialize keys, register services or authorize spending.
+Keys, Policies, request history and cache stay outside package installation paths.
 
-Ordinary users download one combined ZIP attached to a User release. Packaging
-selects reviewed User and Wallet commits and records their independent versions,
-commit IDs and integrity information. The extracted directory contains sibling
-`user/` and `wallet/` folders; it contains no keys, local state or credentials.
-Continue to require Node for this stage; platform binaries are a later decision.
+## Dependency and authority boundaries
 
-Git users create one directory of their choice, clone agentpay-user into `user`
-and agentpay-wallet into `wallet`, then run `./run install --market MARKET_URL`
-from User. Do not require manual selection of a pair of identically named tags.
-Current relative imports require these sibling names. Document the layout until
-implementation deliberately removes that dependency.
+User -> Wallet -> Protocol, and User -> Protocol. Publish only reviewed runtime
+files, public declarations, documentation and licenses. Wallet ships compiled JS.
+Use exact reviewed dependency versions initially; independent compatibility ranges
+are a later step. Versions need not have the same number across repositories.
 
-## Compatibility, not equal release numbers
+Replace User imports of Wallet internals with documented IPC-client and local
+administration entry points, and resolve the CLI through the installed package.
+Normal service calls remain capability-scoped IPC; trusted local administration is
+not an Agent API. Do not expose generic signing or let a package dependency move
+Session Key ownership into Runtime. Generic private-file helpers belong to User's
+own storage boundary, not a new public Wallet API solely to preserve an old import.
 
-User declares the supported Wallet interface/version requirements. Compatible
-independent versions may be used together. Tags identify stable releases, but
-are not a substitute for checking compatibility. A newer version is not
-necessarily compatible, and a declared version cannot prove arbitrary main-branch
-code is bug-free. Maintain usable main branches and verify release combinations.
+Check installed interface requirements and running Wallet identity before enabling
+incompatible operations. Installation/version metadata alone is not proof that the
+current daemon matches. Preserve diagnostic and recovery access on mismatch; never
+replace purchases, Policy identity or keys to resolve an upgrade failure.
 
-Check compatibility before installation changes, before repair pauses services,
-and at startup before enabling incompatible operations. Distinguish source,
-built executable and running service identities. Missing/unsupported metadata
-must produce a concrete instruction identifying the component to update, never
-an implicit latest-version download or a new payment. Preserve original keys,
-Policies, Order history and recovery records. An incompatible process must not be
-trusted for signing; retain local diagnostic access.
+## Upgrade and uninstall
 
-The current exact `update-pair.json` equality checks are implementation debt, not
-the approved long-term contract. Define the smallest public Wallet client/IPC
-boundary and supported range/capability semantics before replacing them. Avoid
-unbounded capability lists or a new general update service. Do not add generic
-signing or make Wallet dependent on User. `repair` continues to apply downloaded
-local code; this decision does not authorize automatic code replacement.
+Review -> confirm -> stop services -> install update -> repair executable paths ->
+start and self-check -> request unlock. Do not let an arbitrary latest-version
+lookup replace executable code. `repair` repairs installed files; downloading an
+update is a distinct action. Failed/interrupted updates retain private data and
+must give a concrete recovery path. Moving npm/Node installations must not leave
+systemd pointing silently to a missing or older executable.
 
-## Implementation order and verification
+Distinguish program removal (stop/remove services, retain private data) from explicit
+confirmed deletion of local keys/history/configuration. Document recovery if npm is
+uninstalled first. Do not rely on npm lifecycle hooks for sensitive cleanup.
 
-1. Audit both current source trees, tracked archives, license/security notices,
-   standalone docs and test/CI prerequisites before opening repositories.
-2. Inventory User imports of Wallet internals, CLI and third-party dependency paths;
-   specify the supported client/IPC boundary and source/build/running checks.
-3. Implement compatibility checks and preserve useful error/recovery guidance.
-   Test supported unequal versions, unsupported/missing versions, stale builds and
-   stale running processes without replacing requests or spending authority.
-4. Generate the combined archive from explicit reviewed commits, keeping Wallet
-   independently distributable. Verify integrity, licenses, exclusions and layout.
-5. Verify fresh combined-ZIP and Git installations, repair and failure recovery;
-   update Market download guidance only when the actual artifacts are available.
+## Closed loops and acceptance
 
-No public visibility, history rewrite, package publication, service changes or
-new paid acceptance is authorized by this plan. Each requires its applicable scope.
+1. Commit the verified Protocol npm migration for User and Wallet as a baseline.
+2. Prepare Wallet public package entry points and compiled artifact. Inventory User
+   consumers; test installed tarball CLI and real IPC/key lifecycle independently.
+   No npm upload or User package migration in this loop.
+3. Integrate User with the Wallet package; remove sibling source/build assumptions;
+   expose `agentpay`, align service paths, installer, repair and uninstall.
+4. Verify version/interface and running-process compatibility, update interruption,
+   data preservation and bounded mismatch handling. Keep exact pins until ranges
+   and their negative tests are explicitly designed.
+5. Configure independent OIDC release workflows. Publish Wallet first, then User;
+   verify public registry installs. Update Market and human guides to tested commands.
+6. Accept fresh install, restart/unlock, upgrade, uninstall and the official paid
+   connectivity test through the same product path on Anvil. Multi-service behavior
+   uses maintained controlled fixtures. Real-network acceptance remains separate.
+
+Current scope: steps 1–2 authorized on 2026-11-07. No new npm upload, chain operation,
+service restart or participant data migration is authorized by this plan.

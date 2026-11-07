@@ -4,7 +4,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { withClientRequestLock } from "./client-request-lock.mjs";
-import { normalizeServiceReference, hashPrivateRequest } from "@agentpay/types";
+import { normalizeServiceReference, hashPrivateRequest } from "@c4roa0/agentpay-protocol";
 import {
   normalizeAcceptedTerms,
   normalizeRuntimeResult,

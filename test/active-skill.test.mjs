@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, mkdir, writeFile, readFile, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { hashServiceProfile } from "@agentpay/types";
+import { hashServiceProfile } from "@c4roa0/agentpay-protocol";
 import { randomBytes } from "node:crypto";
 import { randomSkillBundle, packSkillFiles } from "./fixtures/skill-bundle.mjs";
 import { installSkillBundle } from "../src/skill-bundle.mjs";

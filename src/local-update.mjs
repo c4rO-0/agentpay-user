@@ -28,6 +28,8 @@ async function json(path) {
     throw Error("Update metadata must be a regular file.");
   return JSON.parse(await readFile(path, "utf8"));
 }
+// The v1 metadata field typesDependency now pins the public npm Protocol package.
+// Keep exact pair checks until the separate compatibility-range design is implemented.
 export async function checkUpdatePair(userDir) {
   const walletDir = join(dirname(userDir), "wallet");
   const [pair, user, wallet] = await Promise.all([
@@ -45,8 +47,8 @@ export async function checkUpdatePair(userDir) {
     wallet.name !== "agentpay-wallet" ||
     user.version !== pair.userVersion ||
     wallet.version !== pair.walletVersion ||
-    user.dependencies?.["@agentpay/types"] !== pair.typesDependency ||
-    wallet.dependencies?.["@agentpay/types"] !== pair.typesDependency
+    user.dependencies?.["@c4roa0/agentpay-protocol"] !== pair.typesDependency ||
+    wallet.dependencies?.["@c4roa0/agentpay-protocol"] !== pair.typesDependency
   ) {
     throw Error(
       "User and Wallet do not match the downloaded update. Get the documented pair from the release page, then retry ./run repair.",
@@ -69,14 +71,12 @@ export async function updateSnapshot(userDir) {
           "run",
           "src",
           "scripts",
-          "vendor",
         ]),
         await fingerprint(walletDir, [
           "package.json",
           "pnpm-lock.yaml",
           "tsconfig.json",
           "src",
-          "vendor",
         ]),
       ]),
     )

@@ -29,7 +29,7 @@ import { readSettlementResult as settlementResult } from "./settlement-response.
 import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 import { createConnection } from "node:net";
-import { hashPrivateRequest } from "@agentpay/types";
+import { hashPrivateRequest } from "@c4roa0/agentpay-protocol";
 import { createInvocationStore } from "./invocation-store.mjs";
 import { authorizeCaller, readCallerToken } from "./caller-auth.mjs";
 import { fetchJsonWithTimeout } from "./transport.mjs";

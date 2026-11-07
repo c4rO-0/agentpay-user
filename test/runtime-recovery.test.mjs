@@ -12,7 +12,7 @@ const order = JSON.parse(
   await readFile(
     new URL(
       "../fixtures/agentpay-participant-order-v2/records.json",
-      import.meta.resolve("@agentpay/types"),
+      import.meta.resolve("@c4roa0/agentpay-protocol"),
     ),
   ),
 ).buyerOrder;
@@ -538,7 +538,7 @@ test("archiving hides matching warnings, preserves terminal counts, and new evid
 
 test("background restart verifies a pending result with scoped reads; mismatch, missing evidence and revoked Policy never promote it", async (t) => {
   const { hashServiceProfile, hashServiceOutput } = await import(
-    "@agentpay/types"
+    "@c4roa0/agentpay-protocol"
   );
   const { invocationResults } = await import("../src/invocation-result.mjs");
   for (const mode of [

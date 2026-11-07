@@ -5,7 +5,7 @@ import { OFFICIAL_TEST_PACKAGE } from "../src/official-test-package.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { hashPrivateRequest } from "@agentpay/types";
+import { hashPrivateRequest } from "@c4roa0/agentpay-protocol";
 import {
   runAnvilOnboarding,
   childFailureSummary,

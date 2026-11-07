@@ -8,7 +8,7 @@ import { readSettlementResult } from "../src/settlement-response.mjs";
 const fixtures = JSON.parse(
   readFileSync(
     new URL(
-      "../node_modules/@agentpay/types/fixtures/agentpay-native-service-v1/records.json",
+      "../node_modules/@c4roa0/agentpay-protocol/fixtures/agentpay-native-service-v1/records.json",
       import.meta.url,
     ),
     "utf8",
@@ -17,7 +17,7 @@ const fixtures = JSON.parse(
 const v2 = JSON.parse(
   readFileSync(
     new URL(
-      "../node_modules/@agentpay/types/fixtures/agentpay-participant-order-v2/records.json",
+      "../node_modules/@c4roa0/agentpay-protocol/fixtures/agentpay-participant-order-v2/records.json",
       import.meta.url,
     ),
     "utf8",
@@ -97,7 +97,7 @@ test("Runtime validates finalization even when the response has no nested Order"
     readFileSync(
       new URL(
         "../fixtures/agentpay-finalization-disclosure-v2/records.json",
-        import.meta.resolve("@agentpay/types"),
+        import.meta.resolve("@c4roa0/agentpay-protocol"),
       ),
       "utf8",
     ),
@@ -134,7 +134,7 @@ test("Runtime preserves deadline instants and distinguishes old policy snapshots
     readFileSync(
       new URL(
         "../fixtures/agentpay-order-deadlines-v2/records.json",
-        import.meta.resolve("@agentpay/types"),
+        import.meta.resolve("@c4roa0/agentpay-protocol"),
       ),
       "utf8",
     ),
@@ -171,7 +171,7 @@ test("Runtime adapts service authorization times while preserving one-time token
     readFileSync(
       new URL(
         "../fixtures/agentpay-service-authorization-v2/records.json",
-        import.meta.resolve("@agentpay/types"),
+        import.meta.resolve("@c4roa0/agentpay-protocol"),
       ),
       "utf8",
     ),
@@ -200,7 +200,7 @@ test("Runtime confirmation results keep the actual stored release time even afte
     readFileSync(
       new URL(
         "../fixtures/agentpay-delivery-result-v2/records.json",
-        import.meta.resolve("@agentpay/types"),
+        import.meta.resolve("@c4roa0/agentpay-protocol"),
       ),
       "utf8",
     ),

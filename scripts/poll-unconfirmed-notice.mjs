@@ -5,7 +5,7 @@
 // Poll only through the authenticated, bounded Wallet IPC notice operation.
 import { lstat, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { assertUnixMilliseconds } from "@agentpay/types";
+import { assertUnixMilliseconds } from "@c4roa0/agentpay-protocol";
 import { callWallet } from "../../wallet/dist/src/ipc.js";
 
 const [dataArg, settlementArg] = process.argv.slice(2);

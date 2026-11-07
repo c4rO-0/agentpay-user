@@ -6,7 +6,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { hashServiceProfile } from "@agentpay/types";
+import { hashServiceProfile } from "@c4roa0/agentpay-protocol";
 import { selectInvocation, resumeInvocation } from "../src/runtime-client.mjs";
 test("generic retry cannot silently change usage cap or transport; force keeps old intent", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "service-client-binding-"));

@@ -2,7 +2,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { createHash } from "node:crypto";
-import { hashPrivateRequest } from "@agentpay/types";
+import { hashPrivateRequest } from "@c4roa0/agentpay-protocol";
 
 // These are local guide checks, not a new Policy or payment authority.
 export function sameWalletPolicy(actual, expected) {

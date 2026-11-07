@@ -114,7 +114,7 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
       wallet = join(dir, "wallet");
     await mkdir(user);
     await mkdir(wallet);
-    const types = "file:vendor/protocol/example.tgz";
+    const types = "0.14.3";
     await writeFile(
       join(user, "update-pair.json"),
       JSON.stringify({
@@ -129,13 +129,13 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
       JSON.stringify({
         name: "@agentpay/user-runtime",
         version: "1.0.0",
-        dependencies: { "@agentpay/types": types },
+        dependencies: { "@c4roa0/agentpay-protocol": types },
       }),
     );
     const pkg = {
       name: "agentpay-wallet",
       version: "0.5.0",
-      dependencies: { "@agentpay/types": types },
+      dependencies: { "@c4roa0/agentpay-protocol": types },
     };
     await writeFile(join(wallet, "package.json"), JSON.stringify(pkg));
     assert.equal((await checkUpdatePair(user)).walletVersion, "0.5.0");
@@ -147,6 +147,13 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
       JSON.stringify({ ...pkg, version: "0.4.0" }),
     );
     await assert.rejects(checkUpdatePair(user), /do not match/);
+    for (const dependencies of [
+      { "@c4roa0/agentpay-protocol": "0.14.2" },
+      { "@agentpay/types": "file:vendor/protocol/agentpay-types-0.14.1.tgz" },
+    ]) {
+      await writeFile(join(wallet, "package.json"), JSON.stringify({ ...pkg, dependencies }));
+      await assert.rejects(checkUpdatePair(user), /do not match/);
+    }
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -212,7 +219,7 @@ test("update detection includes same-version source and generated Wallet changes
     const user = join(dir, "user"),
       wallet = join(dir, "wallet");
     for (const root of [user, wallet])
-      for (const sub of ["src", "scripts", "vendor", "dist/src"])
+      for (const sub of ["src", "scripts", "dist/src"])
         await mkdir(join(root, sub), { recursive: true });
     for (const name of [
       "package.json",

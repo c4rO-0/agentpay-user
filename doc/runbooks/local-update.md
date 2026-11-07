@@ -4,6 +4,10 @@ Download the compatible User and Wallet versions listed in the release notes.
 Keep the folders side by side, named `user` and `wallet`. Git users can obtain the
 same versions through Git; ZIP users do not need Git.
 
+For this npm dependency migration, update both repositories together. Mixing an old
+archive-based checkout with a new npm-based checkout is rejected by the repair
+check. Keep your existing private data when replacing the program folders.
+
 Before replacing program files, stop the background processes with `./run service stop`.
 Keep your private User data directory and the parent `.agentpay-install` directory.
 Do not use uninstall, replace key backups, or erase local Order history for an update.

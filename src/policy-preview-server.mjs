@@ -4,7 +4,7 @@
 import {
   assertUnixMilliseconds,
   parseLegacyIsoMilliseconds,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 import { isIP } from "node:net";
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";

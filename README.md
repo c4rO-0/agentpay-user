@@ -12,7 +12,8 @@ without silently creating a replacement purchase.
 
 Use Linux with Node.js 22.22.3 or newer, npm and Corepack. If Corepack is missing,
 install it with `npm install --global corepack` using your Node installation.
-The installer uses Corepack to run Wallet’s pinned pnpm version.
+The installer uses Corepack to run Wallet’s pinned pnpm version. User and Wallet
+install their shared Protocol dependency from npm; no Protocol checkout is needed.
 Keep the two source repositories in
 one parent folder, named `user` and `wallet`:
 

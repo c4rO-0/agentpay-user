@@ -5,7 +5,7 @@ import {
   assertUnixMilliseconds,
   parseLegacyIsoMilliseconds,
   unixSecondsToMilliseconds,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 export const currentTimeMs = () => assertUnixMilliseconds(Date.now());
 // Explicit migration adapter for known local fields only; never inspect signed payloads.
 export function localTimeMs(entry, key) {

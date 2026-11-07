@@ -11,7 +11,7 @@ import {
   hashPrivateRequest,
   hashServiceProfile,
   hashServiceOutput,
-} from "@agentpay/types";
+} from "@c4roa0/agentpay-protocol";
 import {
   saveRuntimeConnection,
   loadRuntimeConnection,

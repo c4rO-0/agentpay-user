@@ -3,7 +3,7 @@
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hashServiceProfile } from "@agentpay/types";
+import { hashServiceProfile } from "@c4roa0/agentpay-protocol";
 import { parseServicePackage } from "../src/skill-package.mjs";
 const profile = {
   version: "agentpay.service-profile.v1",

@@ -215,7 +215,6 @@ export async function runInstall({
     const walletInputs = await fingerprint(walletDir, [
       "package.json",
       "pnpm-lock.yaml",
-      "vendor",
     ]);
     const walletChanged =
       state.walletDependencies !== walletInputs ||
@@ -236,7 +235,6 @@ export async function runInstall({
       "pnpm-lock.yaml",
       "tsconfig.json",
       "src",
-      "vendor",
     ]);
     let outputs;
     try {
@@ -263,7 +261,6 @@ export async function runInstall({
     const userInputs = await fingerprint(userDir, [
       "package.json",
       "package-lock.json",
-      "vendor",
     ]);
     if (
       state.userDependencies !== userInputs ||
