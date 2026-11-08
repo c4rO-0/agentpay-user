@@ -16,6 +16,7 @@ test("official installer rejects both substituted metadata and bytes even with m
   let claimed = attackerHash,
     downloads = 0;
   const server = createServer((req, res) => {
+    assert.equal(req.url, `/skills/bundles/fixture/versions/${OFFICIAL_TEST_PACKAGE.sha256}/${req.url.endsWith("/metadata") ? "metadata" : "download"}`);
     if (req.url.endsWith("/metadata")) {
       res.setHeader("content-type", "application/json");
       res.end(
@@ -28,7 +29,7 @@ test("official installer rejects both substituted metadata and bytes even with m
             byteLength: bytes.length,
             publisherId: "fixture",
             marketServiceId: "fixture",
-            marketDownloadPath: "/skills/bundles/fixture/download",
+            marketDownloadPath: `/skills/bundles/fixture/versions/${OFFICIAL_TEST_PACKAGE.sha256}/download`,
           },
         }),
       );

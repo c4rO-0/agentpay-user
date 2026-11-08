@@ -1,5 +1,28 @@
 # User TODO
 
+## Tag-triggered publication
+
+- [x] Use matching `vX.Y.Z` tags for npm publication; retain verification gates.
+- [x] Owner confirmed release tags allowed in the GitHub `npm-publish` environment.
+- [ ] Verify the first tag-triggered OIDC publication and registry integrity.
+
+## Official package 1.2.1 — 2026-11-08
+
+- [x] Review actual published bytes, update the built-in official pin and verify fixed-download checks. Real Market fixed-version download/install repeated successfully in an isolated directory.
+- [x] Inspect this participant installation’s prior-version official tests: saved 1.2.0 record is acknowledged; retained unchanged. This does not assert every user has completed old tests.
+- [x] Load the reviewed User source update and run the normal 1.2.1 payment test with explicit user consent; terminal delivery/result/ack completed.
+- [x] Verify website visibility and independently reconcile Settlement/chain outcome; prepare User 0.3.2 candidate.
+- [x] Pin the verified public Wallet 0.3.2; align package/lockfile/update-pair.
+- [ ] Publish User 0.3.2 through OIDC and verify registry artifact; then accept a real npm update.
+
+
+## Fixed Skill download loop — 2026-11-08
+
+- [x] Request the official ZIP by the built-in SHA-256; reject unavailable/substituted versions without fallback.
+- [x] Complete fixed-download regression/type checks and publication/deletion review; the separate Market schema-fixture issue was resolved in its later regression.
+- [ ] After Market API/Web/nginx support is live, publish the next User version (not 0.3.1 again) and verify old pinned ZIP download and participant upgrade.
+
+
 ## Running-version release loop — 2026-11-07
 
 - [x] Verify User 0.3.0 public-registry publication; Trusted Publisher configured.
@@ -7,7 +30,8 @@
 - [x] Add process-start software reporting and status/repair mismatch handling; isolated checks passed.
 - [x] Wallet 0.3.1 published through the configured workflow; public npm version/dependencies verified.
 - [x] Pin User 0.3.1 to published Wallet 0.3.1; pairing metadata/lockfile and standalone archive verification complete.
-- [ ] Publish matching User release; validate User OIDC and real published-version update/restart.
+- [x] Publish User 0.3.1; verify public npm/latest and successful Wallet/User OIDC runs.
+- [ ] Verify real published-version update/restart on the participant installation.
 
 
 ## npm update follow-up — 2026-11-07
@@ -25,11 +49,12 @@
 - [x] Review step 2: guard normal packing against missing/stale builds, correct public-interface docs and verify a standalone TypeScript consumer.
 - [x] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions; isolated tarball/process acceptance passed.
 - [x] Step 4a: exact installed-package checks, service-path/client relocation, installer lock, recovery-safe preparation and explicit uninstall modes.
-- [ ] Step 4b: running-daemon version/interface negotiation and participant upgrade/interruption acceptance.
+- [x] Step 4b implementation: installed/running version and interface checks.
+- [ ] Step 4b acceptance: participant upgrade/interruption recovery (same gate as the running-version loop above).
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
   - [x] Wallet 0.3.0 first Token publication; registry integrity/latest and fresh public install/CLI/IPC verified.
-  - [x] Owner configured Wallet npm Trusted Publisher (pending validation).
-  - [ ] Validate Wallet and User OIDC with later reviewed releases. Both 0.3.0 packages are published; Market guide updates remain pending.
+  - [x] Owner configured Wallet npm Trusted Publisher; validated by 0.3.1 publication.
+  - [x] Wallet and User OIDC validated by 0.3.1 releases; Market guide updates remain pending.
 - [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
 
 
@@ -58,7 +83,7 @@
 ## Independent distribution (next development loop)
 
 - [ ] Define the supported Wallet client/IPC boundary and source/build/running compatibility requirements.
-- [ ] Replace exact version pairing with reviewed compatibility checks; preserve keys, Policies and recovery.
+- [ ] Optional later: widen exact reviewed dependency pairs only with a verified compatibility matrix; preserve keys, Policies and recovery.
 - [ ] Optional later: combined ZIP/platform assets after primary npm installation acceptance.
 - [ ] Verify fresh Git/ZIP installation and missing/incompatible/stale version recovery; update Market guidance.
 

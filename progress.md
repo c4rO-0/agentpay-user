@@ -1,6 +1,109 @@
 # AgentPay User progress
 
-## User 0.3.1 paired release preparation — 2026-11-08
+## User 0.3.2 release pairing — 2026-11-08
+
+Candidate now pins the verified public Wallet 0.3.2 with Protocol 0.14.3; package,
+lockfile and update-pair metadata agree. This release includes fixed-version
+Market downloads and the reviewed official Skill 1.2.1 pin. Historical notes
+below describe earlier candidate pairings. Publish through tag `v0.3.2` after
+final suite and standalone archive checks; no automatic new purchase is authorized.
+
+## Tag-triggered publication — 2026-11-08
+
+Wallet, Protocol and User release workflows now run on pushed `vX.Y.Z` tags.
+Each validates its package version, runs existing verification, publishes with
+OIDC and checks registry integrity. Branch pushes do not publish. No tag was
+pushed or npm version published for this workflow change. Owner confirmed `v*` tags allowed in the GitHub
+`npm-publish` environment; npm trust fields remain unchanged. YAML/shell checks and six executable tag/version guard cases passed
+per repository (matching version, mismatch, branch, prerelease, leading zero and
+newline rejection). Actual GitHub/OIDC execution remains pending.
+
+## Official 1.2.1 payment reconciled / User 0.3.2 candidate — 2026-11-08
+
+Participant confirmed Market Order visibility. Independent fixed-block chain reads,
+receipts and token transfers match Settlement's finalized release record: paid
+0.7 rUSDC, seller 0.665, platform fee 0.035, no refund, empty Vault. Funding,
+delivery and release events occur once for the verified Order. No further payment.
+This is private Anvil acceptance, not real-network or production approval.
+User 0.3.2 candidate includes fixed-version downloads and the reviewed official
+1.2.1 ZIP pin. Its preliminary package check used Wallet 0.3.1 and Protocol 0.14.3.
+The maintainer requested Wallet 0.3.2 review/publication first; after registry
+verification, update User’s exact dependency and reverify the final package.
+Candidate publication and real npm update acceptance remain pending.
+
+## Official Skill 1.2.1 participant payment passed — 2026-11-08
+
+Operator ran normal wallet unlock and payment-test commands after source repair.
+The guide quoted a maximum 0.7 rUSDC and 10-minute service limit; the operator
+explicitly confirmed. It reported delivery verification, saved-result verification
+and receipt acknowledgement, then completed successfully. This is private Anvil
+end-to-end participant evidence. The quoted maximum is not independently reconciled
+actual charge; payout/refund terminal chain evidence has not been checked here.
+User remains the 0.3.1-labelled source candidate, not a new published npm release.
+Next: website Order visibility and read-only Settlement/chain reconciliation before
+release closeout. Do not rerun a completed payment test just to inspect the result.
+
+## Participant repair completed — 2026-11-08
+
+Operator ran the normal source repair entry. Official Skill 1.2.1 passed the
+built-in hash check and was installed. Wallet and Runtime restarted; Wallet is
+locked as expected. Saved Policy and Market connection remain present, and local
+history reports two settled Orders plus one archived record. No purchase occurred.
+This is source-candidate repair acceptance, not publication of a new npm version.
+Next operator step unlocks Wallet and invokes the normal payment test; explicit
+current-price confirmation remains required before creating a paid Order.
+
+## Official fixed-download acceptance — 2026-11-08
+
+The normal prepareOfficialTestUpdate entry downloaded 1.2.1 twice from the running
+Market fixed-version API into an isolated directory, verified the built-in hash,
+installed successfully and preserved an existing prior-record fixture byte-for-byte.
+The first diagnostic read assumed a flat archive; it was corrected to read the saved
+publisher ZIP through User's parser. No product installation defect was found.
+17 targeted pin/download/update/payment-orchestration/prefix checks passed.
+This proves download/install behavior, not paid invocation. No participant services
+or Wallet data changed. Source repair and explicit payment acceptance are next;
+the candidate is not yet a new npm release.
+
+## Official test pin 1.2.1 prepared — 2026-11-08
+
+Reviewed the actual Provider ZIP and confirmed it matches the published fixed Market
+download: 4373 bytes, SHA-256
+`20633b314c66166f94dc6e7d7eb5bce54ab5901fb1ed314a04ea3fd49ca8a9a4`.
+The official-test pin now selects 1.2.1; generic Runtime routing is unchanged.
+The package checker and 14 controlled pin/download/update/payment-orchestration
+checks passed. The payment fixture now follows the selected version instead of
+hardcoding 1.2.0. No real payment, service restart or npm release was performed.
+Before participant testing, check for unfinished tests from the previous version:
+records are retained, but the payment-test entry selects a version-specific record.
+Do not treat a new-version test as recovery of an old purchase.
+
+
+## Development dependency verification — 2026-11-08
+
+Reinstalled dependencies from the unchanged lockfile after a stale local installation
+could not resolve the already-declared Protocol package. Fixed-download/update/prefix
+checks pass 8/8; the cross-repository publication/download/User preview regression
+passes 27/27. No dependency pins, services or user data changed. This is controlled
+verification, not a new npm release or live payment acceptance.
+
+
+## Fixed historical Skill downloads — 2026-11-08
+
+Development adds SHA-256-fixed Market metadata/ZIP routes over retained releases,
+a derived per-listing lookup, website forwarding and User official-test pin selection.
+Current publication replacement no longer changes the requested ZIP. Hidden/deleted
+listings, takedown, stale approval and damaged files remain unavailable. Historical
+internal-version ZIP routes now also respect listing visibility. No DB migration,
+Provider download dependency, service restart or payment was performed.
+Deploy Market API/Web and the nginx route allowlist first, then release the updated User; current published User
+0.3.1 does not use the new fixed-version endpoint. Verification: User 33 targeted checks, Web 7 proxy checks, Deploy 8 route/build checks
+and both Market/Web typechecks passed. Market publication regression: 69/70 passed;
+the remaining pre-existing schema fixture fails with WALLET_MAPPING_SCHEMA_INVALID.
+Controlled scanner/DB fixtures and local HTTP were used; no live database, nginx
+rollout or participant acceptance is claimed.
+
+## User 0.3.1 paired release published — 2026-11-08
 
 Public npm now contains Wallet 0.3.1 with Protocol 0.14.3. User 0.3.1 pins that
 published Wallet exactly; pairing metadata and lockfile are updated together.
@@ -8,10 +111,19 @@ This release adds actual installed Protocol verification and running-version che
 for status/repair. Prior release-gate notes below describe earlier checkpoints.
 User 0.3.1 passed 378 behavioral tests and standalone npm archive installation,
 including real Wallet/Runtime restart and matching running-version reports.
-User 0.3.1 publication and real published-version upgrade acceptance remain pending.
+User 0.3.1 is public and npm `latest`, with Wallet 0.3.1 and Protocol 0.14.3.
+[User OIDC publication](https://github.com/c4rO-0/agentpay-user/actions/runs/42440841342)
+passed from `46796ea`; [Wallet OIDC publication](https://github.com/c4rO-0/agentpay-wallet/actions/runs/42440112081)
+passed from `7e4d4fa`. Registry metadata was independently checked.
+Real published-version upgrade/restart acceptance remains pending.
 No participant services, keys, Policies or Orders are changed by package verification.
 
-## Installed dependency verification / paired release — 2026-11-08
+## Historical checkpoints — superseded by the current release status above
+
+The dated entries below preserve evidence and earlier decisions. Their pending
+release labels are historical; use current TODO for remaining work.
+
+### Installed dependency verification / paired release — 2026-11-08
 
 User now checks the actual Protocol package resolved from User and Wallet separately,
 including nested npm copies. Process reports use resolved installed versions, not

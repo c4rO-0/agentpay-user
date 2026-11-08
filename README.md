@@ -15,7 +15,7 @@ Install User with the command below. It automatically installs the matching Wall
 and Protocol packages; you do not need to download two repositories:
 
 ```sh
-npm install --global @c4roa0/agentpay-user@0.3.1
+npm install --global @c4roa0/agentpay-user
 agentpay install --market https://YOUR_MARKET_ORIGIN
 ```
 

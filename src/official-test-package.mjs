@@ -8,8 +8,8 @@ import { createHash } from "node:crypto";
 // This belongs to the official onboarding test, never generic Runtime routing.
 export const OFFICIAL_TEST_PACKAGE = Object.freeze({
   name: "agentpay-random",
-  version: "1.2.0",
-  sha256: "aa366fc2e747b5b444786d542b0a412a505e58ea15252ac1a792b99079084146",
+  version: "1.2.1",
+  sha256: "20633b314c66166f94dc6e7d7eb5bce54ab5901fb1ed314a04ea3fd49ca8a9a4",
 });
 const mismatch = () =>
   Object.assign(

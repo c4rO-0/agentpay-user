@@ -59,6 +59,7 @@ test("matching metadata with substituted bytes never installs a package", async 
   let count = 0;
   f.opts.fetchImpl = async (address) => {
     count++;
+    assert.match(String(address), new RegExp(`/versions/${OFFICIAL_TEST_PACKAGE.sha256}/(?:metadata|download)$`));
     return String(address).endsWith("/metadata")
       ? new Response(
           JSON.stringify({
@@ -74,4 +75,11 @@ test("matching metadata with substituted bytes never installs a package", async 
   assert.equal((await prepareOfficialTestUpdate(f.opts)).status, "unavailable");
   assert.equal(count, 2);
   assert.equal(f.installs, 0);
+});
+
+test('unavailable pinned release never falls back to the current Market package', async () => {
+  const f=fixture();let calls=0;
+  f.opts.fetchImpl=async address=>{calls++;assert.match(String(address),new RegExp(`/versions/${OFFICIAL_TEST_PACKAGE.sha256}/metadata$`));return new Response('{}',{status:404});};
+  assert.equal((await prepareOfficialTestUpdate(f.opts)).status,'unavailable');
+  assert.equal(calls,1);assert.equal(f.installs,0);assert.match(f.lines.join(' '),/no replacement package was selected/);
 });

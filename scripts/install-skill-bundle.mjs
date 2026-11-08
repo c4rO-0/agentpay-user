@@ -7,7 +7,7 @@ import {
   verifyOfficialTestBytes,
   verifyOfficialTestDigest,
 } from "../src/official-test-package.mjs";
-import { marketDownloadUrl } from "../src/market-download-url.mjs";
+import { marketDownloadUrl, marketVersionMetadataUrl } from "../src/market-download-url.mjs";
 import { resolve } from "node:path";
 import {
   inspectInstalledBundle,
@@ -42,7 +42,7 @@ if (
 }
 if (mode === "--prepare-official-test" && !marketMode)
   throw Error("OFFICIAL_TEST_MARKET_REQUIRED");
-const url = new URL(source);
+const url = official ? marketVersionMetadataUrl(source, digest) : new URL(source);
 if (
   url.username ||
   url.password ||
@@ -62,6 +62,8 @@ if (marketMode) {
     redirect: "error",
     signal: AbortSignal.timeout(5000),
   });
+  if (official && [404, 410].includes(r.status))
+    throw Error("This official test version is unavailable in Market. Check for a reviewed User update or contact support; no replacement was selected.");
   if (!r.ok) throw new Error(`MARKET_BUNDLE_METADATA_HTTP_${r.status}`);
   const body = await r.json();
   metadata = body.result;
@@ -78,7 +80,7 @@ if (marketMode) {
     !metadata.publisherId ||
     typeof metadata.marketServiceId !== "string" ||
     metadata.marketDownloadPath !==
-      `/skills/bundles/${encodeURIComponent(metadata.marketServiceId)}/download`
+      marketDownloadUrl(url, metadata.marketServiceId).pathname.replace(/^\/market(?=\/skills\/)/, "")
   )
     throw new Error("MARKET_BUNDLE_METADATA_INVALID");
   downloadUrl = marketDownloadUrl(url, metadata.marketServiceId);

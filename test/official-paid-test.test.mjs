@@ -43,7 +43,7 @@ function fixture() {
       archived.push(value);
     },
     read: async (path) =>
-      path.endsWith("official-paid-test-1.2.0.json")
+      path.endsWith(`official-paid-test-${OFFICIAL_TEST_PACKAGE.version}.json`)
         ? record
         : {
             chainId: 31337,

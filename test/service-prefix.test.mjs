@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { serviceBase, serviceUrl } from "../src/service-url.mjs";
-import { marketDownloadUrl } from "../src/market-download-url.mjs";
+import { marketDownloadUrl, marketVersionMetadataUrl } from "../src/market-download-url.mjs";
 import { marketSettingsUrl } from "../src/install-user.mjs";
 import { validatePublicDeployment } from "../src/prepare-onboarding.mjs";
 
@@ -85,4 +85,17 @@ test("service requests preserve prefixes without accepting URL credentials or es
   assert.throws(() =>
     serviceUrl("https://platform.test/settlement", "/../internal"),
   );
+});
+
+test('fixed package URLs retain ingress and never change the requested digest or service', () => {
+  const digest = 'a'.repeat(64);
+  for (const prefix of ['', '/market']) {
+    const source = `https://market.test${prefix}/skills/bundles/test/metadata`;
+    const pinned = marketVersionMetadataUrl(source, digest);
+    assert.equal(pinned.href, `https://market.test${prefix}/skills/bundles/test/versions/${digest}/metadata`);
+    assert.equal(marketDownloadUrl(pinned, 'test').href, pinned.href.replace(/metadata$/, 'download'));
+    assert.equal(marketVersionMetadataUrl(pinned, digest).href, pinned.href);
+    assert.throws(() => marketVersionMetadataUrl(pinned, 'b'.repeat(64)));
+    assert.throws(() => marketDownloadUrl(pinned, 'other'));
+  }
 });

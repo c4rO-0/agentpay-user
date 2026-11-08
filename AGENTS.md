@@ -135,3 +135,13 @@ load Protocol fixtures from the pinned public package, not a source checkout.
 Do not remove scripts merely because their name contains smoke or Anvil: some are
 current onboarding entries. Review callers first. Never weaken signer or payment
 boundaries to simplify tests. Keep source maps and behavioral evidence limits current.
+
+## Tag-triggered npm releases
+
+Package version `X.Y.Z` is released by pushing tag `vX.Y.Z` at the exact reviewed
+source commit. `.github/workflows/publish.yml` validates this match, verifies the
+package, publishes through OIDC and checks registry integrity. Pushing a release
+tag is a publication action and needs maintainer authorization; ordinary branch
+pushes do not publish. Never move an existing release tag. Verify registry state
+before rerunning a failed publication. The `npm-publish` environment must allow
+release tags (for example `v*`), not only the main branch.

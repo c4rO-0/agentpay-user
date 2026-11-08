@@ -9,8 +9,23 @@ hash reported by the same server that supplies the ZIP.
 
 This pin applies only to the maintained onboarding test. Generic Runtime calls and
 ordinary Skill installation do not require the random service or this package.
-The current pin is the reviewed random Skill 1.2.0 private rehearsal package;
+The current pin is the reviewed random Skill 1.2.1 private rehearsal package;
 it includes its service reference. It is not a production-network release.
+
+## Download a fixed Market version
+
+Setup and repair derive `/skills/bundles/:serviceId/versions/:sha256/metadata`
+from the saved Market source, using User's built-in ZIP hash. They download the matching
+fixed ZIP on the same origin and retain any `/market` ingress prefix. They no longer
+require Market's current release to match the User release. The ZIP is still hashed
+before parsing or saving; metadata cannot override the pin.
+
+Market must retain the approved historical version and permit its public download.
+If it is absent, withdrawn or no longer approved under current checks, preparation
+stops with an unavailable message. No current-version or Provider-hosted fallback is
+used. Existing local packages, requests and spending permission are unchanged.
+This client change requires the Market fixed-version API rollout before distributing
+the next User release; User 0.3.1 and earlier do not use this endpoint.
 
 ## Before publishing a User update
 

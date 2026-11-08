@@ -10,7 +10,7 @@ import {
   verifyOfficialTestBytes,
   verifyOfficialTestDigest,
 } from "./official-test-package.mjs";
-import { marketDownloadUrl } from "./market-download-url.mjs";
+import { marketDownloadUrl, marketVersionMetadataUrl } from "./market-download-url.mjs";
 
 async function localJson(path) {
   let handle;
@@ -48,6 +48,8 @@ async function download(fetchImpl, address, max) {
     redirect: "error",
     signal: AbortSignal.timeout(10000),
   });
+  if ([404, 410].includes(response.status))
+    throw Object.assign(Error("Official test version unavailable"), {code: "OFFICIAL_TEST_VERSION_UNAVAILABLE"});
   if (!response.ok || !response.body) throw Error("Market request failed");
   let length = 0;
   const chunks = [];
@@ -99,13 +101,7 @@ export async function prepareOfficialTestUpdate({
       );
       return { status: "unconfigured" };
     }
-    const metadataUrl = url(source);
-    if (
-      !/^\/(?:market\/)?skills\/bundles\/[^/]+\/metadata$/.test(
-        metadataUrl.pathname,
-      )
-    )
-      throw Error("Invalid package metadata path");
+    const metadataUrl = marketVersionMetadataUrl(url(source), OFFICIAL_TEST_PACKAGE.sha256);
     const body = JSON.parse(
       (await download(fetchImpl, metadataUrl, 65536)).toString("utf8"),
     );
@@ -150,6 +146,8 @@ export async function prepareOfficialTestUpdate({
       write(
         "Not updated: the published ZIP does not match this User release. Check for a reviewed User update; do not bypass the file check.",
       );
+    else if (error.code === "OFFICIAL_TEST_VERSION_UNAVAILABLE")
+      write("This official test version is unavailable in Market. Check for a reviewed User update or contact support; no replacement package was selected.");
     else
       write(
         "Could not prepare the official test Skill. Check your Market connection and retry agentpay repair.",
