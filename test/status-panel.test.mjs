@@ -390,3 +390,10 @@ test("deployment change outranks missing results and unknown compatibility is ex
   assert.match(unknown.text, /Payment availability could not be confirmed/);
   assert.match(unknown.text, /Platform compatibility not confirmed/);
 });
+
+test("software versions remain distinct from Policy validity and require repair on mismatch", () => {
+  const {text}=renderStatusPanel({...model,wallet:{locked:false,bound:true},software:[{label:'Wallet',state:'mismatch',expected:'0.3.1',running:'0.3.0'},{label:'Runtime',state:'matched',expected:'0.3.1',running:'0.3.1'}]});
+  assert.match(text,/Running software needs checking/);
+  assert.match(text,/Running 0.3.0.*installed 0.3.1/);
+  assert.match(text,/agentpay repair/);
+});

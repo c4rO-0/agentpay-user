@@ -87,3 +87,17 @@ independently query the chain. If querying fails, the command labels the last
 local record and its saved check time. A successful query does not rewrite local
 history; Runtime maintains its own recovery observations. Use
 `agentpay orders details ID` for the saved local record.
+
+## Running-version checks (User 0.3.1)
+
+`agentpay status` compares the installed User/Wallet pair with the versions reported
+by the running processes. A mismatch leads to `agentpay repair`; missing reporting
+requires a paired package update first. Repair only records success after both
+processes report the expected package, local reporting interface and Protocol versions.
+These checks do not change Policy validity, Order identity or payment permissions.
+User 0.3.1 installs the required Wallet 0.3.1 dependency automatically.
+
+Protocol reporting reads the installed package resolved by that process, rather than
+copying its dependency declaration. User preflight checks both User's and Wallet's
+resolved copies against the reviewed exact version, including nested dependencies.
+Package version checks establish compatibility metadata, not file-integrity attestation.

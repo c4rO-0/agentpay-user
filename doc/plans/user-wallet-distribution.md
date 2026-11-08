@@ -9,8 +9,8 @@ Repositories, processes and releases remain separate; Node is still required.
 Ordinary users install `@c4roa0/agentpay-user` and run `agentpay setup`. User installs
 its reviewed Wallet dependency; both consume public Protocol. No sibling source
 folders, pnpm or local TypeScript build are required for the published User path.
-Wallet remains independently installable. Git checkouts are for contributors; the User 0.3.0 candidate now uses the same
-public Wallet package. User npm publication remains a separate release step.
+Wallet remains independently installable. Git checkouts are for contributors; the User 0.3.0 release uses the public Wallet package. User 0.3.1 pairs with
+Wallet 0.3.1 for running-version verification; publication remains a separate release step.
 Combined ZIPs and platform binaries are optional later work, not a release prerequisite.
 
 npm installation only installs program files. Key creation, background-service

@@ -1,12 +1,44 @@
 # AgentPay User progress
 
-## User 0.3.0 first publication prepared — 2026-11-07
+## User 0.3.1 paired release preparation — 2026-11-08
 
-Owner authorized the first npm publication. The package's private gate is removed;
-README now describes the npm entry and exact Wallet dependency. GitHub `publish.yml`
-uses the `npm-publish` environment and OIDC for subsequent releases. Initial Token
-upload, public-registry verification and Trusted Publisher validation are pending.
-No published-success claim is made by the prepared package or workflow.
+Public npm now contains Wallet 0.3.1 with Protocol 0.14.3. User 0.3.1 pins that
+published Wallet exactly; pairing metadata and lockfile are updated together.
+This release adds actual installed Protocol verification and running-version checks
+for status/repair. Prior release-gate notes below describe earlier checkpoints.
+User 0.3.1 passed 378 behavioral tests and standalone npm archive installation,
+including real Wallet/Runtime restart and matching running-version reports.
+User 0.3.1 publication and real published-version upgrade acceptance remain pending.
+No participant services, keys, Policies or Orders are changed by package verification.
+
+## Installed dependency verification / paired release — 2026-11-08
+
+User now checks the actual Protocol package resolved from User and Wallet separately,
+including nested npm copies. Process reports use resolved installed versions, not
+just dependency declarations. Wallet 0.3.1 candidate passed behavioral and independent
+package checks and is pushed as `7e4d4fa`; its OIDC publication is the next operator step.
+User remains pinned to public Wallet 0.3.0 until the new registry release exists;
+then update its exact dependency, lockfile and pairing metadata together. User changes
+remain unreleased. No participant service, key, Policy or Order was changed.
+
+## User 0.3.0 published; running-version checks in development — 2026-11-07
+
+`@c4roa0/agentpay-user@0.3.0` was published from User `86ee8e7`.
+Public registry version/latest and archive integrity matched the verified artifact.
+User and Wallet Trusted Publishers are configured; first OIDC releases remain pending.
+Earlier candidate sections below are historical, not current publication status.
+
+Wallet 0.3.1 candidate reports process-start software metadata. User status and repair
+compare running package/interface/Protocol versions against the installed pair.
+Missing reporting is unknown, never proof of compatibility. Policy format/version,
+identity and transaction authority are unchanged. Wallet behavioral tests (30) and installed-package IPC checks passed. User full
+regressions (378) passed, followed by final status checks and an isolated candidate
+Wallet/User process restart test. The candidate pair used a temporary test-only pin.
+
+Release gate: publish verified Wallet 0.3.1 first, then update User's exact Wallet pin,
+lockfile and pairing metadata and verify the combined package before publishing User.
+Current User still pins published Wallet 0.3.0; these development changes are not yet
+an installable verified release pair. No participant services/data were changed.
 
 
 ## npm update and migration review fixes — 2026-11-07

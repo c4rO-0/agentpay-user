@@ -1,3 +1,4 @@
+import { requireRunningSoftware } from "./software-versions.mjs";
 import { walletPackage } from "./wallet-package.mjs";
 // Apply installed packages. Preserve identity/history and startup preferences;
 // preparation failure must not enable a mismatched Wallet/Runtime pair.
@@ -185,12 +186,18 @@ export async function applyLocalUpdate({
           applied.inputs === selected.inputs &&
           applied.outputs === selected.outputs
         ) {
-          await connection({ dataDir, write });
-          phase = "unchanged";
-          write(
-            "Local installation is already up to date. Background services were not changed.",
-          );
-          return false;
+          let runningMatches = false;
+          try {
+            requireRunningSoftware(await wallet(dataDir, "status"), await runtime(dataDir), { ...pair, protocolVersion: pair.typesDependency });
+            runningMatches = true;
+          } catch { /* Keep repair available for old, stopped or unreported processes. */ }
+          if (runningMatches) {
+            await connection({ dataDir, write });
+            phase = "unchanged";
+            write("Local installation and running versions are up to date. Background services were not changed.");
+            return false;
+          }
+          write("Running versions need verification. Repair will restart the paired services.");
         }
         write(
           applied?.status === "pending"
@@ -257,10 +264,12 @@ export async function applyLocalUpdate({
               runtime(dataDir),
             ]);
             if (typeof w.locked === "boolean" && r.role === "user-runtime") {
+              requireRunningSoftware(w, r, { ...pair, protocolVersion: pair.typesDependency });
               ready = true;
               break;
             }
-          } catch {
+          } catch (error) {
+            if (error.code === "RUNNING_VERSION_UNVERIFIED") throw error;
             /* Startup can take a moment; final failure is reported below. */
           }
           await pause(500);
@@ -298,6 +307,7 @@ export async function applyLocalUpdate({
       write(
         "Service changes could not be confirmed. Check agentpay status and agentpay service logs runtime before retrying.",
       );
+    if (error.code === "RUNNING_VERSION_UNVERIFIED") write(error.message);
     const log = error.logPath || logPath;
     if (log) write("Details: " + log);
     write("After resolving the problem, run agentpay repair again.");

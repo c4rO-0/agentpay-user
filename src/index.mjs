@@ -1,3 +1,4 @@
+import { runtimeSoftware } from "./software-versions.mjs";
 // Authenticated local invocation engine. Preserve durable request/payment checkpoints before
 // network calls; startup reconciliation observes history without creating replacement purchases.
 // SPDX-License-Identifier: MPL-2.0
@@ -127,6 +128,7 @@ const server = createServer(async (req, res) => {
       ok: true,
       result: {
         role: "user-runtime",
+        software: runtimeSoftware,
         capabilities: ["agentpay.runtime-call.v1"],
         walletTransport: "unix",
       },
@@ -144,7 +146,7 @@ const server = createServer(async (req, res) => {
     void recovery.refresh();
     return json(res, 200, {
       ok: true,
-      result: { role: "user-runtime", ...recovery.status() },
+      result: { role: "user-runtime", software: runtimeSoftware, ...recovery.status() },
     });
   }
   if (

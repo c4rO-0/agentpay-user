@@ -18,7 +18,7 @@ logic or platform storage. No Settlement checkout or database access is required
 ## Shared Protocol dependency
 
 User and Wallet pin `@c4roa0/agentpay-protocol@0.14.3` from npm. Their lockfiles
-record integrity. The current repair gate still checks the exact repository versions
+record integrity. The current repair gate still checks the exact package versions
 and shared Protocol dependency in `update-pair.json`; `typesDependency` is the
 retained v1 field name for that npm version. It is not a compatibility range.
 Installation/repair fingerprints cover manifests and lockfiles rather than a vendor
@@ -85,8 +85,11 @@ verification before binding. A lost response resumes the original plan.
 ## External dependencies and development boundary
 
 User resolves the installed Wallet package through public client, local-administration
-and CLI exports. Exact reviewed dependency versions are checked; independent
-running-process compatibility negotiation remains planned. User imports ethers from its own
+and CLI exports. `wallet-package.mjs` verifies the exact reviewed pair;
+`protocol-package.mjs` resolves each consumer's actual Protocol installation, including
+nested npm dependencies. `software-versions.mjs` compares process-start reports with
+the installed pair during status/repair. User 0.3.1 pins Wallet 0.3.1 for these checks; broader compatibility ranges remain deferred.
+User imports ethers from its own
 declared dependency. The pinned public Protocol package provides types, hashes and
 fixtures. No Agent, Protocol source checkout or private platform repository is
 required for the local test suite.

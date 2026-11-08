@@ -8,32 +8,20 @@ User is the Agent/Skill runtime, not a Provider server or a general-purpose wall
 It retains request identity and local results so interruptions can be recovered
 without silently creating a replacement purchase.
 
-## Install
+## Install with npm
 
-Use Linux with Node.js 22.22.3 or newer and npm. Install User; its reviewed Wallet
-and Protocol dependencies are included automatically:
+On Linux, prepare Node.js 22.22.3 or newer, npm and your AgentPay Market address.
+Install User with the command below. It automatically installs the matching Wallet
+and Protocol packages; you do not need to download two repositories:
 
 ```sh
-npm install --global @c4roa0/agentpay-user@0.3.0
+npm install --global @c4roa0/agentpay-user@0.3.1
 agentpay install --market https://YOUR_MARKET_ORIGIN
 ```
 
 Replace the Market URL with your platform's address. Use a user-owned Node/npm
 installation with Node and npm's executable directory on PATH. No Wallet checkout,
 Corepack, pnpm or TypeScript build is needed.
-
-For contributors or source ZIP users:
-
-```sh
-git clone https://github.com/c4rO-0/agentpay-user.git user
-cd user
-npm ci
-npm link
-agentpay help
-```
-
-`npm link` exposes the command from your checkout. Without linking, `./run` (or
-`sh run`) provides the same commands; `AGENTPAY_NODE` can select your Node executable.
 
 Install verifies dependencies, downloads public settings and continues setup.
 You choose the Safe and spending limits, then approve with its owner wallet.
@@ -62,6 +50,19 @@ update their files, run `npm ci`, then `agentpay repair`. [Commands](doc/runbook
 · [Backup and restore](doc/runbooks/wallet-identity.md).
 
 ## Develop or integrate
+
+For contributors or source ZIP users:
+
+```sh
+git clone https://github.com/c4rO-0/agentpay-user.git user
+cd user
+npm ci
+npm link
+agentpay help
+```
+
+`npm link` exposes the command from your checkout. Without linking, `./run` (or
+`sh run`) provides the same commands; `AGENTPAY_NODE` can select your Node executable.
 
 - [Developer guide](doc/develope.md): independent checkout, focused tests and evidence limits.
 - [Architecture](doc/architecture.md): source map and recovery/authorization boundaries.

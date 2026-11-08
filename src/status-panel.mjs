@@ -1,3 +1,4 @@
+import { assessRunningSoftware } from "./software-versions.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -172,6 +173,7 @@ export async function collectLocalStatus() {
   const value = (i) =>
     results[i].status === "fulfilled" ? results[i].value : null;
   return {
+    software: assessRunningSoftware(value(0), value(3)),
     deployment: value(6) || { state: "unknown" },
     market: value(5) || { state: "unknown" },
     authorization: value(4),
@@ -325,6 +327,13 @@ export function renderStatusPanel(
     detail =
       "Runtime is running. Order checks will continue when Wallet is available.";
     next = stopped(ws) ? "agentpay service start" : "agentpay service logs wallet";
+  } else if (model.software?.some(x => x.state !== "matched")) {
+    title = "Running software needs checking";
+    level = "wait";
+    detail = "Installed files and running processes have not been verified as a matching pair. Your original Orders are kept.";
+    next = model.software.some(x => x.state === "unreported")
+      ? "agentpay update (source checkout: update the paired packages, then agentpay repair)"
+      : "agentpay repair";
   } else if (w.policyRenewalPending) {
     title = "Spending permission renewal incomplete";
     level = "wait";
@@ -422,6 +431,11 @@ export function renderStatusPanel(
     "",
   ];
   if (!model.configurationError) {
+    if (model.software) {
+      lines.push("> Software");
+      for (const item of model.software) lines.push(`  ${badge(item.state === "matched" ? "ok" : "wait", 6)}  ${item.label.padEnd(8)}  ${item.state === "matched" ? item.running : item.state === "unreported" ? "Running version not reported" : item.running === item.expected ? "Package interface mismatch" : `Running ${item.running} · installed ${item.expected}`}`);
+      lines.push("");
+    }
     lines.push("> Services");
     const row = (label, text, state) =>
       lines.push(`  ${badge(state, 6)}  ${label.padEnd(8)}  ${text}`);

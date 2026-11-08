@@ -26,7 +26,7 @@ function fixture() {
     dataDir: "/private/user",
     platform: "linux",
     write: (s) => lines.push(s),
-    pairCheck: async () => ({ userVersion: "1.0.0", walletVersion: "0.5.0" }),
+    pairCheck: async () => ({ userVersion: "1.0.0", walletVersion: "0.5.0", typesDependency: "0.14.3" }),
     checkDirectory: async () => {},
     settings: async () => {},
     connection: async () => {},
@@ -37,8 +37,8 @@ function fixture() {
     service: async (action) => {
       calls.push(action);
     },
-    wallet: async () => ({ locked: true }),
-    runtime: async () => ({ role: "user-runtime" }),
+    wallet: async () => ({ locked: true, software: {name:"@c4roa0/agentpay-wallet",version:"0.5.0",interfaceVersion:1,protocolVersion:"0.14.3"} }),
+    runtime: async () => ({ role: "user-runtime", software: {name:"@c4roa0/agentpay-user",version:"1.0.0",interfaceVersion:1,protocolVersion:"0.14.3"} }),
     prepare: async (options) => {
       assert.equal(options.prepareOnly, true);
       assert.equal(options.forceWalletBuild, undefined);
@@ -107,6 +107,16 @@ test("failed stop never reaches build; unhealthy restart never claims completion
   assert.equal(await applyLocalUpdate(g.opts), 1);
   assert.doesNotMatch(g.lines.join("\n"), /Repair complete/);
 });
+
+async function protocolAt(base, version) {
+  const target = join(base, 'node_modules/@c4roa0/agentpay-protocol');
+  await mkdir(target, {recursive: true});
+  await writeFile(join(target, 'schema.json'), '{}');
+  await writeFile(join(target, 'package.json'), JSON.stringify({
+    name: '@c4roa0/agentpay-protocol', version, exports: {'./schema': './schema.json'},
+  }));
+}
+
 test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wallet is rejected", async () => {
   const dir = await mkdtemp(join(tmpdir(), "update-pair-"));
   try {
@@ -140,7 +150,15 @@ test("pair check works with ZIP folders (no Git) and Git metadata; mismatched Wa
       dependencies: { "@c4roa0/agentpay-protocol": types },
     };
     await writeFile(join(wallet, "package.json"), JSON.stringify(pkg));
+    await protocolAt(user, types);
     assert.equal((await checkUpdatePair(user)).walletVersion, "0.5.0");
+    await protocolAt(user, '0.14.2');
+    await assert.rejects(checkUpdatePair(user), /Installed Protocol does not match/);
+    await protocolAt(user, types);
+    await protocolAt(wallet, '0.14.2');
+    await assert.rejects(checkUpdatePair(user), /Installed Protocol does not match/);
+    await protocolAt(wallet, types);
+    await checkUpdatePair(user);
     await mkdir(join(user, ".git"));
     await writeFile(join(wallet, ".git"), "gitdir: retained-submodule");
     await checkUpdatePair(user);
@@ -191,7 +209,7 @@ test("successful unchanged updates neither prompt nor restart, including -f", as
   assert.deepEqual(f.calls, []);
   assert.equal(await applyLocalUpdate({ ...f.opts, force: true }), 0);
   assert.deepEqual(f.calls, []);
-  assert.match(f.lines.join(" "), /already up to date/);
+  assert.match(f.lines.join(" "), /running versions are up to date/);
 });
 test("changed source at confirmation stops; incomplete update still prompts on retry", async () => {
   const f = fixture();
@@ -235,6 +253,7 @@ test("update detection includes same-version source and generated Wallet changes
     await writeFile(join(wallet,'bin/agentpay-wallet.mjs'),'// fixture');
     await writeFile(join(user, "src/example.mjs"), "before");
     await writeFile(join(wallet, "lib/cli.js"), "built");
+    await protocolAt(user, "0.14.3");
     const a = await updateSnapshot(user);
     assert.deepEqual(await updateSnapshot(user), a);
     await writeFile(join(user, "src/example.mjs"), "after");
@@ -294,4 +313,13 @@ test("repair checks client connection even with unchanged source; conflicts stop
   h.opts.connection = async () =>
     assert.fail("cancelled repair must not write");
   assert.equal(await applyLocalUpdate(h.opts), 0);
+});
+
+test("repair never reports success when an old process survives or omits its version", async () => {
+  for (const software of [undefined,{name:'@c4roa0/agentpay-wallet',version:'0.4.0',interfaceVersion:1,protocolVersion:'0.14.3'}]) {
+    const f=fixture(); f.opts.wallet=async()=>({locked:true,software});
+    assert.equal(await applyLocalUpdate(f.opts),1);
+    assert.equal(f.state.localUpdate.status,'pending');
+    assert(!f.lines.some(x=>x.includes('Repair complete.')));
+  }
 });

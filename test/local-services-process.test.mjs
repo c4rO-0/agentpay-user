@@ -1,3 +1,4 @@
+import { requireRunningSoftware } from "../src/software-versions.mjs";
 import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -88,6 +89,12 @@ test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate 
       signal: AbortSignal.timeout(1000),
     });
     assert.equal(r.status, 200);
+    const {result: body} = await r.json();
+    const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    assert.equal(body.software.name, '@c4roa0/agentpay-user');
+    assert.equal(body.software.version, manifest.version);
+    assert.equal(body.software.protocolVersion, manifest.dependencies['@c4roa0/agentpay-protocol']);
+    requireRunningSoftware(await status(), body);
   });
   const duplicate = start("wallet");
   assert.equal(await completions.get(duplicate), 1);

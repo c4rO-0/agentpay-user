@@ -1,5 +1,15 @@
 # User TODO
 
+## Running-version release loop — 2026-11-07
+
+- [x] Verify User 0.3.0 public-registry publication; Trusted Publisher configured.
+- [x] Verify actual installed Protocol versions from both consumer resolution paths.
+- [x] Add process-start software reporting and status/repair mismatch handling; isolated checks passed.
+- [x] Wallet 0.3.1 published through the configured workflow; public npm version/dependencies verified.
+- [x] Pin User 0.3.1 to published Wallet 0.3.1; pairing metadata/lockfile and standalone archive verification complete.
+- [ ] Publish matching User release; validate User OIDC and real published-version update/restart.
+
+
 ## npm update follow-up — 2026-11-07
 
 - [x] Implement confirmed `agentpay update [-f]`, exact User target and matching Wallet; invoke new repair and pinned official Skill check.
@@ -19,7 +29,7 @@
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
   - [x] Wallet 0.3.0 first Token publication; registry integrity/latest and fresh public install/CLI/IPC verified.
   - [x] Owner configured Wallet npm Trusted Publisher (pending validation).
-  - [ ] Validate Wallet OIDC with a later reviewed release. User publication and Market guide updates remain pending.
+  - [ ] Validate Wallet and User OIDC with later reviewed releases. Both 0.3.0 packages are published; Market guide updates remain pending.
 - [ ] Step 6: participant setup/upgrade/restart/uninstall and official Anvil paid acceptance.
 
 
