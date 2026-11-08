@@ -1,5 +1,17 @@
 # AgentPay User progress
 
+## User 0.3.2 tag publication verified — 2026-11-08
+
+Tag `v0.3.2` points to `890171b`; GitHub push-triggered OIDC run
+[42491753287](https://github.com/c4rO-0/agentpay-user/actions/runs/42491753287)
+completed successfully, including registry integrity verification. Public npm latest
+is 0.3.2, pins Wallet 0.3.2 / Protocol 0.14.3 and includes provenance. Independently
+downloaded registry bytes exactly match the locally tested archive (SHA-256
+`e6bb2f1199e510850313c004055afeb3ba45afc07035697c1d37af14ebcf1489`).
+All 380 existing tests and the independent package's real Wallet/Runtime restart
+check passed. Participant npm update/restart acceptance remains the next step;
+publication did not modify any participant services or create a paid Order.
+
 ## User 0.3.2 release pairing — 2026-11-08
 
 Candidate now pins the verified public Wallet 0.3.2 with Protocol 0.14.3; package,

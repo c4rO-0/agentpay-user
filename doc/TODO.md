@@ -4,7 +4,7 @@
 
 - [x] Use matching `vX.Y.Z` tags for npm publication; retain verification gates.
 - [x] Owner confirmed release tags allowed in the GitHub `npm-publish` environment.
-- [ ] Verify the first tag-triggered OIDC publication and registry integrity.
+- [x] Verify first tag-triggered OIDC run 42491753287 and registry archive integrity.
 
 ## Official package 1.2.1 — 2026-11-08
 
@@ -13,7 +13,8 @@
 - [x] Load the reviewed User source update and run the normal 1.2.1 payment test with explicit user consent; terminal delivery/result/ack completed.
 - [x] Verify website visibility and independently reconcile Settlement/chain outcome; prepare User 0.3.2 candidate.
 - [x] Pin the verified public Wallet 0.3.2; align package/lockfile/update-pair.
-- [ ] Publish User 0.3.2 through OIDC and verify registry artifact; then accept a real npm update.
+- [x] Publish User 0.3.2 through tag-triggered OIDC; verify public registry archive.
+- [ ] Accept a real participant npm update/restart.
 
 
 ## Fixed Skill download loop — 2026-11-08
