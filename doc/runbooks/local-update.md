@@ -8,18 +8,35 @@ For a global npm installation:
 agentpay update
 ```
 
+For an npm installation inside a project folder, run its own command:
+
+```sh
+./node_modules/.bin/agentpay update
+```
+
+Directory-local update support starts with User 0.3.3. For an older directory
+installation, run `npm install --save-exact @c4roa0/agentpay-user@0.3.3` in its
+original program folder, then `./node_modules/.bin/agentpay repair`. Future versions
+can be installed with the command above. Keep your private data directory.
+
+Both forms update the installation that owns the command, regardless of the
+terminal's working directory. Directory installs update their direct User dependency
+and package lockfile in that folder, with an exact version; global installs keep
+their global prefix. The confirmation shows the target folder. User must be a direct
+registry dependency, not a transitive dependency or a linked/custom-source package.
+
 It checks the published User version and shows its exact Wallet dependency. Confirm
 to continue, or cancel without changing services. `agentpay update -f` skips only
-this confirmation. The updater checks requirements, stops configured services,
+this confirmation. The updater checks requirements in a temporary installation directory, stops configured services,
 installs the confirmed version and invokes the new version's repair to refresh
 services and verify its pinned official test Skill. No paid test runs automatically.
 Other installed Skills and original requests are kept. Wallet needs unlocking after
 restart. A current User version still checks the official test Skill.
 
-Only genuine global npm installations are updated. A source checkout or `npm link`
+Only genuine npm installations are updated. A source checkout or `npm link`
 is refused rather than overwritten: update User's files, run `npm ci`, then
-`agentpay repair`. The first User 0.3.0 release establishes the package baseline; a later real
-registry upgrade still needs participant acceptance. The updater uses npm's configured registry, checks
+`agentpay repair`. Directory update has controlled real-npm verification; participant upgrade acceptance
+remains separate. The updater uses npm's configured registry, checks
 Node engine requirements and disables package installation hooks; releases must
 ship usable runtime artifacts. It never independently selects the newest Wallet.
 

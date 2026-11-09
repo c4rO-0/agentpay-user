@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
-// Update only a real global npm installation. Source checkouts/npm links are never
+// Update real global or project npm installations. Source checkouts/npm links are never
 // overwritten. npm selects User; User's exact dependencies select Wallet/Protocol.
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { access, appendFile, lstat, mkdir, open, readFile, realpath, unlink } from 'node:fs/promises';
+import { access, appendFile, copyFile, chmod, lstat, mkdir, mkdtemp, open, readFile, realpath, rm, unlink } from 'node:fs/promises';
 import { constants } from 'node:fs';
-import { dirname, isAbsolute, join } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createInterface } from 'node:readline/promises';
 import { installedUserDir, resolveUserDataDir, rememberUserDataDir } from './local-data-directory.mjs';
@@ -35,6 +35,35 @@ async function askConfirmation(message) {
   const terminal = createInterface({ input:process.stdin, output:process.stdout });
   try { return await terminal.question(message + '\n> '); } finally { terminal.close(); }
 }
+// Resolve the installed package, not the terminal's working directory. A project
+// update must name a direct dependency; never promote a transitive package or
+// replace a linked source checkout as a side effect of updating User.
+async function installationTarget(userDir, npm) {
+  const root = await npm(['root', '--global']);
+  if (!isAbsolute(root)) throw Error('npm installation paths could not be verified.');
+  const globalPath = join(root, name);
+  const info = await lstat(globalPath).catch(e => { if (e.code !== 'ENOENT') throw e; return null; });
+  if (info?.isDirectory() && !info.isSymbolicLink() && await realpath(globalPath) === await realpath(userDir)) {
+    const prefix = await npm(['prefix', '--global']);
+    if (!isAbsolute(prefix)) throw Error('npm installation paths could not be verified.');
+    return {prefix, flags:['--global'], directory:globalPath};
+  }
+  const scope = dirname(userDir), modules = dirname(scope), prefix = dirname(modules);
+  if (basename(userDir) !== 'agentpay-user' || basename(scope) !== '@c4roa0' || basename(modules) !== 'node_modules' ||
+      !(await lstat(userDir)).isDirectory() || (await lstat(userDir)).isSymbolicLink())
+    throw Error('This is a source checkout or linked installation. Update its files, run npm ci, then agentpay repair.');
+  const project = JSON.parse(await readFile(join(prefix,'package.json'),'utf8'));
+  const sections = ['dependencies','devDependencies','optionalDependencies'].filter(key => Object.hasOwn(project[key] || {}, name));
+  if (sections.length !== 1 || typeof project[sections[0]][name] !== 'string')
+    throw Error('User must be a direct npm dependency of this folder. Install it in a dedicated folder before using update.');
+  const spec = project[sections[0]][name];
+  if (/[:/\\]/.test(spec) || spec.startsWith('.'))
+    throw Error('This dependency uses a custom source. Update that source explicitly, then run agentpay repair.');
+  const save = {dependencies:'--save-prod',devDependencies:'--save-dev',optionalDependencies:'--save-optional'}[sections[0]];
+  return {prefix, directory:userDir, section:sections[0], spec,
+    flags:['--global=false','--workspaces=false','--save-exact',save,'--include=dev','--include=optional']};
+}
+
 export async function updateFromNpm({
   userDir = installedUserDir, dataDir, force = false, write = console.log,
   ask = askConfirmation,
@@ -45,17 +74,13 @@ export async function updateFromNpm({
 } = {}) {
   let lock, lockPath, logPath, installing = false;
   try {
+    userDir = resolve(userDir);
     const current = JSON.parse(await readFile(join(userDir, 'package.json'), 'utf8'));
     if (current.name !== name || !stable(current.version)) throw Error('Unrecognized User installation.');
     write('Checking for a User update…');
-    const root = await npm(['root','--global']), prefix = await npm(['prefix','--global']);
-    if (!isAbsolute(root) || !isAbsolute(prefix)) throw Error('npm installation paths could not be verified.');
-    const globalPath = join(root, name);
-    const globalInfo = await lstat(globalPath).catch(e => { if(e.code !== 'ENOENT') throw e; return null; });
-    if (!globalInfo || globalInfo.isSymbolicLink() || await realpath(globalPath) !== await realpath(userDir))
-      throw Error('This is a source checkout or linked installation. Update its files, run npm ci, then agentpay repair.');
-    await access(dirname(globalPath), constants.W_OK);
-    const metadata = JSON.parse(await npm(['view',name + '@latest','--global','--json']));
+    const target = await installationTarget(userDir, npm);
+    await access(dirname(target.directory), constants.W_OK);
+    const metadata = JSON.parse(await npm(['view',name + '@latest','--json'], {cwd:target.prefix}));
     if (metadata.name !== name || !stable(metadata.version) ||
         !stable(metadata.dependencies?.['@c4roa0/agentpay-wallet']) ||
         !stable(metadata.dependencies?.['@c4roa0/agentpay-protocol']))
@@ -67,6 +92,7 @@ export async function updateFromNpm({
       return 0;
     }
     write(`User ${current.version} → ${metadata.version} · Wallet ${metadata.dependencies['@c4roa0/agentpay-wallet']}`);
+    write(`Installation folder: ${target.prefix}`);
     write('Background services will pause. Keys, permissions, Orders and cache are kept.');
     if (!force && (await ask("Type 'confirm' to update, or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {
       write('Update cancelled. Nothing was changed.'); return 0;
@@ -81,12 +107,28 @@ export async function updateFromNpm({
     const rechecked = JSON.parse(await readFile(join(userDir,'package.json'),'utf8'));
     if (rechecked.version !== current.version || rechecked.name !== name)
       throw Error('Program files changed while reviewing the update. Run agentpay update again.');
+    if (target.section) {
+      const project = JSON.parse(await readFile(join(target.prefix,'package.json'),'utf8'));
+      if (project[target.section]?.[name] !== target.spec)
+        throw Error('The project dependency changed while reviewing the update. Run agentpay update again.');
+    }
     const env = {...process.env,AGENTPAY_USER_DATA_DIR:dataDir};
-    const options = {logPath,env,cwd:stateDir,timeout:600000};
+    const options = {logPath,env,cwd:target.prefix,timeout:600000};
     const spec = name + '@' + metadata.version;
-    const args = ['install','--global','--prefix',prefix,'--engine-strict','--ignore-scripts','--no-audit','--no-fund',spec];
+    const args = ['install',...target.flags,'--prefix',target.prefix,'--engine-strict','--ignore-scripts','--no-audit','--no-fund',spec];
     write('1/3 Check the update requirements.');
-    await npm([...args,'--dry-run'],options);
+    // npm dry-run may rewrite its hidden installed-tree lockfile. Preflight in
+    // a disposable prefix, never the live installation. Carry project npm settings
+    // privately so registry/auth selection remains consistent with the real install.
+    const preflight = await mkdtemp(join(stateDir,'update-check-'));
+    try {
+      await copyFile(join(target.prefix,'.npmrc'),join(preflight,'.npmrc')).then(
+        () => chmod(join(preflight,'.npmrc'),0o600),
+        error => { if(error.code !== 'ENOENT') throw error; });
+      await npm(['install','--global=false','--prefix',preflight,'--engine-strict',
+        '--ignore-scripts','--no-audit','--no-fund',spec,'--dry-run'],
+        {...options,cwd:preflight});
+    } finally { await rm(preflight,{recursive:true,force:true}); }
     let configured = false;
     try { configured = (await lstat(join(dataDir,'runtime/local-services.json'))).isFile(); }
     catch(e) { if(e.code !== 'ENOENT') throw e; }

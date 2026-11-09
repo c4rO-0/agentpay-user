@@ -2,7 +2,8 @@
 
 Use `agentpay` after installing the package or linking a source checkout with
 `npm link`. From a source folder, `./run` is the same entry; it uses Node on PATH
-or `AGENTPAY_NODE`.
+or `AGENTPAY_NODE`. For a folder-local npm install, use
+`./node_modules/.bin/agentpay`; its `update` stays in that installation folder.
 
 ```sh
 agentpay help

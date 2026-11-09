@@ -1,5 +1,11 @@
 # User TODO
 
+## Directory npm update, then HTTPS
+
+- [x] Support directory-local npm update without replacing source/link installs.
+- [x] Verify real npm directory upgrade and isolated preflight; nine regression checks passed.
+- [ ] Publish a follow-up version and verify participant directory install/update.
+
 ## Tag-triggered publication
 
 - [x] Use matching `vX.Y.Z` tags for npm publication; retain verification gates.

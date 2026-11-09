@@ -30,6 +30,7 @@ name change. Independent-version compatibility remains a separate planned featur
 | Area | Main files | Responsibility |
 | --- | --- | --- |
 | CLI | `run`, `scripts/agentpay-cli.mjs`, `src/user-cli.mjs` | Node discovery, grouped commands and help |
+| npm update | `npm-update.mjs` | Detect global/direct-project installation, isolate npm preflight, pin the reviewed release and repair services without changing private data |
 | Install / repair | `install-user.mjs`, `install-and-setup.mjs`, `install-preflight.mjs`, `local-update.mjs` | Dependency/build preparation, checkpoints, downloaded settings and safe restart |
 | Setup | `guided-setup.mjs`, `user-setup-guide.mjs`, `anvil-onboarding.mjs` | Terminal sequence and saved-step continuation; explicit signer mode |
 | Permission | `policy-terminal-guide.mjs`, `safe-policy-plan.mjs`, `renew-policy.mjs`, `policy-operations.mjs`, `policy-migration.mjs` | Drafts, approved operations and verified local binding |

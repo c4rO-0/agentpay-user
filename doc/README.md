@@ -1,5 +1,7 @@
 # User documentation
 
+- [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.
+
 ## Start by role
 
 | Reader | Start here |

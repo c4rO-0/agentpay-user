@@ -33,6 +33,24 @@ normally live in `~/.local/share/agentpay/user`; an existing custom data directo
 is retained. Installation checkpoints use `~/.local/state/agentpay/user` (or
 `$XDG_STATE_HOME/agentpay/user`). Upgrading program files does not erase either.
 
+## Install in a folder instead
+
+For a directory-owned installation, choose a program folder:
+
+```sh
+mkdir agentpay-local
+cd agentpay-local
+npm install @c4roa0/agentpay-user
+./node_modules/.bin/agentpay help
+```
+
+Use `./node_modules/.bin/agentpay` instead of `agentpay` in the commands below.
+`update` updates this installation and its project lockfile; it does not install
+User globally. For an existing Wallet, use `repair` to refresh the background
+services against this installation. Private data stays in its existing directory.
+Before deleting the program folder, run `uninstall` to remove managed services;
+private data is kept unless you explicitly choose `--delete-data`.
+
 ## After setup
 
 ```sh
@@ -44,7 +62,7 @@ agentpay market connect
 
 Linux background services use your systemd user session. Wallet starts locked after
 a restart. `agentpay service help` explains startup, stop and logs; `agentpay help` lists
-all groups. Global npm installations use `agentpay update` to review and install a
+all groups. npm installations use `agentpay update` to review and install a
 new User version with its matching Wallet and official test Skill. Source checkouts
 update their files, run `npm ci`, then `agentpay repair`. [Commands](doc/runbooks/commands.md) · [Updates](doc/runbooks/local-update.md)
 · [Backup and restore](doc/runbooks/wallet-identity.md).

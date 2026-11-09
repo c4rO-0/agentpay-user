@@ -1,5 +1,31 @@
 # AgentPay User progress
 
+## User 0.3.3 release candidate — 2026-11-09
+
+Release directory-local npm updates, keeping exact Wallet 0.3.2 and Protocol
+0.14.3 dependencies and the reviewed official test package unchanged. No endpoint
+migration, Policy or saved request rewrite is included. All 383 local behavior tests and independent archive installation/process checks
+passed. Tag-triggered publication and registry verification remain pending.
+
+## HTTPS endpoint migration — 2026-11-09
+
+HTTPS migration inventory: existing setup rejects URL differences; local service settings, Market receipt origin/session, recovery observations and cancellation intents need coordinated handling. Public configuration publication does not migrate existing users. Keep original requests/Policies and current tunnels until an explicit local migration is implemented and verified.
+
+## Directory npm update — 2026-11-08
+
+Update now supports a direct registry dependency under a project node_modules as
+well as a global installation. It derives the owning project from the running
+package, pins the confirmed version, preserves the dependency section, updates the
+local lockfile and uses the existing stop/repair/private-data flow. Source/link,
+custom-source and transitive installs are refused before changing services.
+Nine updater regression checks passed. A real public-npm 0.3.1 → 0.3.2 upgrade
+in a disposable project verified program/manifest/lockfile agreement and preserved
+private-record fixtures; service hooks were controlled, not participant processes.
+This exposed npm dry-run rewriting the hidden installed-tree lockfile. Preflight
+now runs in a disposable prefix with private project npm settings, removed afterward.
+See [verification](doc/records/local-npm-update-2026-11-08.md).
+User 0.3.3 is the release candidate for this fix; publication verification is pending.
+
 ## User 0.3.2 tag publication verified — 2026-11-08
 
 Tag `v0.3.2` points to `890171b`; GitHub push-triggered OIDC run
