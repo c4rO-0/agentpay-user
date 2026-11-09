@@ -63,25 +63,32 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
  // changed origin or an interrupted update owns transport changes.
  if(!changingOrigin&&!pending)return {changed:false,apply:async()=>{}};
  const setup=await readPrivateJson(await deploymentFilePath(dataDir,userDir,'anvil-onboarding.json'));
- if(!setup)throw Error('Local setup settings are missing. Run agentpay setup before connecting Market.');
+ // A source-to-npm installation may have no copied onboarding draft. The
+ // bound Policy and live service settings remain the authoritative local state.
+ // Never synthesize a draft or replace its RPC/test configuration from Market.
  const policy=await readPrivateJson(join(dataDir,'wallet/policy.json'));
+ if(!policy)throw Error('Saved spending permission is missing (wallet/policy.json). Check your data folder with agentpay wallet info and restore its backup before retrying. Do not create a replacement Policy to fix this.');
  if(!policy||policy.policyId?.toLowerCase()!==scope.policyId?.toLowerCase()||policy.safe?.toLowerCase()!==scope.safe?.toLowerCase()||`eip155:${policy.chainId}`!==scope.network||policy.module?.toLowerCase()!==scope.module?.toLowerCase())
   throw Error('Wallet authorization changed. Run agentpay market connect again.');
  const connectionBefore=await readPrivateJson(join(dataDir,'market-connection.json'));
  if(pending&&(pending.version!==1||pending.origin!==origin||pending.policyId!==policy.policyId))
   throw Error('Finish the pending address update with the same Policy. Retry: agentpay market connect --market '+pending.origin);
  const {response,result}=await fetchJson(origin+'/market/web/onboarding/user-config',{method:'GET'},15000);
- if(!response.ok)throw Error('Market settings could not be checked. Your current addresses are kept.');
+ if(!response.ok)throw Error('Market deployment settings are unavailable. Check the website address and your connection, then retry.');
  const proposed=validatePublicDeployment(result);
- const settings=await readServiceSettings(dataDir);
+ let settings;
+ try{settings=await readServiceSettings(dataDir);}catch(e){
+  if(e.code==='ENOENT')throw Error('Runtime settings are missing (runtime/local-services.json). Run agentpay repair, then retry this command.');
+  throw Error('Runtime settings could not be read safely. Check the selected data folder with agentpay wallet info before retrying.');
+ }
  const urls={settlementUrl:proposed.settlementUrl,marketBundleMetadataUrl:proposed.marketBundleMetadataUrl};
- const changed=Object.keys(urls).some(key=>normalize(setup[key])!==normalize(urls[key]))||normalize(settings.settlementUrl)!==normalize(urls.settlementUrl)||!!pending;
+ const changed=!!setup&&Object.keys(urls).some(key=>normalize(setup[key])!==normalize(urls[key]))||normalize(settings.settlementUrl)!==normalize(urls.settlementUrl)||!!pending;
  // RPC is participant-owned: a different local tunnel must never be overwritten.
  // A Market connection alone is not authority to rotate contracts or test packages.
  const publicPath=await deploymentFilePath(dataDir,userDir,'user-deployment.json');
  const previousPublic=await readPrivateJson(publicPath);
  if(!changed&&!changingOrigin)return {changed:false,apply:async()=>{}};
- if(deploymentChanges(policy,proposed).length||deploymentChanges(setup,proposed).length||setup.mode!==proposed.mode||setup.tokenDecimals!==proposed.tokenDecimals||setup.tokenSymbol!==proposed.tokenSymbol)
+ if(deploymentChanges(policy,proposed).length||(setup&&(deploymentChanges(setup,proposed).length||setup.mode!==proposed.mode||setup.tokenDecimals!==proposed.tokenDecimals||setup.tokenSymbol!==proposed.tokenSymbol)))
   throw Error('This Market uses different network or contract settings. Address update stopped; your current Policy and Orders are kept.');
 
  // Query an unknown service to inspect deployment identity without depending on
@@ -101,6 +108,7 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
   if(!stat.isDirectory()||stat.isSymbolicLink()||stat.uid!==process.getuid()||(stat.mode&0o077))throw Error('Unsafe installation state directory.');
   const lockPath=join(stateDir,'install.lock');let lock;
   try{lock=await open(lockPath,'wx',0o600);}catch(e){if(e.code==='EEXIST')throw Error('Another setup or update is running. Retry market connect when it finishes.');throw e;}
+  let updating=false;
   try{
    if(!same(await readPrivateJson(join(dataDir,'market-connection.json')),connectionBefore)||!same(await readPrivateJson(join(dataDir,'wallet/policy.json')),policy)||!same(await readServiceSettings(dataDir),settings)||!same(await readPrivateJson(publicPath),previousPublic)||!same(await readPrivateJson(await deploymentFilePath(dataDir,userDir,'anvil-onboarding.json')),setup))
     throw Error('Local settings changed during connection. Retry market connect; no addresses were changed.');
@@ -114,16 +122,17 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
    // A durable marker makes interruptions retryable even after settings are written.
    // Write the alias before the new active address; never mutate cancellation IDs.
    await durableJson(pendingPath(dataDir),{version:1,origin,policyId:policy.policyId});
+   updating=true;
    await saveConnection();
    await manage('stop',{dataDir,settings});
    await durableJson(aliasesPath(dataDir),aliases);
    if(previousPublic)await durableJson(join(dataDir,'user-deployment.json'),{...previousPublic,...urls});
-   await durableJson(join(dataDir,'anvil-onboarding.json'),{...setup,...urls});
+   if(setup)await durableJson(join(dataDir,'anvil-onboarding.json'),{...setup,...urls});
    await durableJson(join(dataDir,'runtime/local-services.json'),{...settings,settlementUrl:normalize(urls.settlementUrl)});
    await manage('start',{dataDir,settings:{...settings,settlementUrl:normalize(urls.settlementUrl)}});
    await unlink(pendingPath(dataDir));
    write('Platform addresses updated. Your Wallet, permission and Order records were kept.');
-  }catch(e){throw Error('Address update did not finish. Run agentpay market connect --market '+origin+' again. '+e.message);}
+  }catch(e){throw Error('Address update did not finish.\n'+e.message+'\n'+(updating?'Some connection settings may already be saved. Wallet keys, Policies and Orders were kept.':'No connection addresses were changed.')+'\nNext: agentpay market connect --market '+origin);}
   finally{await lock.close();await unlink(lockPath);}
  }};
 }

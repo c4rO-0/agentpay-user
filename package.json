@@ -1,6 +1,6 @@
 {
   "name": "@c4roa0/agentpay-user",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "type": "module",
   "dependencies": {
     "@c4roa0/agentpay-protocol": "0.14.3",

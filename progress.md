@@ -1,5 +1,17 @@
 # AgentPay User progress
 
+## Missing onboarding draft during npm address update — 2026-11-09
+
+Participant 0.3.4 reconnect stopped before address writes because an old onboarding
+file was absent. Address updates now validate the saved Policy and service settings
+without requiring that draft; existing draft/public files are updated only if
+present. No RPC, Policy, test configuration or private history is synthesized.
+389 full regressions passed, followed by targeted error-guidance checks. Missing
+drafts still reject contract drift; preflight errors explain the stage, preserved
+state and retry action, while interrupted writes warn about partial updates.
+User 0.3.5 publication is pending;
+participant migration remains unverified.
+
 ## User 0.3.4 published — 2026-11-09
 
 Release the explicit Market address update with unchanged Wallet 0.3.2 and

@@ -273,7 +273,21 @@ export async function connectMarket(
         String(p.policyId).toLowerCase() === String(previous.connection.policyId).toLowerCase());
     if (changingOrigin && !originalConnectionMatches)
       throw Error("Your original Wallet connection was not found at this address. The previous connection and addresses were kept.");
-    const endpoints = previous ? await prepareEndpoints({dataDir,origin,scope,fetchJson,changingOrigin}) : {changed:false,apply:async()=>{}};
+    let endpoints;
+    try {
+      endpoints = previous ? await prepareEndpoints({dataDir,origin,scope,fetchJson,changingOrigin}) : {changed:false,apply:async()=>{}};
+    } catch (error) {
+      const networkFailure = ["AbortError", "TimeoutError"].includes(error.name) ||
+        ["ECONNREFUSED", "ECONNRESET", "ENOTFOUND", "ETIMEDOUT"].includes(error.code || error.cause?.code) || error.message === "fetch failed";
+      const reason = networkFailure
+        ? "Could not reach the platform to check its settings. Check your network and the Market address."
+        : error.message;
+      write("\n[!] Platform address check stopped");
+      write(reason);
+      write("No local settings were changed by this check. Your Wallet and Order records are kept.");
+      write("Next: resolve the issue above, then retry this command.");
+      return 1;
+    }
     if (endpoints.changed && (previous?.accountId !== signedIn.developer.id || !originalConnectionMatches))
       throw Error("Platform addresses changed, but your original account and Wallet connection could not be confirmed. Current addresses were kept.");
     if (existing) write(`Using your Wallet name: ${existing.label}`);

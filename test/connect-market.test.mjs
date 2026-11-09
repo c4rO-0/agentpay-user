@@ -335,3 +335,17 @@ test('address change authenticates the original account and grouped Policy conne
   assert.match(f.requests.at(-1).url,/logout$/);
  }
 });
+
+test('address preflight failure explains retry and preserves connection without signing', async () => {
+  const f = fixture();
+  f.options.load = async () => ({marketOrigin:'https://market.example',accountId:'alice',connection:{...scope,id:'old'}});
+  f.options.prepareEndpoints = async () => {throw new TypeError('fetch failed');};
+  const result = await connectMarket(['--market','https://market.example'], f.options);
+  assert.equal(result, 1);
+  assert.equal(f.signs.length, 0);
+  assert.equal(f.saved.length, 0);
+  assert.match(f.writes.join('\n'), /Platform address check stopped/);
+  assert.match(f.writes.join('\n'), /No local settings were changed by this check/);
+  assert.match(f.writes.join('\n'), /Next:/);
+  assert.ok(f.requests.some(r => r.url.endsWith('/logout')));
+});

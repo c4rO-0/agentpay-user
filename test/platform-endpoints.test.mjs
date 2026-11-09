@@ -73,3 +73,18 @@ test('failed restart retains a retry marker and completes on the same command wi
  await assert.rejects(f.read('runtime/endpoint-update.pending.json'),{code:'ENOENT'});
  assert.equal((await f.read('wallet/policy.json')).policyId,policyId);
 });
+
+test('npm address update without old onboarding files uses the bound Policy and keeps private state',async t=>{
+ const f=await fixture(t);
+ await rm(join(f.dataDir,'anvil-onboarding.json'));await rm(join(f.dataDir,'user-deployment.json'));
+ const original=await readFile(join(f.dataDir,'wallet/policy.json'),'utf8');
+ f.proposed.factory=address(7);
+ await assert.rejects(preparePlatformEndpoints(f.options),/different network or contract/);
+ f.proposed.factory=f.before.factory;
+ const plan=await preparePlatformEndpoints(f.options),actions=[];
+ await plan.apply({stateDir:f.stateDir,write:()=>{},manage:async action=>actions.push(action)});
+ assert.deepEqual(actions,['stop','start']);
+ assert.equal((await f.read('runtime/local-services.json')).settlementUrl,f.proposed.settlementUrl);
+ assert.equal(await readFile(join(f.dataDir,'wallet/policy.json'),'utf8'),original);
+ for(const name of ['anvil-onboarding.json','user-deployment.json'])await assert.rejects(f.read(name),{code:'ENOENT'});
+});

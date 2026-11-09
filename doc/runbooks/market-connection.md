@@ -46,8 +46,12 @@ lock, confirm no installer is running before following the lock-review guidance;
 User does not break an unknown live lock automatically. Existing cancellation requests keep their
 original IDs; recovery checks refresh observations from the new Settlement.
 Keep any old SSH tunnels until the update succeeds and `status` confirms operation.
-This feature requires User 0.3.4 or newer. Updating software does not change
+This feature requires User 0.3.5 or newer. Updating software does not change
 your saved addresses; run the command above to review the change.
+
+Older source installations may leave onboarding files outside the npm package.
+Address updates use the saved Wallet Policy and Runtime settings; they do not
+require or recreate an old onboarding draft.
 
 ## Wallet identity and Policy access
 
