@@ -361,6 +361,9 @@ test("Market local receipt must match full Wallet identity and current Policy", 
     c.delegate = "other";
     await save();
     assert.deepEqual(await readMarketStatus(dir), { state: "pending" });
+    await mkdir(join(dir,"runtime"));
+    await writeFile(join(dir,"runtime/endpoint-update.pending.json"),JSON.stringify({version:1}),{mode:0o600});
+    assert.deepEqual(await readMarketStatus(dir),{state:"address_pending"});
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
@@ -396,4 +399,10 @@ test("software versions remain distinct from Policy validity and require repair 
   assert.match(text,/Running software needs checking/);
   assert.match(text,/Running 0.3.0.*installed 0.3.1/);
   assert.match(text,/agentpay repair/);
+});
+
+test('interrupted address update offers the connection command even when Runtime is stopped',()=>{
+ const result=renderStatusPanel({...model,market:{state:'address_pending'},runtime:null,runtimeService:{ActiveState:'inactive',UnitFileState:'enabled'}});
+ assert.match(result.text,/Platform address update incomplete/);
+ assert.match(result.text,/> Next\n  agentpay market connect/);
 });

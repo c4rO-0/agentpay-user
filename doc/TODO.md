@@ -1,5 +1,13 @@
 # User TODO
 
+## Existing Market address update
+
+- [x] Reauthenticate and verify original account, Wallet tuple and Policy connection before replacing an address.
+- [x] Verify unchanged deployment; preserve RPC, key, Policy, history/cache and original cancellation IDs.
+- [x] Apply under installer lock, restart managed Runtime, retain retry marker and show incomplete update in status.
+- [x] Full regression (387 checks), followed by targeted reconnect-boundary/transaction checks.
+- [ ] Publish a reviewed version and verify the existing participant installation against HTTPS.
+
 ## Directory npm update, then HTTPS
 
 - [x] Support directory-local npm update without replacing source/link installs.

@@ -22,6 +22,7 @@ function fixture({
     saved = [];
   let hidden = false;
   const options = {
+    prepareEndpoints: async () => ({changed:false,apply:async()=>{}}),
     unlock: async () => 1,
     dataDir: "/not-used",
     write: (m) => writes.push(m),
@@ -311,4 +312,26 @@ test("a new Policy under an existing Wallet reuses its server nickname without p
   );
   assert.equal(f.saved[0].connection.policyId, scope.policyId);
   assert.equal(f.signs[0].label, "Work PC");
+});
+
+test('address change authenticates the original account and grouped Policy connection before consent or writes',async()=>{
+ for(const failure of [null,'account','connection','cancel','verify-id']){
+  const f=fixture({cancel:failure==='cancel'}),old={...scope,delegate:'0x'+'4'.repeat(40),id:'c'.repeat(64),label:'Work PC'};
+  f.options.load=async()=>({marketOrigin:'http://127.0.0.1:8080',accountId:failure==='account'?'other':'alice',connection:old});
+  const w=f.options.wallet;f.options.wallet=async(...args)=>args[1]==='marketConnectionScope'?{...scope,delegate:old.delegate}:w(...args);
+  const fetch=f.options.fetchJson;
+  f.options.fetchJson=async(url,opts)=>{
+   const reply=await fetch(url,opts);
+   if(url.endsWith('/connections'))reply.result.result.connections=[{...old,id:'wallet-group',policies:[{id:failure==='connection'?'different':old.id,policyId:old.policyId}]}];
+   if(url.endsWith('/verify')&&failure==='verify-id')reply.result.result.connection.id='different';
+   return reply;
+  };
+  let applied=0;
+  f.options.prepareEndpoints=async()=>({changed:true,urls:{settlementUrl:'https://market.example/settlement',marketBundleMetadataUrl:'https://market.example/skills/bundles/test/metadata'},apply:async({saveConnection})=>{await saveConnection();applied++;}});
+  const code=await connectMarket(['--market','https://market.example'],f.options);
+  assert.equal(code,failure&&failure!=='cancel'?1:0);
+  assert.equal(applied,failure?0:1);assert.equal(f.saved.length,failure?0:1);
+  if(['account','connection','cancel'].includes(failure))assert.equal(f.signs.length,0);
+  assert.match(f.requests.at(-1).url,/logout$/);
+ }
 });

@@ -118,6 +118,16 @@ export async function readMarketStatus(dataDir) {
       await h?.close();
     }
   }
+  const endpointUpdate = await saved("runtime/endpoint-update.pending.json");
+  if (endpointUpdate) {
+    let origin;
+    try {
+      const url = new URL(endpointUpdate.origin);
+      if (url.origin === endpointUpdate.origin &&
+          (url.protocol === "https:" || url.protocol === "http:" && ["127.0.0.1", "localhost", "[::1]"].includes(url.hostname))) origin = url.origin;
+    } catch {}
+    return {state:"address_pending", ...(origin ? {origin} : {})};
+  }
   const receipt = await saved("market-connection.json");
   if (!receipt) return { state: "none" };
   const policy = await saved("wallet/policy.json"),
@@ -409,7 +419,7 @@ export function renderStatusPanel(
     next =
       "Keep services running. Check progress in the original Agent conversation. If continuing a supported request, keep its original identifier; never create a replacement purchase.";
   }
-  const marketPending = ["pending", "unknown"].includes(model.market?.state);
+  const marketPending = ["pending", "unknown", "address_pending"].includes(model.market?.state);
   if (marketPending && level === "ok") {
     title =
       model.market.state === "pending"
@@ -419,6 +429,12 @@ export function renderStatusPanel(
     detail =
       "Website access to this Policy is not confirmed. Local payments are unaffected.";
     next = "agentpay market connect";
+  }
+  if (model.market?.state === "address_pending") {
+    title = "Platform address update incomplete";
+    level = "wait";
+    detail = "Retry your Market connection to finish updating addresses. Original Order records are kept.";
+    next = "agentpay market connect" + (model.market.origin ? " --market " + model.market.origin : "");
   }
   const divider = "-".repeat(Math.min(60, width));
   const lines = [
@@ -524,7 +540,9 @@ export function renderStatusPanel(
       lines.push("", "> Market");
       const state = model.market.state;
       lines.push(
-        state === "saved"
+        state === "address_pending"
+          ? `  ${badge("wait")} Platform address update incomplete`
+          : state === "saved"
           ? `  ${badge("ok")} Current Policy connection saved locally`
           : state === "none"
             ? "  Not connected from this installation"

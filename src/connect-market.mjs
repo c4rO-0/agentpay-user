@@ -13,6 +13,7 @@ import { checkServiceDirectory } from "./local-services.mjs";
 import { localWalletAdmin } from "./local-wallet-ipc.mjs";
 import { repairMarketWallet } from "./repair-market-wallet.mjs";
 import { controlWallet } from "./wallet-control.mjs";
+import { preparePlatformEndpoints } from "./platform-endpoints.mjs";
 import { fetchJsonWithTimeout } from "./transport.mjs";
 export function marketOrigin(value) {
   const u = new URL(value);
@@ -129,6 +130,7 @@ export async function connectMarket(
     save = saveConnection,
     repair = repairMarketWallet,
     unlock = controlWallet,
+    prepareEndpoints = preparePlatformEndpoints,
   } = {},
 ) {
   let token, origin, completion;
@@ -194,6 +196,8 @@ export async function connectMarket(
       return 0;
     }
     origin = marketOrigin(answer.trim() || previous?.marketOrigin);
+    write("Checking Market and platform addresses…");
+    const changingOrigin = !!previous?.marketOrigin && marketOrigin(previous.marketOrigin) !== origin;
     const call = async (path, body, auth = true) => {
       const { response, result } = await fetchJson(
         origin + "/market" + path,
@@ -244,6 +248,8 @@ export async function connectMarket(
     token = signedIn.sessionToken;
     if (typeof token !== "string" || !token || !signedIn.developer?.id)
       throw Error("Market returned an invalid sign-in response.");
+    if (changingOrigin && previous.accountId !== signedIn.developer.id)
+      throw Error("This is not your saved Market account. The previous connection and addresses were kept.");
     write(
       "\n------------------------------------------------------------\n2/3 Name your Wallet\n------------------------------------------------------------",
     );
@@ -257,6 +263,19 @@ export async function connectMarket(
           String(w[key]).toLowerCase() === scope[key].toLowerCase(),
       ),
     );
+    // These authenticated record checks detect accidental cross-Market moves.
+    // They are not a cryptographic server identity; the user chooses the URL.
+    const originalConnectionMatches = !!previous?.connection?.id && !!existing &&
+      ["network", "module", "safe", "delegate"].every(key =>
+        typeof previous.connection[key] === "string" &&
+        previous.connection[key].toLowerCase() === String(existing[key]).toLowerCase()) &&
+      existing.policies?.some(p => p.id === previous.connection.id &&
+        String(p.policyId).toLowerCase() === String(previous.connection.policyId).toLowerCase());
+    if (changingOrigin && !originalConnectionMatches)
+      throw Error("Your original Wallet connection was not found at this address. The previous connection and addresses were kept.");
+    const endpoints = previous ? await prepareEndpoints({dataDir,origin,scope,fetchJson,changingOrigin}) : {changed:false,apply:async()=>{}};
+    if (endpoints.changed && (previous?.accountId !== signedIn.developer.id || !originalConnectionMatches))
+      throw Error("Platform addresses changed, but your original account and Wallet connection could not be confirmed. Current addresses were kept.");
     if (existing) write(`Using your Wallet name: ${existing.label}`);
     else
       write(
@@ -307,6 +326,10 @@ export async function connectMarket(
         write(
           "View this Wallet’s Orders and request help on Market. No spending permission is added.",
         );
+        if (endpoints.changed) write(`Also update platform addresses:
+Settlement: ${endpoints.urls.settlementUrl}
+Downloads: ${endpoints.urls.marketBundleMetadataUrl}
+Runtime will restart; your spending permission stays the same.`);
         while (true) {
           const choice = (
             await ask(
@@ -345,17 +368,24 @@ export async function connectMarket(
           throw Error("Connection execution address differs from this Wallet.");
         if (result.connection.label !== label)
           throw Error("Connection nickname differs. Check Market Settings.");
-        try {
-          await save(dataDir, {
-            version: 1,
-            marketOrigin: origin,
-            accountId: signedIn.developer.id,
-            connection: result.connection,
-          });
-        } catch {
-          write(
-            "Market connected this Wallet, but the local shortcut could not be saved. Use --market URL next time.",
-          );
+        if (changingOrigin && previous.connection.policyId === scope.policyId &&
+            result.connection.id !== previous.connection.id)
+          throw Error("Market returned a different connection record. The previous local connection was kept.");
+        const saveConnected = () => save(dataDir, {
+          version: 1,
+          marketOrigin: origin,
+          accountId: signedIn.developer.id,
+          connection: result.connection,
+        });
+        if (endpoints.changed) {
+          await endpoints.apply({write,saveConnection:saveConnected});
+        } else {
+          try { await saveConnected(); }
+          catch {
+            if (changingOrigin)
+              throw Error("The updated Market connection could not be saved. Retry the same command.");
+            write("Market connected this Wallet, but the local shortcut could not be saved. Use --market URL next time.");
+          }
         }
         completion = `\nWallet connected: ${label}\nView this Wallet’s Orders in Market → Account → My Orders.\nManage or disconnect it in Market Settings. This guide has finished.`;
         return 0;

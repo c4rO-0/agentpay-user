@@ -98,3 +98,20 @@ required for the local test suite.
 Tests use public interfaces and controlled remote responses. The explicit fault
 loader only instruments a spawned test Runtime; production startup contains no
 crash-test switch. See [test guide](https://github.com/c4rO-0/agentpay-user/blob/main/test/README.md) for evidence limits.
+
+## Explicit platform address changes
+
+`connect-market.mjs` reauthenticates at the user-selected origin and checks the
+original account, Wallet tuple and exact Policy connection ID. Public configuration
+is not a Market identity proof. `platform-endpoints.mjs` compares saved deployment
+and bound Policy with the new configuration, probes Settlement's existing public
+readiness projection, then changes only transport URLs after consent. No new API
+or platform identity key is introduced.
+
+The shared installer lock serializes the local apply step. Only the managed Runtime
+unit is stopped; its listener must be gone before writes. Private atomic files and
+a pending marker allow retry after interruption. Wallet and Order files are never
+rewritten. `settlement-address-history.mjs` preserves exact directed, Policy-scoped
+address mappings so cancellation retries retain their immutable original IDs.
+Runtime recovery observations remain tagged by source and are rechecked instead of
+being relabelled. The pending marker is surfaced by status.

@@ -1,5 +1,28 @@
 # AgentPay User progress
 
+## User 0.3.4 release candidate — 2026-11-09
+
+Release the explicit Market address update with unchanged Wallet 0.3.2 and
+Protocol 0.14.3 pins. No participant data or running services are changed by
+publication. Independent npm archive installation and real isolated local-service
+startup passed; all 388 release regressions passed. Tag publication, registry verification and participant migration
+are separate gates; participant acceptance remains pending.
+
+
+## Explicit Market address update — 2026-11-09
+
+Approved reduced scope: reuse login, Wallet list and public deployment interfaces;
+no Market identity key or new backend endpoint. User-selected address changes must
+match the original account/Wallet/Policy connection and deployment. Consent updates
+transport URLs, restarts only managed Runtime and preserves key/Policy/Orders/cache.
+Policy-scoped aliases retain cancellation IDs; interrupted apply has a retry marker
+and status guidance. Controlled address/connection/cancellation/status checks pass;
+387 full regression checks passed; subsequent reconnect-boundary/transaction
+changes passed targeted checks. npm publication and participant acceptance remain
+pending. Only explicit origin changes or interrupted updates enter this path;
+ordinary reconnect/renewal does not acquire new configuration dependencies.
+No participant settings have been modified.
+
 ## User 0.3.3 published — 2026-11-09
 
 Tag v0.3.3 identifies c5f3be1. GitHub run 42567636609 passed behavior, standalone

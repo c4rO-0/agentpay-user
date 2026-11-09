@@ -16,6 +16,39 @@ Review the account and nickname, then type `confirm`. Use `details` to inspect t
 Safe, network and Policy. Open Market → Account to view your Wallets and Orders.
 A separate browser login may be needed; terminal sign-in does not create browser cookies.
 
+## Change the address of the same Market
+
+In a version containing the address-update feature, run:
+
+```sh
+agentpay market connect --market https://YOUR_NEW_MARKET_ADDRESS
+```
+
+For a folder installation, use `./node_modules/.bin/agentpay` instead of `agentpay`.
+Sign in again at the address you trust. User checks that the account ID and the
+original Wallet/Policy connection are still present. The existing nickname is
+reused. It also checks the network, contracts and Settlement deployment before
+showing the new platform addresses for confirmation.
+
+Confirm to update the saved Market address and, if changed, the Settlement and
+package download addresses. Runtime pauses briefly and restarts; Wallet remains
+unlocked. Keys, Policy, Orders, input/output caches, startup preference and the
+participant's RPC address stay unchanged. No paid test runs automatically.
+
+A different account, missing original connection or changed contracts stops the
+address update. This is a deliberate address change, not automatic discovery or
+cryptographic proof of server identity. Check the website address yourself; the
+terminal never forwards a previously saved login token to the new address.
+
+If interrupted, repeat the same command with the same address. `status` reports
+an incomplete update until it finishes. If a killed process leaves an installation
+lock, confirm no installer is running before following the lock-review guidance;
+User does not break an unknown live lock automatically. Existing cancellation requests keep their
+original IDs; recovery checks refresh observations from the new Settlement.
+Keep any old SSH tunnels until the update succeeds and `status` confirms operation.
+This feature requires User 0.3.4 or newer. Updating software does not change
+your saved addresses; run the command above to review the change.
+
 ## Wallet identity and Policy access
 
 A Wallet is identified by network + Module + Safe + execution address. Its nickname

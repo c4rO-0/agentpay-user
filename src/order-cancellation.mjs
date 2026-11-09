@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { sameSettlementAddress } from "./settlement-address-history.mjs";
 import { isUnpaidExpiry } from "./order-closure.mjs";
 import { randomBytes, createHash } from "node:crypto";
 import { constants } from "node:fs";
@@ -109,7 +110,7 @@ async function readIntent(ctx) {
     !B32.test(intent.cancellationId || "") ||
     intent.orderId !== ctx.orderId ||
     intent.policyId !== ctx.policyId ||
-    intent.settlementUrl !== ctx.settlementUrl ||
+    !(await sameSettlementAddress(ctx.dataDir,intent.settlementUrl,ctx.settlementUrl,ctx.policyId)) ||
     !Number.isSafeInteger(intent.createdAtMs) ||
     intent.createdAtMs < 0
   )
