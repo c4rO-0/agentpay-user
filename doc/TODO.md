@@ -6,7 +6,8 @@
 - [x] Verify unchanged deployment; preserve RPC, key, Policy, history/cache and original cancellation IDs.
 - [x] Apply under installer lock, restart managed Runtime, retain retry marker and show incomplete update in status.
 - [x] Full regression (387 checks), followed by targeted reconnect-boundary/transaction checks.
-- [ ] Publish a reviewed version and verify the existing participant installation against HTTPS.
+- [x] Publish User 0.3.4 through v0.3.4; workflow and independent registry integrity verification passed.
+- [ ] Verify the existing participant installation and explicit address update against HTTPS.
 
 ## Directory npm update, then HTTPS
 

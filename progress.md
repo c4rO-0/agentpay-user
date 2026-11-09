@@ -1,12 +1,14 @@
 # AgentPay User progress
 
-## User 0.3.4 release candidate — 2026-11-09
+## User 0.3.4 published — 2026-11-09
 
 Release the explicit Market address update with unchanged Wallet 0.3.2 and
 Protocol 0.14.3 pins. No participant data or running services are changed by
 publication. Independent npm archive installation and real isolated local-service
-startup passed; all 388 release regressions passed. Tag publication, registry verification and participant migration
-are separate gates; participant acceptance remains pending.
+startup passed; all 388 release regressions passed. Tag v0.3.4 identifies c63ff80.
+GitHub run 42574859894 completed OIDC publication and registry verification.
+Independent registry integrity comparison matched the reviewed local archive.
+Participant address migration remains pending.
 
 
 ## Explicit Market address update — 2026-11-09
