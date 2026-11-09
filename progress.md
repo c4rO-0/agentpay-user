@@ -9,7 +9,8 @@ present. No RPC, Policy, test configuration or private history is synthesized.
 389 full regressions passed, followed by targeted error-guidance checks. Missing
 drafts still reject contract drift; preflight errors explain the stage, preserved
 state and retry action, while interrupted writes warn about partial updates.
-User 0.3.5 publication is pending;
+User 0.3.5 published from tag v0.3.5 (6c57c12). GitHub run 42575980847
+and independent registry archive verification passed;
 participant migration remains unverified.
 
 ## User 0.3.4 published — 2026-11-09

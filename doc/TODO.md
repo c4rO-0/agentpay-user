@@ -3,7 +3,8 @@
 ## Existing Market address update
 
 - [x] Allow source-to-npm reconnect without an onboarding draft; verify Policy contracts and preserve missing files.
-- [ ] Publish 0.3.5 and retry the participant address update.
+- [x] Publish 0.3.5 and independently verify registry integrity.
+- [ ] Retry the participant address update without old onboarding files.
 
 - [x] Reauthenticate and verify original account, Wallet tuple and Policy connection before replacing an address.
 - [x] Verify unchanged deployment; preserve RPC, key, Policy, history/cache and original cancellation IDs.
