@@ -4,21 +4,21 @@
 
 - [x] Allow source-to-npm reconnect without an onboarding draft; verify Policy contracts and preserve missing files.
 - [x] Publish 0.3.5 and independently verify registry integrity.
-- [ ] Retry the participant address update without old onboarding files.
+- [x] Retry the participant address update without old onboarding files. Observed User 0.3.5 / Wallet 0.3.2 on 2026-11-09.
 
 - [x] Reauthenticate and verify original account, Wallet tuple and Policy connection before replacing an address.
 - [x] Verify unchanged deployment; preserve RPC, key, Policy, history/cache and original cancellation IDs.
 - [x] Apply under installer lock, restart managed Runtime, retain retry marker and show incomplete update in status.
 - [x] Full regression (387 checks), followed by targeted reconnect-boundary/transaction checks.
 - [x] Publish User 0.3.4 through v0.3.4; workflow and independent registry integrity verification passed.
-- [ ] Verify the existing participant installation and explicit address update against HTTPS.
+- [x] Verify the existing participant installation and explicit address update against HTTPS. Observed User 0.3.5 / Wallet 0.3.2 on 2026-11-09.
 
 ## Directory npm update, then HTTPS
 
 - [x] Support directory-local npm update without replacing source/link installs.
 - [x] Verify real npm directory upgrade and isolated preflight; nine regression checks passed.
 - [x] Publish 0.3.3 via v0.3.3 and independently verify registry archive/dependency pins.
-- [ ] Verify participant directory install/update.
+- [x] Verify participant directory install/update. Observed User 0.3.5 / Wallet 0.3.2 on 2026-11-09.
 
 ## Tag-triggered publication
 
@@ -34,7 +34,7 @@
 - [x] Verify website visibility and independently reconcile Settlement/chain outcome; prepare User 0.3.2 candidate.
 - [x] Pin the verified public Wallet 0.3.2; align package/lockfile/update-pair.
 - [x] Publish User 0.3.2 through tag-triggered OIDC; verify public registry archive.
-- [ ] Accept a real participant npm update/restart.
+- [x] Accept a real participant npm update/restart. Observed User 0.3.5 / Wallet 0.3.2 on 2026-11-09.
 
 
 ## Fixed Skill download loop — 2026-11-08
@@ -52,7 +52,7 @@
 - [x] Wallet 0.3.1 published through the configured workflow; public npm version/dependencies verified.
 - [x] Pin User 0.3.1 to published Wallet 0.3.1; pairing metadata/lockfile and standalone archive verification complete.
 - [x] Publish User 0.3.1; verify public npm/latest and successful Wallet/User OIDC runs.
-- [ ] Verify real published-version update/restart on the participant installation.
+- [x] Verify real published-version update/restart on the participant installation. Observed User 0.3.5 / Wallet 0.3.2 on 2026-11-09.
 
 
 ## npm update follow-up — 2026-11-07

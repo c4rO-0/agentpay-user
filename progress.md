@@ -1,5 +1,16 @@
 # AgentPay User progress
 
+## Participant HTTPS address update accepted — 2026-11-09
+
+Participant directory-npm installation reports User 0.3.5 / Wallet 0.3.2.
+Market reconnect completed with the existing Wallet and Policy. With Anvil 8547
+forwarded, explicit Settlement Order read succeeded over HTTPS; subsequent Runtime
+status recovered to 2 saved / 2 settled / 0 waiting. The one older missing result
+predates this update and is retained. Initial unavailable checks cleared on retry.
+No new paid Order, Policy replacement or result recovery was performed. This closes
+the observed existing-installation update/address/read-recovery loop, not fresh
+installation, a new HTTPS paid journey or real-network acceptance.
+
 ## Missing onboarding draft during npm address update — 2026-11-09
 
 Participant 0.3.4 reconnect stopped before address writes because an old onboarding
@@ -400,9 +411,11 @@ approval. Detailed operational records are not distributed in this repository.
 
 ## Next work
 
-Public source preparation is complete within the recorded review scope. Next is the approved
-[distribution plan](doc/plans/user-wallet-distribution.md): a supported public Wallet
-client/version boundary and combined release archive. No automatic source updater.
+Public npm distribution and the existing-participant update/HTTPS loop are verified
+within the recorded scope. User pins Wallet and Protocol packages; npm update is
+available. Combined release archives remain optional, not the next installation
+prerequisite. Remaining compatibility and fresh-install checks follow the
+[distribution plan](doc/plans/user-wallet-distribution.md).
 
 Official test network mapping, deployment/artifact handoff, complete interrupted owner
 signing and real-network acceptance remain open. macOS and graphical unlock remain
