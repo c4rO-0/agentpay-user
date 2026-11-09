@@ -1,5 +1,16 @@
 # AgentPay User progress
 
+## User 0.3.3 published — 2026-11-09
+
+Tag v0.3.3 identifies c5f3be1. GitHub run 42567636609 passed behavior, standalone
+archive and OIDC publication steps. Independent public-registry verification
+confirmed exact Wallet 0.3.2 / Protocol 0.14.3 dependencies, provenance metadata
+and byte-identical archive (SHA-256
+aa231297a4690117850f5d50414d89ad0da86b29c29d03947383c23bfa62a833).
+Participant directory-update acceptance remains pending. Existing directory installs
+older than 0.3.3 need one npm install of 0.3.3 and repair before using local update.
+HTTPS endpoint migration is not included.
+
 ## User 0.3.3 release candidate — 2026-11-09
 
 Release directory-local npm updates, keeping exact Wallet 0.3.2 and Protocol

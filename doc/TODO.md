@@ -4,7 +4,8 @@
 
 - [x] Support directory-local npm update without replacing source/link installs.
 - [x] Verify real npm directory upgrade and isolated preflight; nine regression checks passed.
-- [ ] Publish a follow-up version and verify participant directory install/update.
+- [x] Publish 0.3.3 via v0.3.3 and independently verify registry archive/dependency pins.
+- [ ] Verify participant directory install/update.
 
 ## Tag-triggered publication
 

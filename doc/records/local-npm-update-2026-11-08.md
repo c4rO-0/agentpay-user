@@ -26,3 +26,7 @@ User 0.3.3 release preparation (2026-11-09): all 383 behavior checks and standal
 archive installation with isolated Wallet/Runtime process checks passed. Wallet
 0.3.2, Protocol 0.14.3 and official package pin are unchanged. Publication and
 participant acceptance remain separate gates.
+
+Publication verified on 2026-11-09: tag v0.3.3 at c5f3be1, GitHub run
+42567636609. Public npm archive matches the final local release archive byte for
+byte; provenance metadata is present. Participant acceptance remains pending.
