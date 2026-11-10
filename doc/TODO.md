@@ -1,5 +1,8 @@
 # User TODO
 
+- [x] Preserve maintenance error guidance and original request identity; controlled HTTP/IPC verification (2026-11-10).
+- [ ] Include maintenance guidance in the next reviewed npm release; no release performed by this change.
+
 ## Existing Market address update
 
 - [x] Allow source-to-npm reconnect without an onboarding draft; verify Policy contracts and preserve missing files.

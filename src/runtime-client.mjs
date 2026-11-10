@@ -676,7 +676,7 @@ async function invokeSaved(
       WALLET_LOCKED:
         "From the User repository, run agentpay wallet unlock, then resume this request.",
       SERVICE_MAINTENANCE:
-        "Service is under maintenance. Resume this request later.",
+        "The service is under maintenance. Try this same request later; do not create a replacement purchase.",
       SERVICE_NOT_READY:
         "Service is not ready. Check its status, then resume this request.",
     };

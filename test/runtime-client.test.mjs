@@ -436,3 +436,20 @@ test("older Runtime cannot silently ignore original-request recovery protections
   );
   assert.equal(calls, 0);
 });
+
+
+test("maintenance keeps the original request and retries only when requested",async t=>{
+ let maintenance=true,calls=0;const requests=[];
+ const f=await fixture(t,(_req,res,body)=>{
+  calls++;requests.push(body);
+  if(maintenance){res.statusCode=503;res.end(JSON.stringify({ok:false,error:{code:"SERVICE_MAINTENANCE"}}));}
+  else res.end(JSON.stringify(result(body.request)));
+ });
+ const saved=await prepareInvocation(f.connection,service,input("maintenance"));
+ await assert.rejects(invokeService(f.connection,service,saved),e=>e.code==="SERVICE_MAINTENANCE"&&e.message.includes("same request"));
+ assert.equal(calls,1);
+ const resumed=await resumeInvocation(f.connection,service,saved.requestId);
+ assert.equal(resumed.requestId,saved.requestId);
+ maintenance=false;await invokeService(f.connection,service,resumed);
+ assert.equal(calls,2);assert.deepEqual(requests[0],requests[1]);
+});
