@@ -41,7 +41,8 @@
 
 - [x] Request the official ZIP by the built-in SHA-256; reject unavailable/substituted versions without fallback.
 - [x] Complete fixed-download regression/type checks and publication/deletion review; the separate Market schema-fixture issue was resolved in its later regression.
-- [ ] After Market API/Web/nginx support is live, publish the next User version (not 0.3.1 again) and verify old pinned ZIP download and participant upgrade.
+- [x] Publish later User versions and accept participant update through 0.3.5.
+- [ ] Independently verify retained old pinned ZIP download; current package acceptance alone does not close historical-version availability.
 
 
 ## Running-version release loop — 2026-11-07
@@ -60,7 +61,7 @@
 - [x] Implement confirmed `agentpay update [-f]`, exact User target and matching Wallet; invoke new repair and pinned official Skill check.
 - [x] Fix relocation preparation ordering, matching legacy purge and packaged document links.
 - [x] Complete update/migration regressions (374 full-suite and 35 final targeted checks) and real npm replacement of local candidate artifacts; controlled service/registry dependencies.
-- [ ] After User release, verify a real published-version npm upgrade and participant service recovery.
+- [x] Verify published-version directory npm update and participant service recovery: User 0.3.5 / Wallet 0.3.2, 2026-11-09. Deliberate interruption remains separate.
 
 ## npm client distribution — 2026-11-07
 
@@ -71,7 +72,8 @@
 - [x] Step 3: migrate User to Wallet npm dependency and `agentpay` entry; remove sibling/build assumptions; isolated tarball/process acceptance passed.
 - [x] Step 4a: exact installed-package checks, service-path/client relocation, installer lock, recovery-safe preparation and explicit uninstall modes.
 - [x] Step 4b implementation: installed/running version and interface checks.
-- [ ] Step 4b acceptance: participant upgrade/interruption recovery (same gate as the running-version loop above).
+- [x] Step 4b participant existing-installation update/restart and HTTPS original-Order read recovery (2026-11-09).
+- [ ] Step 4b deliberate interrupted-upgrade acceptance; normal restart recovery does not close this case.
 - [ ] Step 5: publish Wallet then User via OIDC; verify registry installs and update Market guides.
   - [x] Wallet 0.3.0 first Token publication; registry integrity/latest and fresh public install/CLI/IPC verified.
   - [x] Owner configured Wallet npm Trusted Publisher; validated by 0.3.1 publication.

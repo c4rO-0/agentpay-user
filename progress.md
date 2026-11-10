@@ -1,5 +1,15 @@
 # AgentPay User progress
 
+## Acceptance bookkeeping — 2026-11-10
+
+Existing-installation npm update/restart and HTTPS original-Order read recovery
+are closed by the 2026-11-09 participant evidence below. Older pending publication
+and migration paragraphs are historical checkpoints, not instructions to repeat
+the accepted update. Deliberate upgrade interruption, clean installation/uninstall
+and historical pinned-download availability remain separate acceptance items.
+No runtime code or package version changed in this documentation closeout.
+
+
 ## Participant HTTPS address update accepted — 2026-11-09
 
 Participant directory-npm installation reports User 0.3.5 / Wallet 0.3.2.
