@@ -1,7 +1,7 @@
 # User TODO
 
 - [x] Preserve maintenance error guidance and original request identity; controlled HTTP/IPC verification (2026-11-10).
-- [ ] Include maintenance guidance in the next reviewed npm release; no release performed by this change.
+- [x] Publish User 0.3.6 with exact Wallet 0.3.3 dependency; registry identity/integrity verified (2026-11-10).
 
 ## Existing Market address update
 

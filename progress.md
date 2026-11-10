@@ -1,20 +1,19 @@
 # AgentPay User progress
 
-## User 0.3.6 release candidate — 2026-11-10
+## User 0.3.6 published — 2026-11-10
 
 Pins published Wallet 0.3.3, retaining Protocol 0.14.3. Maintenance errors provide
 same-request guidance without automatic write retries. Package manifest, lockfile
-and update-pair metadata agree. Publication uses the matching v0.3.6 tag after
-independent installation and behavior checks; completion is not implied by this
-candidate record. No local data, Policy or service changes occur on publication.
+and update-pair metadata agree. Published through matching tag v0.3.6 after 391 behavior tests and independent
+installation/lifecycle checks. Public npm metadata and SHA-512 match the verified
+archive. No local data, Policy or service changes occur on publication.
 
 
 ## Maintenance guidance — 2026-11-10
 
 Added explicit maintenance guidance without automatic write retries or replacement
 purchases. Controlled HTTP/IPC tests verify that retry retains original request
-identifiers. This is source verification, not live financial acceptance. Changes
-have not been published to npm.
+identifiers. This is source verification, not live financial acceptance. These changes were subsequently published in 0.3.6; see the release record above.
 
 
 ## Acceptance bookkeeping — 2026-11-10
