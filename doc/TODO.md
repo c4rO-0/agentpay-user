@@ -5,11 +5,11 @@
 
 
 - [x] Clarify full Cache IDs and missing details argument; support bounded, unique read-only short-ID lookup (2026-11-11).
-- [ ] Publish cache-details guidance with the next reviewed User release.
+- [x] Publish cache-details guidance in User 0.3.7; tag/registry integrity verified (2026-11-11).
 
 
 - [x] Clarify npm update preview with actual installed Wallet versus target, unchanged and unknown states (2026-11-11).
-- [ ] Include update-preview wording in the next reviewed User release; no new release was made for this edit.
+- [x] Publish update-preview wording in User 0.3.7 (2026-11-11).
 
 
 - [x] Preserve maintenance error guidance and original request identity; controlled HTTP/IPC verification (2026-11-10).

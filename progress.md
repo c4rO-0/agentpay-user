@@ -1,12 +1,15 @@
 # AgentPay User progress
 
-## User 0.3.7 release preparation — 2026-11-11
+## User 0.3.7 published — 2026-11-11
 
 Patch release includes installed/target Wallet version preview and clearer Cache ID
 help with unique short-ID lookup for read-only details. Wallet remains pinned to
 0.3.3 and Protocol to 0.14.3. Manifest, lockfile and update-pair versions are aligned.
-Publication and registry verification are pending; no local participant service or
-private data is changed by preparing the release.
+393 behavior tests passed from an isolated lockfile installation; standalone npm
+archive installation and process lifecycle passed. Tag v0.3.7 points to source
+3d31297dd3baedbd798f51e86c5fa8a1e474bb4a. GitHub run 42976422954 succeeded;
+public registry SHA-512 matches the tested archive and latest is 0.3.7. No local
+participant service or private data was changed by publication.
 
 
 ## Existing client update accepted — 2026-11-11
@@ -17,7 +20,7 @@ startup/Market connection and retained available result cache were observed.
 Participant confirmed both original Orders remain visible on Market. The older
 missing result predates this update. No new payment or Policy was created.
 [Evidence and limits](doc/records/npm-update-participant-2026-11-11.md). Update-preview and Cache ID guidance fixes are
-verified in source, not yet published. Fresh installation and interrupted-update
+published in 0.3.7. Fresh installation and interrupted-update
 acceptance remain next for discussion; neither has started in this loop.
 
 
@@ -29,7 +32,7 @@ accept a unique prefix with at least eight hexadecimal characters; ambiguous,
 missing or incomplete bounded lookups require a full ID. Export and cleanup keep
 their existing exact-identity rules. All 19 targeted cache/CLI regressions passed
 with isolated process tests outside the restricted sandbox; no live cache changed.
-Source only, pending publication. There is no input: ID namespace: inputs use the
+Included in published 0.3.7. There is no input: ID namespace: inputs use the
 attachment ID shown by list, while results can use result: or runtime-result:0x.
 
 
@@ -40,7 +43,7 @@ from update targets. Wallet is read from the installed dependency, not inferred
 from User's requested dependency. Unchanged versions are explicit; unreadable or
 missing Wallet metadata shows “not confirmed” without blocking the normal repair
 through npm. Controlled update tests cover all three cases and cancellation without
-service/install mutation. This source change is not yet published; running-process
+service/install mutation. Published in 0.3.7; running-process
 versions remain the responsibility of status after update/restart.
 
 
