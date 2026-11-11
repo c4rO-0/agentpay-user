@@ -1,5 +1,14 @@
 # AgentPay User progress
 
+## User 0.3.7 release preparation — 2026-11-11
+
+Patch release includes installed/target Wallet version preview and clearer Cache ID
+help with unique short-ID lookup for read-only details. Wallet remains pinned to
+0.3.3 and Protocol to 0.14.3. Manifest, lockfile and update-pair versions are aligned.
+Publication and registry verification are pending; no local participant service or
+private data is changed by preparing the release.
+
+
 ## Existing client update accepted — 2026-11-11
 
 Participant directory-local npm update to User 0.3.6 / Wallet 0.3.3 completed.
