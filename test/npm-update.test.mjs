@@ -42,6 +42,21 @@ test('cancel makes no service/install changes; -f skips only confirmation',async
  assert.equal(await updateFromNpm({...f.options,force:true,ask:async()=>{throw Error('unexpected prompt');}}),0);
  assert.equal(f.calls.at(-1),'new repair');
 });
+test('update preview reads installed Wallet and distinguishes changed, unchanged and missing versions',async t=>{
+ const f=await fixture(t,true);
+ const directory=join(f.project,'node_modules/@c4roa0/agentpay-wallet');
+ await mkdir(directory,{recursive:true});
+ for(const version of ['0.2.9','0.3.0',null]){
+  if(version)await writeFile(join(directory,'package.json'),JSON.stringify({name:'@c4roa0/agentpay-wallet',version}));
+  else await rm(join(directory,'package.json'));
+  f.messages.length=0;
+  assert.equal(await updateFromNpm({...f.options,ask:async()=> 'q'}),0);
+  assert(f.messages.includes('User    0.3.0 → 0.3.1'));
+  const expected=version==='0.3.0'?'0.3.0 (unchanged)':`${version||'not confirmed'} → 0.3.0`;
+  assert(f.messages.includes(`Wallet  ${expected}`));
+  assert.deepEqual(f.calls,[]);
+ }
+});
 test('failed install keeps data and the retry path; a later repair failure is not called success',async t=>{
  const f=await fixture(t);const npm=f.options.npm;
  assert.equal(await updateFromNpm({...f.options,npm:async args=>{

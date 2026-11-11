@@ -1,5 +1,7 @@
 # User documentation
 
+- [Existing-installation update acceptance](records/npm-update-participant-2026-11-11.md): participant update to User 0.3.6 / Wallet 0.3.3 and retained records.
+
 - [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.
 
 ## Start by role

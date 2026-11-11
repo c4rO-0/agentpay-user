@@ -128,6 +128,11 @@ export async function runCacheManagement(
     }
   const usage =
     "Usage: agentpay cache [info | list [PAGE] [input|output] [--state STATE] [--request ID | --order ID] | details ID | export ID PATH | clean | settings [KEY VALUE]]\nAdd --offline only when managing stopped Runtime storage. Wallet unlock is not required.";
+  if(action === "details" && rest.length === 0){
+    write("Choose a Cache ID from agentpay cache list. Copy the whole ID, including any prefix such as result:.");
+    write("Example: agentpay cache details result:5aa18b50\nA unique short ID needs at least 8 hexadecimal characters.");
+    return 2;
+  }
   if (
     invalidFilter ||
     !["summary", "list", "details", "export", "clean", "settings"].includes(
@@ -192,7 +197,7 @@ export async function runCacheManagement(
           ...(rest[1] ? { purpose: rest[1] } : {}),
         });
       write(
-        `\n${r.total} entries · page ${page}\nDetails: agentpay cache details <Cache ID>`,
+        `\n${r.total} entries · page ${page}\nDetails: agentpay cache details <Cache ID>\nCopy the full ID including its prefix, or use a unique short ID (8+ hex characters).`,
       );
       if (!r.items.length)
         write("No saved results or attachments match this view.");
@@ -222,7 +227,32 @@ export async function runCacheManagement(
             .join("")}`,
         );
     } else if (action === "details") {
-      const r = await operate({ action, id: rest[0] });
+      let id=rest[0];
+      if(!/^(?:result:|runtime-result:0x)?[0-9a-f]{64}$/.test(id)){
+        if(!/^(?:result:|runtime-result:0x)?[0-9a-f]{8,63}$/.test(id)){
+          write('Use the Cache ID from agentpay cache list, or its first 8 or more hexadecimal characters.');
+          return 2;
+        }
+        // Resolve only read-only details. Bound enumeration; never guess from an
+        // incomplete list or turn a short display identifier into a cleanup key.
+        const matches=new Set();let offset=0,total;
+        do {
+          const page=await operate({action:'list',offset,limit:100});
+          if(page.total>1000 || total!==undefined&&page.total!==total || !page.items.length&&offset<page.total){
+            write('Use the full Cache ID; the cache is too large or changed during lookup.');return 2;
+          }
+          total=page.total;
+          for(const row of page.items){
+            const key=id.includes(':')?row.id:row.id.replace(/^(?:result:|runtime-result:0x)/,'');
+            if(key.startsWith(id))matches.add(row.id);
+          }
+          if(matches.size>1){write('More than one cache entry matches. Copy a longer or full Cache ID from agentpay cache list.');return 2;}
+          offset+=page.items.length;
+        }while(offset<total);
+        if(!matches.size){write('No cache entry matches. Run agentpay cache list and copy its Cache ID.');return 2;}
+        id=[...matches][0];
+      }
+      const r = await operate({ action, id });
       write(
         `${safe(r.filename)}\n  ${contentSize(r)} · ${r.state}\n  ${r.requestId ? "Request" : "Order"}: ${safe(r.requestId || r.orderId)}\n  File key: ${safe(r.fileKey)}\n  SHA-256: ${r.sha256 || "Not available"}\n  Updated: ${new Date(r.updatedAtMs).toLocaleString()}`,
       );

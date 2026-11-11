@@ -1,5 +1,40 @@
 # AgentPay User progress
 
+## Existing client update accepted — 2026-11-11
+
+Participant directory-local npm update to User 0.3.6 / Wallet 0.3.3 completed.
+Running versions, unlocked Wallet, two settled Orders, unchanged saved validity,
+startup/Market connection and retained available result cache were observed.
+Participant confirmed both original Orders remain visible on Market. The older
+missing result predates this update. No new payment or Policy was created.
+[Evidence and limits](doc/records/npm-update-participant-2026-11-11.md). Update-preview and Cache ID guidance fixes are
+verified in source, not yet published. Fresh installation and interrupted-update
+acceptance remain next for discussion; neither has started in this loop.
+
+
+## Cache details guidance — 2026-11-11
+
+Missing details IDs now show a short example before accessing local storage.
+List guidance explains that the namespace is part of the ID. Read-only details
+accept a unique prefix with at least eight hexadecimal characters; ambiguous,
+missing or incomplete bounded lookups require a full ID. Export and cleanup keep
+their existing exact-identity rules. All 19 targeted cache/CLI regressions passed
+with isolated process tests outside the restricted sandbox; no live cache changed.
+Source only, pending publication. There is no input: ID namespace: inputs use the
+attachment ID shown by list, while results can use result: or runtime-result:0x.
+
+
+## Update preview clarity — 2026-11-11
+
+The confirmation screen now lists installed User and Wallet versions separately
+from update targets. Wallet is read from the installed dependency, not inferred
+from User's requested dependency. Unchanged versions are explicit; unreadable or
+missing Wallet metadata shows “not confirmed” without blocking the normal repair
+through npm. Controlled update tests cover all three cases and cancellation without
+service/install mutation. This source change is not yet published; running-process
+versions remain the responsibility of status after update/restart.
+
+
 ## User 0.3.6 published — 2026-11-10
 
 Pins published Wallet 0.3.3, retaining Protocol 0.14.3. Maintenance errors provide

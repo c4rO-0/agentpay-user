@@ -7,6 +7,7 @@ import { access, appendFile, copyFile, chmod, lstat, mkdir, mkdtemp, open, readF
 import { constants } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
+import { createRequire } from 'node:module';
 import { createInterface } from 'node:readline/promises';
 import { installedUserDir, resolveUserDataDir, rememberUserDataDir } from './local-data-directory.mjs';
 import { installationDirectory } from './installation-paths.mjs';
@@ -91,7 +92,18 @@ export async function updateFromNpm({
       await officialTest({userDir,dataDir,write});
       return 0;
     }
-    write(`User ${current.version} → ${metadata.version} · Wallet ${metadata.dependencies['@c4roa0/agentpay-wallet']}`);
+    // Read the installed dependency, not the version requested by User's manifest.
+    // Missing/broken packages must not prevent npm from repairing the installation.
+    let walletVersion;
+    try {
+      const file = createRequire(join(userDir,'package.json')).resolve('@c4roa0/agentpay-wallet/package.json');
+      const wallet = JSON.parse(await readFile(file,'utf8'));
+      if(wallet.name === '@c4roa0/agentpay-wallet' && stable(wallet.version)) walletVersion = wallet.version;
+    } catch {}
+    const targetWallet = metadata.dependencies['@c4roa0/agentpay-wallet'];
+    write('Installed packages → update target');
+    write(`User    ${current.version} → ${metadata.version}`);
+    write(`Wallet  ${walletVersion === targetWallet ? `${walletVersion} (unchanged)` : `${walletVersion || 'not confirmed'} → ${targetWallet}`}`);
     write(`Installation folder: ${target.prefix}`);
     write('Background services will pause. Keys, permissions, Orders and cache are kept.');
     if (!force && (await ask("Type 'confirm' to update, or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {

@@ -1,5 +1,17 @@
 # User TODO
 
+- [x] Participant directory-local update to User 0.3.6 / Wallet 0.3.3: running versions, original Orders in CLI/Market and available result cache verified (2026-11-11).
+- [ ] Fresh-install and interrupted-update acceptance remain separate; discuss scope before execution.
+
+
+- [x] Clarify full Cache IDs and missing details argument; support bounded, unique read-only short-ID lookup (2026-11-11).
+- [ ] Publish cache-details guidance with the next reviewed User release.
+
+
+- [x] Clarify npm update preview with actual installed Wallet versus target, unchanged and unknown states (2026-11-11).
+- [ ] Include update-preview wording in the next reviewed User release; no new release was made for this edit.
+
+
 - [x] Preserve maintenance error guidance and original request identity; controlled HTTP/IPC verification (2026-11-10).
 - [x] Publish User 0.3.6 with exact Wallet 0.3.3 dependency; registry identity/integrity verified (2026-11-10).
 

@@ -209,3 +209,31 @@ test("direct Runtime results and client copies merge without a Skill package; al
     "runtime-result:" + b("6"),
   );
 });
+
+test('cache details guides missing IDs and resolves only unique short IDs', async () => {
+  const {runCacheManagement}=await import('../src/cache-management-cli.mjs');
+  const id='result:'+'a'.repeat(64),lines=[],calls=[];
+  let items=[{id}];
+  const options={write:s=>lines.push(s),operate:async body=>{
+    calls.push(body);
+    if(body.action==='list')return {total:items.length,items};
+    assert.equal(body.action,'details');assert.equal(body.id,id);
+    return {id,filename:'Result.json',kind:'result',bytes:12,contentBytes:2,state:'available',updatedAtMs:1};
+  }};
+  assert.equal(await runCacheManagement(['details'],options),2);
+  assert.equal(calls.length,0);assert.match(lines.join('\n'),/including any prefix/);
+  for(const short of ['result:aaaaaaaa','aaaaaaaa']){
+    assert.equal(await runCacheManagement(['details',short],options),0);
+    assert.equal(calls.at(-1).id,id);
+  }
+  items.push({id:'result:'+'a'.repeat(63)+'b'});calls.length=0;
+  assert.equal(await runCacheManagement(['details','result:aaaaaaaa'],options),2);
+  assert.ok(calls.every(c=>c.action==='list'));
+  assert.match(lines.join('\n'),/More than one/);
+  assert.equal(await runCacheManagement(['details','bbbbbbbb'],options),2);
+  assert.match(lines.join('\n'),/No cache entry matches/);
+  calls.length=0;
+  assert.equal(await runCacheManagement(['details',id],options),0);
+  assert.deepEqual(calls,[{action:'details',id}]);
+  assert.equal(await runCacheManagement(['details','aaaaaaaa'],{...options,operate:async()=>({total:1001,items:[{id}]})}),2);
+});
