@@ -1,5 +1,17 @@
 # AgentPay User progress
 
+## User 0.3.8 published — 2026-11-12
+
+User `0.3.8` and tag `v0.3.8` identify release commit `727e547`.
+[Publication workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43148236738)
+passed the complete behavior suite, standalone package installation and publication.
+The public npm `latest` version and archive integrity were independently verified.
+Dependencies remain Wallet 0.3.3 and Protocol 0.14.3; official test Skill remains 1.2.1.
+The release includes multiple installations with one active Runtime/Wallet pair.
+Real A/B/A switching passed; desktop login/reboot, full guided installation and
+complete interrupted-switch acceptance remain separate pending checks.
+Agent's candidate template is not published by this release.
+
 ## Real two-installation switch passed — 2026-11-12
 
 Actual user-systemd switching A → B → A passed using source and folder-local npm

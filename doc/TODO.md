@@ -1,5 +1,7 @@
 # User TODO
 
+- [x] Publish User 0.3.8 with matching v0.3.8 tag; full CI, standalone package and public registry integrity passed (2026-11-12).
+
 - [x] Recover failed service start/stop without blocking repair; incomplete target unit replacement remains protected (2026-11-12, controlled service-manager verification).
 
 - [x] Fix shared-data switch client relocation and retry without a repair deadlock; isolated selection/connection checks pass (2026-11-11).
@@ -18,13 +20,13 @@
 - [x] Implement and check storage-choice module (reuse/new/cancel); public installer selection now connects through a service-switch gate (2026-11-11).
 - [x] Connect installer selection and service-start switching with confirmation, stopped-state/listener checks and Runtime lifetime exclusion; focused checks passed (2026-11-11; systemd results simulated).
 - [x] Correct shared-directory purge, mixed-unit retry, manual setup regression, first-start preparation and startup-preference inheritance; 37 targeted checks pass (2026-11-11).
-- [ ] Verify complete switch-crash recovery and real systemd switching/login before release; preserve historical request scope across switches. Inactive maintenance isolation is implemented with scoped verification.
+- [ ] Complete remaining switch-crash recovery and desktop login acceptance; real A/B/A systemd switching passed; preserve historical request scope across switches. Inactive maintenance isolation is implemented with scoped verification.
 
 
 
 - [x] Isolated public npm fresh install, registry failure/retry and disposable-data uninstall (2026-11-11; no real systemd or financial acceptance).
 - [x] Replace existence-only locking for new operations: inherited native lock survives caller death while writers live, then permits retry. Old unknown locks require review; they are not automatically removed.
-- [ ] Publish folder-local npm uninstall completion guidance after review.
+- [x] Publish reviewed folder-local npm uninstall completion guidance in User 0.3.8.
 
 
 - [x] Participant directory-local update to User 0.3.6 / Wallet 0.3.3: running versions, original Orders in CLI/Market and available result cache verified (2026-11-11).
