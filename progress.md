@@ -2,7 +2,11 @@
 
 ## Update recovery during an unfinished switch — 2026-11-12
 
-User 0.3.11 candidate: the updater may replace the exact previously confirmed switch target
+Published as `v0.3.11` at `6cf9f0d`. Full CI behavior and standalone package checks
+passed; npm archive integrity independently verified. Wallet remains 0.3.3.
+[Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43178613605).
+
+User 0.3.11: the updater may replace the exact previously confirmed switch target
 only after managed services and known listeners are stopped. It retains the switch
 journal, runs the new service command after package installation, then repairs the
 installation. A failed resume keeps the update checkpoint for retry; another target
