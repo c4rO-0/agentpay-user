@@ -70,6 +70,19 @@ export async function prepareOfficialTestUpdate({
 } = {}) {
   write("\n> Official test Skill");
   try {
+    // Only the release-pinned archive can establish the expected installed files.
+    // Never trust installation.json or a Market-provided digest for this shortcut.
+    const { inspectSavedSkillBundle } = await import("./skill-bundle.mjs");
+    const local = await inspectSavedSkillBundle(dataDir, OFFICIAL_TEST_PACKAGE);
+    if (local.status === "ready") {
+      write(`Version ${OFFICIAL_TEST_PACKAGE.version} verified locally. No download needed.`);
+      return local;
+    }
+    if (local.status === "local_edits") {
+      write("Local test Skill files are changed or incomplete. Existing files were kept; review them before testing.");
+      return local;
+    }
+    write("Downloading the official test Skill…");
     let source;
     for (const name of ["anvil-onboarding.json", "user-deployment.json"]) {
       const saved = await readJson(await deploymentFilePath(dataDir, userDir, name));

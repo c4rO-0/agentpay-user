@@ -1,5 +1,14 @@
 # AgentPay User progress
 
+## Official Skill local verification — 2026-11-12
+
+User 0.3.9 candidate: update/repair verifies the release-pinned local ZIP and its extracted
+files before using the network. Matching files skip download; edited or incomplete
+extracted files are preserved with guidance. Software-update repair progress streams
+as it happens. Targeted update/package regressions passed; the actual pinned 1.2.1
+archive was installed in temporary storage and verified with network access forbidden.
+Child output streaming was checked with a real process. No live services or payments changed.
+
 ## User 0.3.8 published — 2026-11-12
 
 User `0.3.8` and tag `v0.3.8` identify release commit `727e547`.

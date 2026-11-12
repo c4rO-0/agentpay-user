@@ -91,7 +91,7 @@ export function installationChildOptions({env = process.env, stdio = ['ignore','
 
 // Wait for close even on timeout/error: returning on a timer while npm still writes
 // would release the caller's lock too early. Writer children retain the descriptor.
-export async function runInstallationCommand(file, args, {env = process.env, timeout = 120000, maxBuffer = 2 * 1024 * 1024, cwd} = {}) {
+export async function runInstallationCommand(file, args, {env = process.env, timeout = 120000, maxBuffer = 2 * 1024 * 1024, cwd, onStdout} = {}) {
   const {spawn} = await import('node:child_process');
   return new Promise((resolve,reject) => {
     const child = spawn(file,args,{cwd,...installationChildOptions({env})});
@@ -102,7 +102,7 @@ export async function runInstallationCommand(file, args, {env = process.env, tim
       killTimer ||= setTimeout(()=>child.kill('SIGKILL'),1000);
     };
     const timer = setTimeout(()=>stop(Error('Command timed out.')),timeout);
-    child.stdout.on('data',chunk=>{if(failure)return;stdout+=chunk;if(Buffer.byteLength(stdout)>maxBuffer)stop(Error('Command output exceeded its limit.'));});
+    child.stdout.on('data',chunk=>{if(failure)return;stdout+=chunk;if(onStdout)onStdout(chunk.toString());if(Buffer.byteLength(stdout)>maxBuffer)stop(Error('Command output exceeded its limit.'));});
     child.stderr.on('data',chunk=>{if(failure)return;stderr+=chunk;if(Buffer.byteLength(stderr)>maxBuffer)stop(Error('Command output exceeded its limit.'));});
     child.once('error',error=>{failure=error;});
     child.once('close',(code,signal)=>{

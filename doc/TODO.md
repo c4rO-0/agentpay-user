@@ -1,5 +1,8 @@
 # User TODO
 
+- [x] Verify local official Skill files before downloading and stream update repair progress (2026-11-12; targeted checks).
+- [ ] Publish and verify the local official-Skill check optimization in the next User patch.
+
 - [x] Publish User 0.3.8 with matching v0.3.8 tag; full CI, standalone package and public registry integrity passed (2026-11-12).
 
 - [x] Recover failed service start/stop without blocking repair; incomplete target unit replacement remains protected (2026-11-12, controlled service-manager verification).

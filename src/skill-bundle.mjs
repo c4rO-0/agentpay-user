@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { constants } from "node:fs";
 import { currentTimeMs } from "./local-time.mjs";
 import { readSkillZip } from "./skill-zip.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import {
+  open,
   mkdir,
   lstat,
   readFile,
@@ -139,4 +141,40 @@ export async function installSkillBundle({
   } finally {
     await rm(staging, { recursive: true, force: true });
   }
+}
+
+// Read-only fast path for a release-pinned package. A matching ZIP alone is not
+// enough: compare every installed file with its authenticated archive content.
+export async function inspectSavedSkillBundle(dataDir, pin) {
+  const parent = join(dataDir, "runtime", "skill-bundles");
+  const directory = join(parent, `${pin.name}-${pin.version}-${pin.sha256}`);
+  async function readBounded(file, max) {
+    const handle = await open(file, constants.O_RDONLY | constants.O_NOFOLLOW);
+    try {
+      const stat = await handle.stat();
+      if (!stat.isFile() || stat.size > max) throw Error("Invalid saved Skill file");
+      return await handle.readFile();
+    } finally { await handle.close(); }
+  }
+  try {
+    for (const path of [dataDir, join(dataDir, "runtime"), parent, directory]) await privateDir(path);
+    const bytes = await readBounded(join(directory, "publisher.zip"), skillArchiveLimits.compressed);
+    if (bundleDigest(bytes) !== pin.sha256) return {status: "download_required"};
+    const parsed = parseSkillBundle(bytes);
+    if (parsed.manifest.packageName !== pin.name || parsed.manifest.packageVersion !== pin.version)
+      return {status: "download_required"};
+    try {
+      for (const [name, expected] of Object.entries(parsed.files)) {
+        // Refuse symlinked intermediate directories as well as symlinked files.
+        let ancestor = dirname(join(directory, name));
+        while (ancestor !== directory) {
+          await privateDir(ancestor);
+          ancestor = dirname(ancestor);
+        }
+        const actual = await readBounded(join(directory, name), skillArchiveLimits.file);
+        if (!actual.equals(expected)) return {status: "local_edits", directory};
+      }
+    } catch { return {status: "local_edits", directory}; }
+    return {status: "ready", directory};
+  } catch { return {status: "download_required"}; }
 }

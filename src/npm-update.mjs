@@ -21,12 +21,12 @@ function newer(next, current) {
   for (let i = 0; i < 3; i++) if (a[i] !== b[i]) return a[i] > b[i];
   return false;
 }
-async function command(file, args, { logPath, timeout = 120000, env = process.env, cwd = process.cwd() } = {}) {
+async function command(file, args, { logPath, timeout = 120000, env = process.env, cwd = process.cwd(), onStdout } = {}) {
   try {
-    const result = await execute(file, args, { timeout, cwd, maxBuffer: 2 * 1024 * 1024,
+    const result = await execute(file, args, { timeout, cwd, onStdout, maxBuffer: 2 * 1024 * 1024,
       env: { ...env, PATH: dirname(process.execPath) + ':' + (env.PATH || '') } });
     if (logPath) await appendFile(logPath, result.stdout + result.stderr, {mode:0o600});
-    return result.stdout.trim();
+    return onStdout ? '' : result.stdout.trim();
   } catch (error) {
     if (logPath) await appendFile(logPath, String(error.stdout || '') + String(error.stderr || ''), {mode:0o600});
     throw Error(logPath ? 'The command did not complete. Check the update log.' : 'Could not query npm. Check your network and npm configuration, then retry.');
@@ -75,7 +75,14 @@ async function updateUnderLock({
   ask = askConfirmation,
   npm = (args, options) => command('npm', args, options),
   service = (action, options) => command(process.execPath, [join(userDir,'scripts/autostart.mjs'), action], options),
-  repair = options => command(process.execPath, [join(userDir,'scripts/repair.mjs'), '-f'], options),
+  repair = options => {
+    let pending = '';
+    return command(process.execPath, [join(userDir,'scripts/repair.mjs'), '-f'], {...options, onStdout(chunk) {
+      pending += chunk;
+      const lines = pending.split('\n'); pending = lines.pop();
+      for (const line of lines) write(line);
+    }}).finally(() => { if (pending) write(pending); });
+  },
   officialTest = prepareOfficialTestUpdate,
   serviceScope = maintenanceServiceScope,
 } = {}) {

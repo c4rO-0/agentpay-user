@@ -52,3 +52,11 @@ to that business example. An interrupted test retains its original request.
 [Background service guide](runbooks/local-autostart.md) explains Linux user services,
 login reminders and manual startup. A local lock or process stop does not revoke
 permission; follow [emergency stop](runbooks/emergency-payment-stop.md) when needed.
+
+### Official test Skill checks during updates
+
+Update and repair verify the official test ZIP against the version pinned by User,
+then compare its installed files. Matching local files need no download. Missing
+archives trigger a download; changed or incomplete extracted files are kept and
+reported for review. These checks do not start a payment or select a newer Skill
+from Market. Software updates display repair progress while it runs.
