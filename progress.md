@@ -1,5 +1,12 @@
 # AgentPay User progress
 
+## User 0.3.12 release candidate — 2026-11-12
+
+Pins published Wallet 0.3.4 for actionable RPC errors. Includes single-start update
+recovery and incomplete-setup guidance, including missing-Policy and mixed-error
+review fixes. All 66 targeted User checks passed; tag publication and participant
+acceptance remain pending.
+
 ## Participant recovery and guidance cleanup — 2026-11-12
 
 Participant installed User 0.3.11 and resumed the original installation through

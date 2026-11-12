@@ -1,6 +1,6 @@
 {
   "format": "agentpay.local-update-pair.v1",
-  "userVersion": "0.3.11",
-  "walletVersion": "0.3.3",
+  "userVersion": "0.3.12",
+  "walletVersion": "0.3.4",
   "typesDependency": "0.14.3"
 }
