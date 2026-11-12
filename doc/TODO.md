@@ -4,7 +4,8 @@
 - [x] Prepare resumed switch without premature startup; preserve repair checkpoint across current-version interruption.
 - [x] Show setup guidance for a fresh unfinished installation, without treating missing established Wallet files as new setup.
 - [x] Classify chain RPC transport failure in Wallet and show actionable User recovery guidance; controlled RPC/IPC tests passed.
-- [ ] Publish Wallet RPC guidance, pin its verified package in User, then publish and verify combined cleanup.
+- [x] Publish Wallet 0.3.4 and User 0.3.12 with exact pairing; CI and npm integrity verified.
+- [ ] Participant update to User 0.3.12 / Wallet 0.3.4; verify guidance and complete second-installation switching.
 
 - [x] Allow update of an exact confirmed stopped switch target, then resume using new code; preserve retry checkpoint and reject other targets/live services (controlled verification).
 - [x] Publish User 0.3.11 update recovery and document one-time bootstrap for older blocked updaters; tag/package integrity verified.
@@ -12,8 +13,8 @@
 
 - [x] Fix switching back from setup cancelled before Wallet creation; retain stop/listener and established-data checks.
 - [x] Publish User 0.3.10 switch-back fix; matching tag and npm integrity verified.
-- [ ] Verify participant switch-back to the original installation after installing 0.3.10.
-- [x] Improve unconfigured installation status/info: direct to setup, not service start or missing-key recovery (unreleased).
+- [x] Participant switch-back to the original installation verified using 0.3.11 (supersedes the planned 0.3.10 check).
+- [x] Improve unconfigured installation status/info: direct to setup, not service start or missing-key recovery (released in User 0.3.12).
 
 - [x] Verify local official Skill files before downloading and stream update repair progress (2026-11-12; targeted checks).
 - [x] Publish local official-Skill verification and streaming update progress in User 0.3.9; tag and npm integrity verified (2026-11-12).

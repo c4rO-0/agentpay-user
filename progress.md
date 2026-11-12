@@ -1,11 +1,14 @@
 # AgentPay User progress
 
-## User 0.3.12 release candidate — 2026-11-12
+## User 0.3.12 published — 2026-11-12
 
 Pins published Wallet 0.3.4 for actionable RPC errors. Includes single-start update
 recovery and incomplete-setup guidance, including missing-Policy and mixed-error
-review fixes. All 66 targeted User checks passed; tag publication and participant
-acceptance remain pending.
+review fixes. All 66 targeted User checks passed. Tag `v0.3.12` points to
+`e3b3ae0`; [publication](https://github.com/c4rO-0/agentpay-user/actions/runs/43191673492)
+passed full behavior, standalone installation and registry integrity checks. npm
+latest and independent archive SHA-512 checks passed. Participant acceptance
+of this cleanup and the fully configured second installation remain pending.
 
 ## Participant recovery and guidance cleanup — 2026-11-12
 
@@ -15,14 +18,13 @@ Runtime 0.3.11, original Policy/Market connection and two settled Orders. The ol
 missing-result warning remains separate. This verifies return from incomplete B;
 B has not run as a configured independent Wallet/Runtime pair.
 
-Unreleased cleanup prepares the switch without starting services, then repair
+Cleanup released in User 0.3.12 prepares the switch without starting services, then repair
 starts them once. Current-version recovery now saves a repair checkpoint before
 selecting units. Status/info distinguish fresh incomplete setup from lost existing
 Wallet files. Wallet classifies RPC transport failure without exposing raw errors;
 User preserves the code through recovery, status and Order guidance. Targeted tests
 use temporary files, controlled service management and real local RPC/IPC failure;
-they do not establish participant acceptance of these new changes. Publish Wallet
-first, then pin the verified release in User before publishing the combined change.
+they do not establish participant acceptance of these new changes. Wallet 0.3.4 was published and verified before User 0.3.12 was released.
 
 Review follow-up: missing Policy with saved Order history or a Market connection
 now requires file recovery, while key-only first setup can continue. Mixed RPC
