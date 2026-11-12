@@ -1,5 +1,14 @@
 # AgentPay User progress
 
+## Participant incomplete-setup switch — 2026-11-12
+
+Participant A-to-B setup cancellation exposed a switch-back failure: B had no
+Wallet directory, but selection required complete service settings. User 0.3.10 candidate
+allows demonstrably unconfigured B to release selection after confirmed systemd
+stop and socket checks. Existing key/Policy/connection or invalid directories still
+block missing-configuration bypass. Original participant A remains stopped until
+the corrected switch is run. Full two-running-installation acceptance is pending.
+
 ## Official Skill local verification — 2026-11-12
 
 Published as `v0.3.9` at `8fbae4e`. Full GitHub behavior and standalone package

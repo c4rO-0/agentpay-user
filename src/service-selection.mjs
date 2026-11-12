@@ -45,6 +45,26 @@ async function targetUnitsPrepared(unitDir, target) {
   } catch { return false; }
 }
 
+// A cancelled first setup can own generated units before it has a Wallet or
+// runtime address. Only that demonstrably unconfigured state may omit settings;
+// missing settings in an established installation still require review.
+async function previousServiceSettings(dataDir) {
+  try { return await readServiceSettings(dataDir); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    for (const directory of [dataDir, join(dataDir,'wallet'), join(dataDir,'runtime')]) {
+      const info = await lstat(directory).catch(e => { if(e.code==='ENOENT' && directory!==dataDir)return null;throw e; });
+      if (info && (!info.isDirectory() || info.isSymbolicLink() || info.uid!==process.getuid() || info.mode & 0o077))
+        throw Error('Previous installation directories need ownership review before switching.');
+    }
+    for (const name of ['wallet/session.keystore.json','wallet/policy.json','runtime/local-services.json','runtime/connection.json']) {
+      const exists = await lstat(join(dataDir,name)).then(()=>true,e=>{if(e.code==='ENOENT')return false;throw e;});
+      if (exists) throw Error('Previous installation has saved Wallet or Runtime settings, but its service configuration is incomplete. Keep its files and repair it before switching.');
+    }
+    return null;
+  }
+}
+
 // The caller holds this lock through unit replacement and start/stop. No prompts
 // can grant approval to a different target while the current transition writes.
 export async function withServiceSelection({target, action, ask, write = console.log, ctl, unitDir, operation, verifyReady = waitForServiceReadiness}) {
@@ -104,9 +124,9 @@ export async function withServiceSelection({target, action, ask, write = console
       }
     }
     if (different) {
-      const settings = await readServiceSettings(previous.dataDir);
+      const settings = await previousServiceSettings(previous.dataDir);
       if (await listenerPresent(join(previous.dataDir,'wallet/wallet.sock')) ||
-          await listenerPresent({host:'127.0.0.1',port:Number(new URL(settings.runtimeUrl).port)}))
+          (settings && await listenerPresent({host:'127.0.0.1',port:Number(new URL(settings.runtimeUrl).port)})))
         throw Error('An original Wallet or Runtime listener is still running. Stop it before switching; no new service was started.');
     }
     if (different) {

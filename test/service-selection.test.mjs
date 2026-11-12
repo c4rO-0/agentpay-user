@@ -208,3 +208,36 @@ test('older incomplete journal with exact target units permits stop and maintena
  await withServiceSelection({...f,target:f.old,action:'stop',write:()=>{},operation:async()=>{stopped=true;}});
  assert.equal(stopped,true);assert.equal(JSON.parse(await readFile(path,'utf8')).phase,'stopped');
 });
+
+test('cancelled first setup with no Wallet or service settings can switch back',async t=>{
+ const f=await fixture(t);
+ await rm(join(f.old.dataDir,'wallet'),{recursive:true});
+ await rm(join(f.old.dataDir,'runtime/local-services.json'));
+ let replaced=false;
+ await withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:async()=>{replaced=true;}});
+ assert.equal(replaced,true);
+});
+
+test('missing Wallet directory never bypasses an established runtime address',async t=>{
+ const f=await fixture(t);
+ await rm(join(f.old.dataDir,'wallet'),{recursive:true});
+ await assert.rejects(withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:()=>{throw Error('must not replace');}}),/configuration is incomplete/);
+});
+
+test('missing service settings with a saved key is not treated as fresh setup',async t=>{
+ const f=await fixture(t);
+ await rm(join(f.old.dataDir,'runtime/local-services.json'));
+ await writeFile(join(f.old.dataDir,'wallet/session.keystore.json'),'retained private fixture',{mode:0o600});
+ await assert.rejects(withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:()=>{throw Error('must not replace');}}),/configuration is incomplete/);
+});
+
+test('unconfigured installation with a live Wallet socket still blocks switching',async t=>{
+ const f=await fixture(t);
+ await rm(join(f.old.dataDir,'runtime/local-services.json'));
+ const {createServer}=await import('node:net');
+ const server=createServer(socket=>socket.end());
+ await new Promise((resolve,reject)=>{server.once('error',reject);server.listen(join(f.old.dataDir,'wallet/wallet.sock'),resolve);});
+ try {
+  await assert.rejects(withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:()=>{throw Error('must not replace');}}),/listener is still running/);
+ } finally {await new Promise(resolve=>server.close(resolve));}
+});

@@ -1,5 +1,9 @@
 # User TODO
 
+- [x] Fix switching back from setup cancelled before Wallet creation; retain stop/listener and established-data checks.
+- [ ] Deliver the fix and verify participant switch-back to the original installation.
+- [ ] Improve unconfigured installation status/info: direct to setup, not service start or missing-key recovery.
+
 - [x] Verify local official Skill files before downloading and stream update repair progress (2026-11-12; targeted checks).
 - [x] Publish local official-Skill verification and streaming update progress in User 0.3.9; tag and npm integrity verified (2026-11-12).
 
