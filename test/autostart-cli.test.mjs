@@ -53,6 +53,7 @@ test("CLI enables without starting, refuses foreign files and removes only manag
     env = {
       ...process.env,
       HOME: root,
+      XDG_STATE_HOME: join(root, "state"),
       AGENTPAY_USER_DATA_DIR: dataDir,
       PATH: bin + ":" + dirname(process.execPath) + ":/usr/bin:/bin",
       TEST_LOG: log,
@@ -85,6 +86,9 @@ test("CLI enables without starting, refuses foreign files and removes only manag
   await writeFile(connectionPath, JSON.stringify(oldConnection), {mode:0o600});
   await writeFile(file, autostartFiles({node:process.execPath,userDir:"/previous/user",dataDir})["agentpay-local-wallet.service"]);
   await assert.rejects(run("prepare"));
+  await assert.rejects(run("prepare-repair"));
+  assert.notEqual(await readFile(file,"utf8"),original);
+  await writeFile(file,original);
   await run("prepare-repair");
   assert.equal(JSON.parse(await readFile(connectionPath)).clientModule,oldConnection.clientModule);
   assert.equal(await readFile(file,"utf8"),original);
@@ -94,20 +98,9 @@ test("CLI enables without starting, refuses foreign files and removes only manag
   await assert.rejects(run("enable"));
   assert.equal(await readFile(file, "utf8"), "foreign");
   await writeFile(file, original);
-  await run("start");
-  const started = (await readFile(log, "utf8"))
-    .trim()
-    .split("\n")
-    .map(JSON.parse)
-    .filter((c) => c[1] === "start");
-  assert.deepEqual(started, [
-    [
-      "--user",
-      "start",
-      "agentpay-local-wallet.service",
-      "agentpay-local-runtime.service",
-    ],
-  ]);
+  // This fixture records service-manager commands; it does not start daemons.
+  // Authenticated readiness and failed starts are covered by service-selection
+  // and service-readiness tests, plus the real two-installation rehearsal.
   await run("stop");
   await run("status");
   const statuses = (await readFile(log, "utf8"))
@@ -133,7 +126,6 @@ test("CLI enables without starting, refuses foreign files and removes only manag
     .filter((c) => c[1] === "disable");
   assert.equal(disabled.length, 1);
   assert.ok(!disabled[0].includes("--now"));
-  await run("start");
   await run("remove");
   await assert.rejects(readFile(file), { code: "ENOENT" });
   assert.equal(
