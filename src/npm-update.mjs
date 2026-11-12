@@ -106,7 +106,13 @@ async function updateUnderLock({
     } catch(error) { if(error.code !== 'ENOENT') throw error; }
     dataDir ??= await resolveUserDataDir({userDir});
     if (pending && pending.dataDir !== dataDir) throw Error('The interrupted update belongs to another data folder. Keep its recovery record for review.');
-    const scope = await serviceScope({userDir,dataDir});
+    const scope = await serviceScope({userDir,dataDir,resumeUpdate:true});
+    const resumeSwitch = async options => {
+      if (!scope.resumeSwitch) return;
+      write('Continuing your previously confirmed installation switch…');
+      const output = await service('start',options);
+      if(output)write(output);
+    };
     if (pending && current.version === pending.targetVersion) {
       installing = true;
       if (current.dependencies?.['@c4roa0/agentpay-wallet'] !== pending.walletVersion ||
@@ -115,6 +121,7 @@ async function updateUnderLock({
       write('Continuing the interrupted update. Checking installed packages and service settings.');
       const configured = await lstat(join(dataDir,'runtime/local-services.json')).then(s=>s.isFile(),e=>{if(e.code==='ENOENT')return false;throw e;});
       if (configured) {
+        await resumeSwitch({env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000});
         const output = await repair({env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000});
         if(output)write(output);
       } else await officialTest({userDir,dataDir,write});
@@ -132,6 +139,15 @@ async function updateUnderLock({
     if (pending && (metadata.version !== pending.targetVersion || metadata.dependencies["@c4roa0/agentpay-wallet"] !== pending.walletVersion || metadata.dependencies["@c4roa0/agentpay-protocol"] !== pending.protocolVersion))
       throw Error("The published package differs from the interrupted update. No program files were changed.");
     if (!newer(metadata.version,current.version)) {
+      if (scope.resumeSwitch) {
+        if (!force && (await ask("Continue the previously confirmed installation switch? Type 'confirm', or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {
+          write('Update cancelled. The saved switch was kept.'); return 0;
+        }
+        const options={env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000};
+        await resumeSwitch(options);
+        const output=await repair(options); if(output)write(output);
+        return 0;
+      }
       write(`User ${current.version} is current. Checking the official test Skill.`);
       await officialTest({userDir,dataDir,write});
       return 0;
@@ -149,7 +165,8 @@ async function updateUnderLock({
     write(`User    ${current.version} → ${metadata.version}`);
     write(`Wallet  ${walletVersion === targetWallet ? `${walletVersion} (unchanged)` : `${walletVersion || 'not confirmed'} → ${targetWallet}`}`);
     write(`Installation folder: ${target.prefix}`);
-    write(scope.active ? 'Background services will pause. Keys, permissions, Orders and cache are kept.' : 'This installation is inactive. The running Wallet and Runtime will not change.');
+    if (scope.resumeSwitch) write('After updating, AgentPay will finish your previously confirmed installation switch.');
+    write(scope.active ? 'Background services will pause. Keys, permissions, Orders and cache are kept.' : scope.resumeSwitch ? 'Services are stopped. Keys, permissions, Orders and cache are kept.' : 'This installation is inactive. The running Wallet and Runtime will not change.');
     if (!force && (await ask("Type 'confirm' to update, or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {
       write('Update cancelled. Nothing was changed.'); return 0;
     }
@@ -202,7 +219,8 @@ async function updateUnderLock({
        installed.dependencies?.['@c4roa0/agentpay-protocol'] !== metadata.dependencies['@c4roa0/agentpay-protocol'])
       throw Error('The installed version does not match the confirmed update.');
     if (configured) {
-      write(scope.active ? '3/3 Restore services and verify the official test Skill.' : '3/3 Verify the inactive installation and official test Skill.');
+      await resumeSwitch(options);
+      write(scope.active || scope.resumeSwitch ? '3/3 Restore services and verify the official test Skill.' : '3/3 Verify the inactive installation and official test Skill.');
       // A fresh Node process loads the NEW repair/client/official digest, not old imports.
       const output = await repair(options);
       if(output) write(output);

@@ -60,3 +60,15 @@ then compare its installed files. Matching local files need no download. Missing
 archives trigger a download; changed or incomplete extracted files are kept and
 reported for review. These checks do not start a payment or select a newer Skill
 from Market. Software updates display repair progress while it runs.
+
+### Updating after an interrupted installation switch
+
+From the installation you previously selected, run `agentpay update`. If its
+background services have stopped, the updater can install the new version and
+continue that same switch. It preserves Wallet data and the confirmed target. If
+recovery fails, run the same command again; do not delete the switch records.
+
+User 0.3.9 and 0.3.10 stop before downloading when unit replacement is unfinished.
+For those versions only, install the intended fixed User version with npm in the
+same program folder, then run `agentpay service start` there. Do not uninstall or
+create a replacement Wallet to recover an interrupted switch.

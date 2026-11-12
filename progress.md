@@ -1,5 +1,18 @@
 # AgentPay User progress
 
+## Update recovery during an unfinished switch — 2026-11-12
+
+User 0.3.11 candidate: the updater may replace the exact previously confirmed switch target
+only after managed services and known listeners are stopped. It retains the switch
+journal, runs the new service command after package installation, then repairs the
+installation. A failed resume keeps the update checkpoint for retry; another target
+cannot adopt the transition. An existing confirmed switch no longer needs duplicate
+consent during resume. 35 update/selection checks passed with temporary storage,
+real local sockets and controlled npm/systemctl; participant acceptance remains open.
+Already-installed 0.3.9/0.3.10 updaters still reject this state before fetching code,
+so the current stranded installation needs a one-time npm bootstrap. This fix cannot
+retroactively change an installed updater.
+
 ## Participant incomplete-setup switch — 2026-11-12
 
 Published as `v0.3.10` at `6e89266`; 20 targeted selection checks, full CI behavior

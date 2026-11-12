@@ -165,3 +165,22 @@ test('retry finishes interrupted repair even when npm already installed the targ
  assert.equal(await updateFromNpm(f.options),0);
  assert.deepEqual(f.calls,['current official test']);
 });
+
+test('update installs new code before resuming an already confirmed stopped switch',async t=>{
+ const f=await fixture(t,true);
+ const opts={...f.options,serviceScope:async options=>{assert.equal(options.resumeUpdate,true);return {active:false,resumeSwitch:true};}};
+ assert.equal(await updateFromNpm({...opts,ask:async()=> 'q'}),0);
+ assert.deepEqual(f.calls,[]);
+ assert.equal(await updateFromNpm(opts),0);
+ assert.deepEqual(f.calls,['requirements','install','start','new repair']);
+ assert.equal(await readFile(join(f.dataDir,'keep'),'utf8'),'private fixture');
+});
+
+test('failed post-update switch keeps the confirmed update resumable without reinstalling',async t=>{
+ const f=await fixture(t,true);
+ const opts={...f.options,serviceScope:async()=>({active:false,resumeSwitch:true})};
+ assert.equal(await updateFromNpm({...opts,service:async()=>{throw Error('switch interrupted');}}),1);
+ f.calls.length=0;
+ assert.equal(await updateFromNpm(opts),0);
+ assert.deepEqual(f.calls,['start','new repair']);
+});

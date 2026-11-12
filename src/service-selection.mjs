@@ -6,7 +6,7 @@ import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { autostartFiles, units } from './autostart-files.mjs';
 import { installationDirectory } from './installation-paths.mjs';
-import { withInstallationOperation } from './installation-operation.mjs';
+import { withInstallationOperation, runInstallationCommand } from './installation-operation.mjs';
 import { readServiceSettings, listenerPresent } from './local-services.mjs';
 import { atomicWritePrivate } from './private-journal-files.mjs';
 import { ensureRuntimeConnection } from './runtime-connection-settings.mjs';
@@ -104,7 +104,7 @@ export async function withServiceSelection({target, action, ask, write = console
       write('Current data: ' + previous.dataDir);
       write('Selected data: ' + target.dataDir);
       write('Wallet and Runtime will stop. Keys, permissions and Order records stay in their own folders.');
-      if (!ask || String(await ask("Type 'confirm' to switch, or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {
+      if (!recovery && (!ask || String(await ask("Type 'confirm' to switch, or 'q' to cancel")).trim().toLowerCase() !== 'confirm')) {
         write('Switch cancelled. Existing services were kept.');
         return {cancelled:true};
       }
@@ -188,7 +188,8 @@ export async function withServiceLifecycleLock(operation) {
 
 // Called while holding the installation-operation lock. Maintenance of an inactive
 // program tree must never claim the fixed service pair or rewrite active data.
-export async function maintenanceServiceScope({userDir,dataDir,unitDir}) {
+export async function maintenanceServiceScope({userDir,dataDir,unitDir, resumeUpdate = false,
+  ctl = (...args) => runInstallationCommand('systemctl',['--user',...args],{timeout:30000})}) {
   const canonical = async path => realpath(path).catch(error=>{if(error.code==='ENOENT')return resolve(path);throw error;});
   userDir = await canonical(userDir); dataDir = await canonical(dataDir);
   let saved;
@@ -197,8 +198,26 @@ export async function maintenanceServiceScope({userDir,dataDir,unitDir}) {
     const {assertPrivateFile}=await import('./private-journal-files.mjs');
     await assertPrivateFile(path); saved=JSON.parse(await readFile(path,'utf8'));
     if(saved.version!==1)throw Error('Unrecognized service selection. Keep it for review.');
-    if(['stopping','preparing'].includes(saved.phase) && !await targetUnitsPrepared(unitDir,saved.target))
-      throw Error('A service switch is unfinished. Retry service start from its selected installation before maintenance.');
+    if(['stopping','preparing'].includes(saved.phase) && !await targetUnitsPrepared(unitDir,saved.target)) {
+      if (!resumeUpdate || !saved.target ||
+          await canonical(saved.target.userDir)!==userDir || await canonical(saved.target.dataDir)!==dataDir)
+        throw Error('A service switch is unfinished. Run agentpay update from its originally selected installation.');
+      // Read-only preflight: the prior confirmation remains bound to this exact
+      // target. Do not replace code while any managed process could still use it.
+      await installedServiceSelection(unitDir,saved);
+      for (const name of units) {
+        const result=await ctl('show',name,'--property=ActiveState','--value');
+        if (!['inactive','failed'].includes(String(result.stdout||'').trim()))
+          throw Error('The interrupted switch still has running services. Stop them before updating.');
+      }
+      for (const path of new Set([saved.previous?.dataDir,dataDir].filter(Boolean))) {
+        const settings=await previousServiceSettings(path);
+        if (await listenerPresent(join(path,'wallet/wallet.sock')) ||
+            (settings && await listenerPresent({host:'127.0.0.1',port:Number(new URL(settings.runtimeUrl).port)})))
+          throw Error('An installation listener is still running. Stop it before updating.');
+      }
+      return {active:false,resumeSwitch:true};
+    }
   } catch(error) {if(error.code!=='ENOENT')throw error;}
   const owner=await installedServiceSelection(unitDir) || saved?.target;
   if(!owner)return {active:true}; // Existing single-install setup/repair behavior.

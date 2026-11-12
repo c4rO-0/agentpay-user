@@ -241,3 +241,20 @@ test('unconfigured installation with a live Wallet socket still blocks switching
   await assert.rejects(withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:()=>{throw Error('must not replace');}}),/listener is still running/);
  } finally {await new Promise(resolve=>server.close(resolve));}
 });
+
+test('only the confirmed stopped switch target may update before finishing unit replacement',async t=>{
+ const f=await fixture(t);
+ const {maintenanceServiceScope}=await import('../src/service-selection.mjs');
+ // The real switch entry saves confirmation, then encounters an incomplete prior setup.
+ await rm(join(f.old.dataDir,'wallet'),{recursive:true});
+ await assert.rejects(withServiceSelection({...f,action:'start',ask:async()=> 'confirm',write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:()=>{throw Error('must not replace');}}),/configuration is incomplete/);
+ await rm(join(f.old.dataDir,'runtime/local-services.json'));
+ await mkdir(f.target.dataDir,{mode:0o700});
+ const options={...f.target,unitDir:f.unitDir,resumeUpdate:true,ctl:async()=>({stdout:'inactive\n'})};
+ assert.deepEqual(await maintenanceServiceScope(options),{active:false,resumeSwitch:true});
+ await assert.rejects(maintenanceServiceScope({...options,ctl:async()=>({stdout:'active\n'})}),/running services/);
+ await assert.rejects(maintenanceServiceScope({...options,...f.old}),/originally selected installation/);
+ let resumed=false;
+ await withServiceSelection({...f,action:'start',ask:()=>{throw Error('same target already confirmed');},write:()=>{},ctl:async()=>({stdout:'inactive\n'}),operation:async()=>{resumed=true;}});
+ assert.equal(resumed,true);
+});

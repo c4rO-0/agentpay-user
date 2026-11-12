@@ -1,5 +1,8 @@
 # User TODO
 
+- [x] Allow update of an exact confirmed stopped switch target, then resume using new code; preserve retry checkpoint and reject other targets/live services (controlled verification).
+- [ ] Publish and accept the update recovery path; document one-time bootstrap for older updaters already blocked before download.
+
 - [x] Fix switching back from setup cancelled before Wallet creation; retain stop/listener and established-data checks.
 - [x] Publish User 0.3.10 switch-back fix; matching tag and npm integrity verified.
 - [ ] Verify participant switch-back to the original installation after installing 0.3.10.
