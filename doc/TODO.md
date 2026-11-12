@@ -9,7 +9,8 @@
 
 - [x] Coordinate uninstall with service switching; preserve another installation’s managed pair, recheck confirmed scope and retry partial unit removal (19 targeted checks; systemctl simulated).
 - [x] Implement inactive update/repair and inherited writer exclusion, plus interrupted-update continuation; isolated process/controlled service checks passed.
-- [ ] Complete real two-install systemd acceptance; uninstall still refuses occupied ports of unconfirmed ownership.
+- [x] Real A/B/A user-systemd switching, cancellation and same-install start verified (2026-11-12); A restored locked with unchanged key/Policy.
+- [ ] Complete remaining login/reboot and full guided-install acceptance; uninstall still refuses occupied ports of unconfirmed ownership.
 
 - [x] Inventory local instance consumers and document the concrete interface/change map (2026-11-11; design only).
 - [x] Align design to multiple installations with one active Runtime/Wallet per OS user; remove mandatory harness launcher (2026-11-11).

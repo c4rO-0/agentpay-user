@@ -1,5 +1,7 @@
 # User documentation
 
+- [Real two-installation switching](records/dual-install-systemd-2026-11-12.md): live systemd cancellation, switching, restoration and evidence limits.
+
 - [Historical request routing](records/historical-request-routing-2026-11-11.md): switch-time indexing, missing records and conservative recovery limits.
 
 - [Local instances and installation recovery](plans/local-instances-and-install-recovery.md): agreed design and implementation sequence.

@@ -1,5 +1,18 @@
 # AgentPay User progress
 
+## Real two-installation switch passed — 2026-11-12
+
+Actual user-systemd switching A → B → A passed using source and folder-local npm
+candidate installations with separate data. Cancellation preserved A's process;
+repeated B start preserved its process. B authenticated status passed. Original
+A key/Policy hashes were unchanged, and its existing Orders/Market connection
+remained visible. A is restored with both services running and startup enabled;
+Wallet is locked. Source dependencies now match Wallet 0.3.3 / Protocol 0.14.3;
+old dependencies and inactive B are retained privately. No payment or authorization.
+The initial harness rejected an expected nonzero status for B's unconfigured Wallet;
+corrected full execution passed. This does not establish fresh guided install,
+desktop login/reboot or funded recovery. [Evidence](doc/records/dual-install-systemd-2026-11-12.md).
+
 ## Service command recovery — 2026-11-12
 
 Service-manager failure recovery is now stage-aware: complete exact target unit
