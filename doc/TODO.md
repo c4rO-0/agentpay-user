@@ -1,7 +1,8 @@
 # User TODO
 
 - [x] Fix switching back from setup cancelled before Wallet creation; retain stop/listener and established-data checks.
-- [ ] Deliver the fix and verify participant switch-back to the original installation.
+- [x] Publish User 0.3.10 switch-back fix; matching tag and npm integrity verified.
+- [ ] Verify participant switch-back to the original installation after installing 0.3.10.
 - [ ] Improve unconfigured installation status/info: direct to setup, not service start or missing-key recovery.
 
 - [x] Verify local official Skill files before downloading and stream update repair progress (2026-11-12; targeted checks).

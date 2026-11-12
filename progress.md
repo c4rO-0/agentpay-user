@@ -2,8 +2,13 @@
 
 ## Participant incomplete-setup switch — 2026-11-12
 
+Published as `v0.3.10` at `6e89266`; 20 targeted selection checks, full CI behavior
+and standalone package checks passed. npm latest and archive integrity independently
+verified. Wallet stays 0.3.3; participant switch-back remains to be verified.
+[Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43173745431).
+
 Participant A-to-B setup cancellation exposed a switch-back failure: B had no
-Wallet directory, but selection required complete service settings. User 0.3.10 candidate
+Wallet directory, but selection required complete service settings. User 0.3.10 fix
 allows demonstrably unconfigured B to release selection after confirmed systemd
 stop and socket checks. Existing key/Policy/connection or invalid directories still
 block missing-configuration bypass. Original participant A remains stopped until
