@@ -256,13 +256,15 @@ export function localReviewDetails(
   if (
     unknownOriginal ||
     unavailable ||
-    (o?.errorCode && o.errorCode !== "ORDER_CHECK_UNAVAILABLE")
+    (o?.errorCode && !["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(o.errorCode))
   ) {
     text(
       "Check the original Agent conversation and payment history. If still unclear, contact AgentPay support with the reference IDs below.",
     );
     text("Do not create another purchase to resolve this record.");
-  } else if (o?.errorCode === "ORDER_CHECK_UNAVAILABLE")
+  } else if (o?.errorCode === "CHAIN_RPC_UNAVAILABLE")
+    text("Restore the chain RPC connection and any SSH tunnel. Keep Wallet unlocked; Runtime retries automatically. Do not pay again.");
+  else if (o?.errorCode === "ORDER_CHECK_UNAVAILABLE")
     text(
       "Runtime retries automatically. Keep Wallet unlocked and check your network if this continues.",
     );
@@ -358,6 +360,8 @@ export function localOrderSummary(entry, observation, review) {
       ? "SETTLED_RESULT_UNAVAILABLE"
       : null);
   const reasons = {
+    CHAIN_RPC_UNAVAILABLE:
+      "Cannot connect to the chain RPC. Check your network and any SSH tunnel. Runtime retries automatically; keep the original request.",
     RECOVERY_POLICY_UNAVAILABLE:
       "Original Policy cannot authorize this check (it may be revoked or belong to another key).",
     ORIGINAL_POLICY_UNKNOWN:

@@ -110,7 +110,8 @@ async function updateUnderLock({
     const resumeSwitch = async options => {
       if (!scope.resumeSwitch) return;
       write('Continuing your previously confirmed installation switch…');
-      const output = await service('start',options);
+      // Prepare the confirmed target without launching it; repair starts it once.
+      const output = await service('activate-setup',options);
       if(output)write(output);
     };
     if (pending && current.version === pending.targetVersion) {
@@ -144,8 +145,17 @@ async function updateUnderLock({
           write('Update cancelled. The saved switch was kept.'); return 0;
         }
         const options={env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000};
+        // Even without a new package, keep repair resumable if the process exits
+        // after selecting the target units but before the one final service start.
+        if (!stable(current.dependencies?.['@c4roa0/agentpay-wallet']) || !stable(current.dependencies?.['@c4roa0/agentpay-protocol']))
+          throw Error('Installed package dependencies could not be verified.');
+        await atomicWritePrivate(progressPath, JSON.stringify({version:1,installation:userDir,dataDir,
+          targetVersion:current.version,walletVersion:current.dependencies['@c4roa0/agentpay-wallet'],
+          protocolVersion:current.dependencies['@c4roa0/agentpay-protocol']}) + '\n');
+        installing = true;
         await resumeSwitch(options);
         const output=await repair(options); if(output)write(output);
+        await unlink(progressPath);
         return 0;
       }
       write(`User ${current.version} is current. Checking the official test Skill.`);

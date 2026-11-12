@@ -1,5 +1,28 @@
 # AgentPay User progress
 
+## Participant recovery and guidance cleanup — 2026-11-12
+
+Participant installed User 0.3.11 and resumed the original installation through
+update. After unlock and restoring the Anvil tunnel, status showed Wallet 0.3.3 /
+Runtime 0.3.11, original Policy/Market connection and two settled Orders. The old
+missing-result warning remains separate. This verifies return from incomplete B;
+B has not run as a configured independent Wallet/Runtime pair.
+
+Unreleased cleanup prepares the switch without starting services, then repair
+starts them once. Current-version recovery now saves a repair checkpoint before
+selecting units. Status/info distinguish fresh incomplete setup from lost existing
+Wallet files. Wallet classifies RPC transport failure without exposing raw errors;
+User preserves the code through recovery, status and Order guidance. Targeted tests
+use temporary files, controlled service management and real local RPC/IPC failure;
+they do not establish participant acceptance of these new changes. Publish Wallet
+first, then pin the verified release in User before publishing the combined change.
+
+Review follow-up: missing Policy with saved Order history or a Market connection
+now requires file recovery, while key-only first setup can continue. Mixed RPC
+and manual-review Order issues lead to the Order list rather than network-only
+guidance. All 24 targeted info/status checks passed using temporary files and
+controlled status observations; no participant data or services changed.
+
 ## Update recovery during an unfinished switch — 2026-11-12
 
 Published as `v0.3.11` at `6cf9f0d`. Full CI behavior and standalone package checks

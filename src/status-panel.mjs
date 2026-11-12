@@ -1,3 +1,4 @@
+import { inspectLocalSetup } from "./local-setup-state.mjs";
 import { assessRunningSoftware } from "./software-versions.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -179,10 +180,12 @@ export async function collectLocalStatus() {
     readAuthorizationStatus(dataDir),
     readMarketStatus(dataDir),
     inspectDeploymentStatus(dataDir),
+    inspectLocalSetup(dataDir),
   ]);
   const value = (i) =>
     results[i].status === "fulfilled" ? results[i].value : null;
   return {
+    setup: value(7),
     software: assessRunningSoftware(value(0), value(3)),
     deployment: value(6) || { state: "unknown" },
     market: value(5) || { state: "unknown" },
@@ -279,7 +282,7 @@ export function renderStatusPanel(
   const onlyRetryable =
     r?.orders.review > 0 &&
     issues.length === r.orders.review &&
-    issues.every((issue) => issue.code === "ORDER_CHECK_UNAVAILABLE");
+    issues.every((issue) => ["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(issue.code));
   const stopped = (s) =>
     s && ["failed", "inactive", "deactivating"].includes(s.ActiveState);
   let title = "Local checks passed",
@@ -292,6 +295,16 @@ export function renderStatusPanel(
     detail =
       "Your saved installation could not be read. Keep your existing Wallet data.";
     next = "agentpay service logs runtime";
+  } else if (model.setup?.state === "needed") {
+    title = "Setup not finished";
+    level = "wait";
+    detail = "Complete setup for this installation before starting its services.";
+    next = model.setup.next;
+  } else if (model.setup?.state === "attention") {
+    title = "Local Wallet files need attention";
+    level = "error";
+    detail = "Existing files are missing or could not be safely checked. Keep this data folder; do not create a replacement Wallet.";
+    next = "agentpay wallet info";
   } else if (model.deployment?.state === "changed") {
     title = "Spending permission needs updating";
     level = "error";
@@ -384,6 +397,11 @@ export function renderStatusPanel(
     detail =
       "Platform deployment check is unavailable. Check your network and retry.";
     next = "agentpay status";
+  } else if (onlyRetryable && issues.some(issue => issue.code === "CHAIN_RPC_UNAVAILABLE")) {
+    title = "Cannot connect to the chain RPC";
+    level = "wait";
+    detail = "Check your network and any SSH port forwarding. Order checks retry automatically; do not repeat purchases.";
+    next = "Restore the connection, then run agentpay status.";
   } else if (onlyRetryable) {
     title = "Order checks temporarily unavailable";
     level = "wait";
@@ -447,7 +465,7 @@ export function renderStatusPanel(
     "",
   ];
   if (!model.configurationError) {
-    if (model.software) {
+    if (model.software && model.setup?.state !== "needed") {
       lines.push("> Software");
       for (const item of model.software) lines.push(`  ${badge(item.state === "matched" ? "ok" : "wait", 6)}  ${item.label.padEnd(8)}  ${item.state === "matched" ? item.running : item.state === "unreported" ? "Running version not reported" : item.running === item.expected ? "Package interface mismatch" : `Running ${item.running} · installed ${item.expected}`}`);
       lines.push("");
@@ -461,15 +479,17 @@ export function renderStatusPanel(
         ? w.locked
           ? "Running · locked"
           : "Running · unlocked"
+        : model.setup?.state === "needed"
+          ? "Not started · setup needed"
         : stopped(ws)
           ? "Stopped"
           : "Not checked",
-      w ? (w.locked ? "wait" : "ok") : "error",
+      w ? (w.locked ? "wait" : "ok") : model.setup?.state === "needed" ? "wait" : "error",
     );
     row(
       "Runtime",
-      r ? "Running" : stopped(rs) ? "Stopped" : "Not checked",
-      r ? "ok" : "error",
+      r ? "Running" : model.setup?.state === "needed" ? "Not started · setup needed" : stopped(rs) ? "Stopped" : "Not checked",
+      r ? "ok" : model.setup?.state === "needed" ? "wait" : "error",
     );
     if (r)
       row(
@@ -489,7 +509,9 @@ export function renderStatusPanel(
       );
     lines.push("", "> Policy");
     const policyState =
-      model.deployment?.state === "changed"
+      model.setup?.state === "needed"
+        ? ["wait", "Setup not finished"]
+        : model.deployment?.state === "changed"
         ? ["error", "Update required · deployment changed"]
         : w?.policyRenewalPending
           ? ["wait", "Renewal incomplete"]
@@ -509,7 +531,7 @@ export function renderStatusPanel(
       lines.push(
         `  Valid until: ${new Date(authorization.validUntil * 1000).toLocaleString()}`,
       );
-    if (model.deployment?.state === "unknown")
+    if (model.deployment?.state === "unknown" && model.setup?.state !== "needed")
       lines.push(`  ${badge("wait")} Platform compatibility not confirmed`);
     if (model.deployment?.state === "downloaded")
       lines.push(

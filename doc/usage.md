@@ -72,3 +72,17 @@ User 0.3.9 and 0.3.10 stop before downloading when unit replacement is unfinishe
 For those versions only, install the intended fixed User version with npm in the
 same program folder, then run `agentpay service start` there. Do not uninstall or
 create a replacement Wallet to recover an interrupted switch.
+
+### Setup and connection warnings
+
+An installation whose setup was cancelled before Wallet creation displays
+“Setup not finished”; continue with `agentpay setup`. Existing Wallet records with
+missing files instead require review; do not create a replacement Wallet.
+
+“Cannot connect to the chain RPC” refers to the blockchain connection, not the
+Market website. Restore the RPC connection and any SSH forwarding used by your
+deployment. Keep Wallet unlocked; Runtime retries the original Order checks.
+Manual `agentpay orders status ORDER_ID` also retries without making a payment.
+
+Update recovery prepares the selected installation first; repair performs the
+final service start. If interrupted between these steps, rerun `agentpay update`.

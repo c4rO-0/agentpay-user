@@ -172,7 +172,7 @@ test('update installs new code before resuming an already confirmed stopped swit
  assert.equal(await updateFromNpm({...opts,ask:async()=> 'q'}),0);
  assert.deepEqual(f.calls,[]);
  assert.equal(await updateFromNpm(opts),0);
- assert.deepEqual(f.calls,['requirements','install','start','new repair']);
+ assert.deepEqual(f.calls,['requirements','install','activate-setup','new repair']);
  assert.equal(await readFile(join(f.dataDir,'keep'),'utf8'),'private fixture');
 });
 
@@ -182,5 +182,17 @@ test('failed post-update switch keeps the confirmed update resumable without rei
  assert.equal(await updateFromNpm({...opts,service:async()=>{throw Error('switch interrupted');}}),1);
  f.calls.length=0;
  assert.equal(await updateFromNpm(opts),0);
- assert.deepEqual(f.calls,['start','new repair']);
+ assert.deepEqual(f.calls,['activate-setup','new repair']);
+});
+
+test('current-version recovery retains repair checkpoint after units are selected but repair fails',async t=>{
+ const f=await fixture(t,true);let selected=false;
+ const npm=f.options.npm;
+ const options={...f.options,npm:async args=>args[0]==='view'?await readFile(join(f.userDir,'package.json'),'utf8'):npm(args),
+  serviceScope:async()=>selected?{active:true}:{active:false,resumeSwitch:true},
+  service:async action=>{assert.equal(action,'activate-setup');selected=true;f.calls.push(action);}};
+ assert.equal(await updateFromNpm({...options,repair:async()=>{throw Error('interrupted before starting');}}),1);
+ f.calls.length=0;
+ assert.equal(await updateFromNpm(options),0);
+ assert.deepEqual(f.calls,['new repair']);
 });

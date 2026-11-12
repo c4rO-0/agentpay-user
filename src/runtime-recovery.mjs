@@ -32,6 +32,7 @@ const resultIssue = (o) =>
           ? "SETTLED_RESULT_UNAVAILABLE"
           : null;
 const knownCodes = new Set([
+  "CHAIN_RPC_UNAVAILABLE",
   "LOCKED",
   "POLICY_UNBOUND",
   "POLICY_MIGRATION_PENDING",

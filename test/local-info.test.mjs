@@ -73,8 +73,9 @@ test("missing installation does not create files or claim authorization", async 
     }),
     0,
   );
-  assert.match(out, /No readable Session Key/);
-  assert.match(out, /Policy ID\s+Not recorded/);
+  assert.match(out, /Setup not finished/);
+  assert.match(out, /agentpay install --market/);
+  assert.doesNotMatch(out, /Policy ID|No readable Session Key/);
 });
 test("help exposes info; secret arguments are not accepted", async () => {
   let out = "";
@@ -84,4 +85,46 @@ test("help exposes info; secret arguments are not accepted", async () => {
     await runUserCli(["wallet", "info", "--private-key"], { write: () => {} }),
     2,
   );
+});
+
+test('unfinished setup describes only saved data and points to setup; missing existing keys remain a warning',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'new-info-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ await writeFile(join(dir,'user-deployment.json'),'{}',{mode:0o600});
+ let lines=[];
+ await showLocalInfo({resolveDirectory:async()=>dir,write:s=>lines.push(s)});
+ assert.match(lines.join('\n'),/Setup not finished/);
+ assert.match(lines.join('\n'),/agentpay setup/);
+ assert.doesNotMatch(lines.join('\n'),/No readable Session Key|Files inside|market connect/);
+ await mkdir(join(dir,'wallet'),{mode:0o700});
+ await writeFile(join(dir,'wallet/policy.json'),'{}',{mode:0o600});
+ lines=[];
+ await showLocalInfo({resolveDirectory:async()=>dir,write:s=>lines.push(s)});
+ assert.match(lines.join('\n'),/No readable Session Key/);
+ assert.doesNotMatch(lines.join('\n'),/No Wallet has been created/);
+});
+
+
+test('missing Policy after prior use requests recovery; a key-only first setup can continue', async t => {
+  const dir = await mkdtemp(join(tmpdir(), 'missing-policy-'));
+  t.after(() => rm(dir, {recursive:true, force:true}));
+  await mkdir(join(dir,'wallet'), {mode:0o700});
+  await mkdir(join(dir,'runtime'), {mode:0o700});
+  await writeFile(join(dir,'wallet/session.keystore.json'), '{}', {mode:0o600});
+  await writeFile(join(dir,'user-deployment.json'), '{}', {mode:0o600});
+  const info = async () => {
+    let output = '';
+    const code = await showLocalInfo({resolveDirectory:async()=>dir,write:s=>{output += s + '\n';}});
+    return {code,output};
+  };
+  assert.match((await info()).output, /agentpay setup/);
+  for (const marker of ['runtime/invocations.json', 'market-connection.json']) {
+    await writeFile(join(dir,marker), '{}', {mode:0o600});
+    const result = await info();
+    assert.equal(result.code, 1);
+    assert.match(result.output, /Local Wallet files need attention/);
+    assert.match(result.output, /Check missing files against your backup/);
+    assert.doesNotMatch(result.output, /agentpay setup|Setup not finished/);
+    await rm(join(dir,marker));
+  }
 });

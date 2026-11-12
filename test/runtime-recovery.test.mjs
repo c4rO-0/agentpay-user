@@ -653,3 +653,19 @@ test("background restart verifies a pending result with scoped reads; mismatch, 
       assert.equal(saved.errorCode, "RESULT_STORAGE_UNAVAILABLE");
   }
 });
+
+test('RPC outage retains a useful error and recovers the same Order after connection returns',async t=>{
+ const f=await fixture(t),before=await readFile(f.path);
+ let offline=true;
+ const original=f.deps.readOrder;
+ const recovery=createRuntimeRecovery({...f.deps,readOrder:async(...args)=>{
+  if(offline)throw Object.assign(Error('private diagnostic detail'),{code:'CHAIN_RPC_UNAVAILABLE'});
+  return original(...args);
+ }});
+ await recovery.refresh();
+ assert.equal(recovery.status().issues[0].code,'CHAIN_RPC_UNAVAILABLE');
+ assert.deepEqual(await readFile(f.path),before);
+ offline=false;f.advance();await recovery.refresh();
+ assert.equal(recovery.status().orders.settled,1);
+ assert.deepEqual(await readFile(f.path),before);
+});

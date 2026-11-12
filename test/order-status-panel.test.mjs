@@ -81,3 +81,13 @@ test("not found is not declared unpaid; mismatched local observations are not di
   assert.match(lines.join("\n"), /Not checked/);
   assert.match(lines.join("\n"), /Last checked: Not available/);
 });
+
+test('chain transport failure points to RPC and tunnel without exposing exception payloads',async()=>{
+ const lines=[];
+ await showOrderStatus({entry,observation,selector:'order',write:s=>lines.push(s),read:async()=>{
+  throw Object.assign(Error('private URL must not appear'),{code:'CHAIN_RPC_UNAVAILABLE'});
+ }});
+ assert.match(lines.join('\n'),/Cannot connect to the chain RPC/);
+ assert.match(lines.join('\n'),/SSH port forwarding/);
+ assert.doesNotMatch(lines.join('\n'),/private URL/);
+});

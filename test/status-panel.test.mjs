@@ -406,3 +406,25 @@ test('interrupted address update offers the connection command even when Runtime
  assert.match(result.text,/Platform address update incomplete/);
  assert.match(result.text,/> Next\n  agentpay market connect/);
 });
+
+test('unfinished setup gives setup guidance instead of starting nonexistent services',()=>{
+ const result=renderStatusPanel({setup:{state:'needed',next:'agentpay setup'},wallet:null,runtime:null,walletService:{ActiveState:'inactive'},runtimeService:{ActiveState:'inactive'}});
+ assert.match(result.text,/Setup not finished/);
+ assert.match(result.text,/agentpay setup/);
+ assert.doesNotMatch(result.text,/agentpay service start|Could not confirm/);
+});
+test('RPC outage is explicit while keeping retry guidance',()=>{
+ const result=renderStatusPanel({...model,wallet:{locked:false,bound:true},runtime:{...model.runtime,wallet:'available',orders:{total:1,settled:0,waiting:0,review:1},issues:[{code:'CHAIN_RPC_UNAVAILABLE'}]}});
+ assert.match(result.text,/Cannot connect to the chain RPC/);
+ assert.match(result.text,/SSH port forwarding/);
+});
+
+
+test('manual review is not hidden by a simultaneous RPC outage', () => {
+  const render = code => renderStatusPanel({...model,wallet:{locked:false,bound:true},runtime:{...model.runtime,wallet:'available',orders:{total:2,settled:0,waiting:0,review:2},issues:[{code:'CHAIN_RPC_UNAVAILABLE'},{code}]}}).text;
+  const mixed = render('ORDER_IDENTITY_MISMATCH');
+  assert.match(mixed, /Some Orders need review/);
+  assert.match(mixed, /> Next\n  agentpay orders list/);
+  assert.doesNotMatch(mixed, /Cannot connect to the chain RPC/);
+  assert.match(render('ORDER_CHECK_UNAVAILABLE'), /Cannot connect to the chain RPC/);
+});

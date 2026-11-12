@@ -1,3 +1,4 @@
+import { inspectLocalSetup } from "./local-setup-state.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -89,7 +90,20 @@ export async function showLocalInfo({
     );
     return 1;
   }
-  let incomplete = false;
+  const setup = await inspectLocalSetup(dataDir);
+  if (setup.state === "needed") {
+    write([
+      "------------------------------------------------------------",
+      "> Wallet information",
+      "------------------------------------------------------------",
+      "[WAIT] Setup not finished",
+      setup.hasKey ? "Your local key is saved. Continue setup to finish this installation." : "No Wallet has been created for this installation yet.",
+      "", "Data folder", "  " + dataDir,
+      "", "Next", "  " + setup.next,
+    ].join("\n"));
+    return 0;
+  }
+  let incomplete = setup.state === "attention";
   const read = async (name) => {
     try {
       return await privateJson(dataDir, name);
@@ -119,6 +133,11 @@ export async function showLocalInfo({
     "> Wallet information",
     divider,
     "Saved settings · live status: agentpay status",
+    ...(setup.state === "attention" ? [
+      "[!] Local Wallet files need attention",
+      "Keep this data folder. Check missing files against your backup before continuing.",
+      "Do not create a replacement Wallet to recover existing Orders.",
+    ] : []),
     ...section("Wallet & authorization"),
     `  Network: ${Number.isSafeInteger(policy?.chainId) && policy.chainId > 0 ? `eip155:${policy.chainId}` : "Not recorded"}`,
     ...field("Safe account", address(policy?.safe)),
