@@ -1,7 +1,33 @@
 # User TODO
 
+- [x] Recover failed service start/stop without blocking repair; incomplete target unit replacement remains protected (2026-11-12, controlled service-manager verification).
+
+- [x] Fix shared-data switch client relocation and retry without a repair deadlock; isolated selection/connection checks pass (2026-11-11).
+- [x] Preserve availability for preference-only operations and require authenticated matching-service readiness before publishing the default; failed readiness permits retry/repair (controlled transport/service verification, 2026-11-11).
+- [x] Stage downloaded settings until switch consent under the shared lock; cancellation preserves prior deployment and avoids binding the new installation.
+- [x] Persist one state-directory locator for CLI, background processes and candidate Skill loaders; cross-environment and concurrent-first-use process tests passed.
+
+- [x] Coordinate uninstall with service switching; preserve another installation’s managed pair, recheck confirmed scope and retry partial unit removal (19 targeted checks; systemctl simulated).
+- [x] Implement inactive update/repair and inherited writer exclusion, plus interrupted-update continuation; isolated process/controlled service checks passed.
+- [ ] Complete real two-install systemd acceptance; uninstall still refuses occupied ports of unconfirmed ownership.
+
+- [x] Inventory local instance consumers and document the concrete interface/change map (2026-11-11; design only).
+- [x] Align design to multiple installations with one active Runtime/Wallet per OS user; remove mandatory harness launcher (2026-11-11).
+- [x] Persist canonical per-installation data binding and preserve it across shared checkpoint writes; focused regression checks passed (2026-11-11).
+- [x] Implement and check storage-choice module (reuse/new/cancel); public installer selection now connects through a service-switch gate (2026-11-11).
+- [x] Connect installer selection and service-start switching with confirmation, stopped-state/listener checks and Runtime lifetime exclusion; focused checks passed (2026-11-11; systemd results simulated).
+- [x] Correct shared-directory purge, mixed-unit retry, manual setup regression, first-start preparation and startup-preference inheritance; 37 targeted checks pass (2026-11-11).
+- [ ] Verify complete switch-crash recovery and real systemd switching/login before release; preserve historical request scope across switches. Inactive maintenance isolation is implemented with scoped verification.
+
+
+
+- [x] Isolated public npm fresh install, registry failure/retry and disposable-data uninstall (2026-11-11; no real systemd or financial acceptance).
+- [x] Replace existence-only locking for new operations: inherited native lock survives caller death while writers live, then permits retry. Old unknown locks require review; they are not automatically removed.
+- [ ] Publish folder-local npm uninstall completion guidance after review.
+
+
 - [x] Participant directory-local update to User 0.3.6 / Wallet 0.3.3: running versions, original Orders in CLI/Market and available result cache verified (2026-11-11).
-- [ ] Fresh-install and interrupted-update acceptance remain separate; discuss scope before execution.
+- [ ] Complete configured multi-instance installation and interrupted-update recovery acceptance after the scoped implementation; isolated fresh npm installation already passed, systemd and recovery gaps remain.
 
 
 - [x] Clarify full Cache IDs and missing details argument; support bounded, unique read-only short-ID lookup (2026-11-11).
@@ -168,3 +194,11 @@ investigations remain private operator work, not a public contributor prerequisi
 
 Original chronological TODO snapshots are preserved in the private workspace.
 Consolidation does not turn historical partial evidence into completed acceptance.
+
+- [x] Update candidate Agent template/default loader; selected storage is pinned for each invocation, unavailable selection has no fallback.
+- [ ] Review/build/deploy candidate Agent template 0.1.2 and official bundle 1.2.2, then update the reviewed User official digest; no publication authorized by source changes.
+
+- [x] Protect new default request ownership across data folders; restore selected connection on Runtime bind; persist startup changes and allow Node-path-independent recovery (2026-11-11, scoped tests).
+- [x] Index historical client request identities during confirmed switching; reject missing selection/checkpoints and conflicting owners, preserve startup with an unclassified-history barrier (controlled verification).
+- [ ] Accept historical request routing in the complete two-install public-entry/systemd rehearsal before rollout.
+- [ ] Finish actual login/switch and full public-entry interruption acceptance; isolated inactive maintenance/concurrency verification is complete.

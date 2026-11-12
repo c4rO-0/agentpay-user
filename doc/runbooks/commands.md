@@ -102,3 +102,31 @@ Protocol reporting reads the installed package resolved by that process, rather 
 copying its dependency declaration. User preflight checks both User's and Wallet's
 resolved copies against the reviewed exact version, including nested dependencies.
 Package version checks establish compatibility metadata, not file-integrity attestation.
+
+## Multiple installations (unreleased working tree)
+
+Run `agentpay service start` from the installation you want to use. When another
+installation owns the background services, the command shows both data folders and
+asks for `confirm` before stopping the old pair. Cancellation keeps the old services.
+Noninteractive commands cannot approve a switch. Wallet and Order data stay in their
+own folders; unlock the selected Wallet after starting it.
+
+Install now offers reuse, separate data or cancellation when it finds existing data.
+The setup guide checks service ownership before continuing. A separate data folder
+starts empty; it does not copy a Session Key or spending permission.
+
+These changes are under development. Actual systemd switching and login behavior have
+not yet been accepted; default Skill discovery and interrupted-switch recovery remain
+open. Do not use these working-tree changes as a released multi-installation guide.
+
+### Original requests after switching installations
+
+If a Skill says a request belongs to another installation, return to that installation
+and inspect `agentpay orders list`. Use the Skill's `--resume REQUEST_ID` option with
+its original request identifier. An Order ID and a Skill request ID are different.
+
+Missing or conflicting history is kept for review; switching does not recreate a
+purchase. Very old records may prevent automatic invocation in another installation
+because the original input cannot be identified. `--force` is only for an intentional
+new purchase, never a way to recover an old result. Read-only status, order inspection
+and service startup remain available.

@@ -1,5 +1,76 @@
 # AgentPay User progress
 
+## Service command recovery — 2026-11-12
+
+Service-manager failure recovery is now stage-aware: complete exact target unit
+files are checkpointed before reload/start/stop, so command failure permits retry
+or repair. Older incomplete journals recover only after all target units match;
+partial/conflicting units remain blocked. Sixteen selection checks passed, including
+actual autostart subprocesses with a controlled systemctl executable. No real
+systemd service or transaction was changed (2026-11-12).
+
+## Sequential review fixes — 2026-11-11
+
+Shared-data installation switching now relocates the client module only after
+switch confirmation and stopped-service/listener checks. It accepts the previous
+managed installation path or the already-relocated current path; unrelated paths
+remain blocked. Retrying `service start` completes interrupted preparation without
+requiring repair first. Keys, authorization and request records are unchanged.
+Twelve selection tests and both connection/preparation test files passed with
+real temporary storage/native locks and simulated service management. Real systemd
+acceptance is still pending.
+
+Default availability now requires authenticated Wallet/Runtime readiness and
+matching running versions; locked Wallets are accepted. Startup preferences and
+preparation preserve existing availability, removal closes it, and readiness failure
+leaves maintenance retryable. Login startup verifies both services under the selection
+lock and checks the selected program/data identity. Transport fixtures and lifecycle
+regressions passed; actual systemd acceptance remains pending.
+
+Installation now stages downloaded settings in memory, confirms activation under
+the shared operation lock, then writes settings and binds the installation. Cancel
+preserves the previous deployment. A private per-user state locator preserves the
+initial XDG location across shells, background services and candidate Skill loaders;
+changing XDG does not create another ownership/maintenance lock namespace.
+Isolated installation, transport, process-lock and update/uninstall regressions passed.
+Next: overall review and real two-install systemd acceptance before release.
+systemd is a Linux backend, not the definition of installation identity.
+macOS background startup remains deferred until a test machine is available.
+
+## Multiple installations, one active Runtime — 2026-11-11
+
+Working-tree implementation now includes canonical installation/data bindings,
+reuse/new/cancel selection, confirmed service switching, single Runtime lifetime
+ownership, default Skill routing and protection for newly recorded request scopes.
+Agent template 0.1.2 / example Skill 1.2.2 remain unpublished candidates; User still
+pins official Skill 1.2.1. Historical request ownership is now indexed during
+confirmed switches; original files and authorization remain unchanged.
+[Design and remaining acceptance](doc/plans/local-instances-and-install-recovery.md).
+
+Installation, update, repair, uninstall, service switching and address maintenance
+now share one operation lock. Inactive update/repair preserves the selected services;
+shared active program/data paths require explicit switching. Short-lived writers and
+administration children inherit the lock, while daemons do not. Recognizable v2 locks
+recover after writers exit; old unknown locks remain blocked for review. Interrupted
+updates retain the confirmed target and finish repair even when npm already installed
+that version. Uninstall rechecks the confirmed scope and supports partial-unit retry.
+
+77 combined targeted checks passed, followed by the marker-publication recovery
+check and its process-lock regressions. These cover process interruption/inheritance, temporary
+storage and controlled npm/service interfaces. A separate offline npm install verified
+Wallet 0.3.3, Protocol 0.14.3 and native-lock loading with hooks disabled. The working
+checkout's older dependencies were not replaced. [Evidence and limits](doc/records/installation-maintenance-2026-11-11.md).
+
+Historical routing now preserves known IDs and refuses missing/conflicting original
+selection. Unclassified older history does not prevent startup, but blocks automatic
+replacement calls from another installation; explicit force remains a new purchase.
+35 focused checks passed with controlled HTTP/service fixtures.
+
+Remaining: complete two-install public-entry and
+real systemd switch/login acceptance; release coordination and participant rehearsal.
+Unknown occupied ports still conservatively block uninstall. No live service, key,
+Policy, Order, payment, migration, commit or publication changed in this loop.
+
 ## User 0.3.7 published — 2026-11-11
 
 Patch release includes installed/target Wallet version preview and clearer Cache ID

@@ -1,18 +1,19 @@
+import {atomicWritePrivate, assertPrivateFile} from './private-journal-files.mjs';
+import {withInstallationOperation, runInstallationCommand} from './installation-operation.mjs';
+import {maintenanceServiceScope} from './service-selection.mjs';
 // SPDX-License-Identifier: MPL-2.0
 // Update real global or project npm installations. Source checkouts/npm links are never
 // overwritten. npm selects User; User's exact dependencies select Wallet/Protocol.
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { access, appendFile, copyFile, chmod, lstat, mkdir, mkdtemp, open, readFile, realpath, rm, unlink } from 'node:fs/promises';
+import { access, appendFile, copyFile, chmod, lstat, mkdir, mkdtemp, readFile, realpath, rm, unlink } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { createInterface } from 'node:readline/promises';
 import { installedUserDir, resolveUserDataDir, rememberUserDataDir } from './local-data-directory.mjs';
 import { installationDirectory } from './installation-paths.mjs';
 import { prepareOfficialTestUpdate } from './official-test-update.mjs';
-const execute = promisify(execFile);
+const execute = runInstallationCommand;
 const name = '@c4roa0/agentpay-user';
 const stable = value => typeof value === 'string' && /^\d+\.\d+\.\d+$/.test(value);
 function newer(next, current) {
@@ -65,15 +66,20 @@ async function installationTarget(userDir, npm) {
     flags:['--global=false','--workspaces=false','--save-exact',save,'--include=dev','--include=optional']};
 }
 
-export async function updateFromNpm({
+export async function updateFromNpm(options = {}) {
+  try { return await withInstallationOperation(() => updateUnderLock(options)); }
+  catch(error) { (options.write || console.log)("Update stopped. " + error.message); return 1; }
+}
+async function updateUnderLock({
   userDir = installedUserDir, dataDir, force = false, write = console.log,
   ask = askConfirmation,
   npm = (args, options) => command('npm', args, options),
   service = (action, options) => command(process.execPath, [join(userDir,'scripts/autostart.mjs'), action], options),
   repair = options => command(process.execPath, [join(userDir,'scripts/repair.mjs'), '-f'], options),
   officialTest = prepareOfficialTestUpdate,
+  serviceScope = maintenanceServiceScope,
 } = {}) {
-  let lock, lockPath, logPath, installing = false;
+  let logPath, installing = false;
   try {
     userDir = resolve(userDir);
     const current = JSON.parse(await readFile(join(userDir, 'package.json'), 'utf8'));
@@ -81,12 +87,43 @@ export async function updateFromNpm({
     write('Checking for a User update…');
     const target = await installationTarget(userDir, npm);
     await access(dirname(target.directory), constants.W_OK);
-    const metadata = JSON.parse(await npm(['view',name + '@latest','--json'], {cwd:target.prefix}));
+    const progressPath = join(installationDirectory(), 'update-' + createHash('sha256').update(userDir).digest('hex') + '.json');
+    let pending;
+    try {
+      await assertPrivateFile(progressPath);
+      if ((await lstat(progressPath)).size > 16384) throw Error('Invalid update recovery record.');
+      pending = JSON.parse(await readFile(progressPath,'utf8'));
+      if (pending.version !== 1 || pending.installation !== userDir || !stable(pending.targetVersion) ||
+          !stable(pending.walletVersion) || !stable(pending.protocolVersion) || !isAbsolute(pending.dataDir))
+        throw Error('Invalid update recovery record. Keep it for review.');
+    } catch(error) { if(error.code !== 'ENOENT') throw error; }
+    dataDir ??= await resolveUserDataDir({userDir});
+    if (pending && pending.dataDir !== dataDir) throw Error('The interrupted update belongs to another data folder. Keep its recovery record for review.');
+    const scope = await serviceScope({userDir,dataDir});
+    if (pending && current.version === pending.targetVersion) {
+      installing = true;
+      if (current.dependencies?.['@c4roa0/agentpay-wallet'] !== pending.walletVersion ||
+          current.dependencies?.['@c4roa0/agentpay-protocol'] !== pending.protocolVersion)
+        throw Error('The interrupted update has mismatched dependencies. Reinstall the confirmed User version, then retry.');
+      write('Continuing the interrupted update. Checking installed packages and service settings.');
+      const configured = await lstat(join(dataDir,'runtime/local-services.json')).then(s=>s.isFile(),e=>{if(e.code==='ENOENT')return false;throw e;});
+      if (configured) {
+        const output = await repair({env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000});
+        if(output)write(output);
+      } else await officialTest({userDir,dataDir,write});
+      await unlink(progressPath);
+      write(`User ${current.version} update completed. No paid test was started.`);
+      return 0;
+    }
+    if(pending && newer(current.version,pending.targetVersion))
+      throw Error('Installed User is newer than the interrupted update. Keep the recovery record for review; no downgrade was attempted.');
+    const metadata = JSON.parse(await npm(['view',name + '@' + (pending?.targetVersion || 'latest'),'--json'], {cwd:target.prefix}));
     if (metadata.name !== name || !stable(metadata.version) ||
         !stable(metadata.dependencies?.['@c4roa0/agentpay-wallet']) ||
         !stable(metadata.dependencies?.['@c4roa0/agentpay-protocol']))
       throw Error('The published User release does not declare reviewed package versions.');
-    dataDir ??= await resolveUserDataDir({userDir});
+    if (pending && (metadata.version !== pending.targetVersion || metadata.dependencies["@c4roa0/agentpay-wallet"] !== pending.walletVersion || metadata.dependencies["@c4roa0/agentpay-protocol"] !== pending.protocolVersion))
+      throw Error("The published package differs from the interrupted update. No program files were changed.");
     if (!newer(metadata.version,current.version)) {
       write(`User ${current.version} is current. Checking the official test Skill.`);
       await officialTest({userDir,dataDir,write});
@@ -105,7 +142,7 @@ export async function updateFromNpm({
     write(`User    ${current.version} → ${metadata.version}`);
     write(`Wallet  ${walletVersion === targetWallet ? `${walletVersion} (unchanged)` : `${walletVersion || 'not confirmed'} → ${targetWallet}`}`);
     write(`Installation folder: ${target.prefix}`);
-    write('Background services will pause. Keys, permissions, Orders and cache are kept.');
+    write(scope.active ? 'Background services will pause. Keys, permissions, Orders and cache are kept.' : 'This installation is inactive. The running Wallet and Runtime will not change.');
     if (!force && (await ask("Type 'confirm' to update, or 'q' to cancel")).trim().toLowerCase() !== 'confirm') {
       write('Update cancelled. Nothing was changed.'); return 0;
     }
@@ -114,8 +151,6 @@ export async function updateFromNpm({
     const stateDir = installationDirectory();
     await mkdir(stateDir,{recursive:true,mode:0o700});
     logPath = join(stateDir, `update-${Date.now()}-${randomUUID()}.log`);
-    lockPath = join(stateDir,'install.lock');
-    lock = await open(lockPath,'wx',0o600);
     const rechecked = JSON.parse(await readFile(join(userDir,'package.json'),'utf8'));
     if (rechecked.version !== current.version || rechecked.name !== name)
       throw Error('Program files changed while reviewing the update. Run agentpay update again.');
@@ -144,8 +179,13 @@ export async function updateFromNpm({
     let configured = false;
     try { configured = (await lstat(join(dataDir,'runtime/local-services.json'))).isFile(); }
     catch(e) { if(e.code !== 'ENOENT') throw e; }
+    // Record the confirmed version before stopping or replacing anything. A retry
+    // must finish repair even when npm already installed the target version.
+    await atomicWritePrivate(progressPath, JSON.stringify({version:1,installation:userDir,dataDir,
+      targetVersion:metadata.version,walletVersion:metadata.dependencies['@c4roa0/agentpay-wallet'],
+      protocolVersion:metadata.dependencies['@c4roa0/agentpay-protocol']}) + '\n');
     // All imports used by this updater are loaded before npm replaces its files.
-    if (configured) await service('stop',options);
+    if (configured && scope.active) await service('stop',options);
     installing = true;
     write('2/3 Install User and its matching Wallet. This may take a few minutes.');
     await npm(args,options);
@@ -154,11 +194,8 @@ export async function updateFromNpm({
        installed.dependencies?.['@c4roa0/agentpay-wallet'] !== metadata.dependencies['@c4roa0/agentpay-wallet'] ||
        installed.dependencies?.['@c4roa0/agentpay-protocol'] !== metadata.dependencies['@c4roa0/agentpay-protocol'])
       throw Error('The installed version does not match the confirmed update.');
-    // Release before the new version's repair acquires the same lock. Another
-    // operation may win that lock; repair then refuses safely and can be retried.
-    await lock.close(); lock = null; await unlink(lockPath); lockPath = null;
     if (configured) {
-      write('3/3 Restore services and verify the official test Skill.');
+      write(scope.active ? '3/3 Restore services and verify the official test Skill.' : '3/3 Verify the inactive installation and official test Skill.');
       // A fresh Node process loads the NEW repair/client/official digest, not old imports.
       const output = await repair(options);
       if(output) write(output);
@@ -166,6 +203,7 @@ export async function updateFromNpm({
       write('3/3 Program files are ready. Local setup has not been configured.');
       write('Next: agentpay install --market YOUR_MARKET_URL');
     }
+    await unlink(progressPath);
     write(`User ${metadata.version} installed. No paid test was started.`);
     return 0;
   } catch(error) {
@@ -174,7 +212,5 @@ export async function updateFromNpm({
       : 'Update stopped before replacing program files. ' + (error.code === 'EEXIST' ? 'Another installation is running.' : error.message));
     if(logPath) write('Log: ' + logPath);
     return 1;
-  } finally {
-    if(lock) { await lock.close(); await unlink(lockPath); }
   }
 }

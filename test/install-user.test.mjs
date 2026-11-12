@@ -22,7 +22,7 @@ test('source install retries failed dependencies, keeps private data and saves c
  await mkdir(join(f.dataDir,'wallet'),{mode:0o700});
  const key=join(f.dataDir,'wallet/session.keystore.json');await writeFile(key,'retained encrypted key',{mode:0o600});
  const before=f.calls.length;await runInstall(f.options);assert.equal(f.calls.length,before);
- assert.deepEqual(f.calls,[['npm','ci'],['npm','ci']]);
+ assert.deepEqual(f.calls,[['npm','ci','--ignore-scripts'],['npm','ci','--ignore-scripts']]);
  assert.equal(await readFile(key,'utf8'),'retained encrypted key');
  assert.deepEqual(JSON.parse(await readFile(join(f.dataDir,'user-deployment.json'))),config);
  assert.equal((await stat(join(f.dataDir,'user-deployment.json'))).mode&0o777,0o600);
@@ -40,7 +40,7 @@ test('installer lock covers the service handoff and is released after failure',a
  const f=await fixture(t);const lock=join(installationDirectory(),'install.lock');
  await assert.rejects(runInstall({...f.options,prepareOnly:true,beforePrepare:async()=>{
    await stat(lock);
-   await assert.rejects(runInstall({...f.options,prepareOnly:true}),/Another installation/);
+   assert.equal(await readFile(lock,'utf8'),'agentpay.install-lock.v2\n');
  },afterPrepare:async()=>{await stat(lock);throw Error('restart failed');}}),/restart failed/);
  await assert.rejects(stat(lock),{code:'ENOENT'});
 });
@@ -52,4 +52,21 @@ test('unsafe private data stops before installation commands',async t=>{
 test('Market settings use an explicit public HTTPS or loopback origin',()=>{
  assert.equal(marketSettingsUrl('https://example.test'), 'https://example.test/market/web/onboarding/user-config');
  for(const url of ['http://example.test','https://user:pass@example.test','https://example.test/path'])assert.throws(()=>marketSettingsUrl(url));
+});
+
+test('downloaded settings stay staged until switch approval; cancellation preserves shared setup',async t=>{
+ const f=await fixture(t);
+ await mkdir(f.dataDir,{mode:0o700});
+ const path=join(f.dataDir,'user-deployment.json'),old='{"original":"deployment"}\n';
+ await writeFile(path,old,{mode:0o600});
+ const result=await runInstall({...f.options,beforeApplySettings:async()=>{
+  assert.equal(await readFile(path,'utf8'),old);
+  return 2;
+ }});
+ assert.equal(result.cancelled,true);
+ assert.equal(await readFile(path,'utf8'),old);
+ await runInstall({...f.options,beforeApplySettings:async()=>{
+  assert.equal(await readFile(path,'utf8'),old);return 0;
+ }});
+ assert.deepEqual(JSON.parse(await readFile(path,'utf8')),config);
 });

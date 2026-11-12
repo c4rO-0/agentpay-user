@@ -1,3 +1,5 @@
+import { readFileSync, lstatSync } from "node:fs";
+import { installationDirectory } from "./installation-paths.mjs";
 // Shared Skill transport and recovery. Resolve local credentials privately; endpoint
 // changes must not replace the original purchase identity or bypass retained checkpoints.
 // SPDX-License-Identifier: MPL-2.0
@@ -38,6 +40,17 @@ export class RuntimeClientError extends Error {
 }
 const fail = (code, message) => new RuntimeClientError(code, message);
 export function userDataDirectory(env = process.env) {
+  if (!env.AGENTPAY_USER_DATA_DIR) {
+    const path=join(installationDirectory(),'active-services.json');
+    try {
+      const st=lstatSync(path);
+      if (!st.isFile() || st.isSymbolicLink() || st.uid!==process.getuid() || st.mode & 0o077 || st.size>32768) throw Error('Unsafe default Runtime selection.');
+      const selection=JSON.parse(readFileSync(path,'utf8'));
+      if (selection.version!==1 || selection.phase!=='selected' || typeof selection.target?.dataDir!=='string' || !isAbsolute(selection.target.dataDir))
+        throw Error('The default Runtime is unavailable. Start the selected installation before using a Skill.');
+      return selection.target.dataDir;
+    } catch(e) {if(e.code!=='ENOENT')throw e;}
+  }
   return resolve(
     env.AGENTPAY_USER_DATA_DIR || join(homedir(), ".local/share/agentpay/user"),
   );
@@ -852,7 +865,7 @@ export async function selectInvocation(
   connection,
   service,
   input,
-  { force = false, requestId } = {},
+  { force = false, requestId, knownRequestIds } = {},
 ) {
   if (force && requestId !== undefined)
     throw fail(
@@ -871,9 +884,13 @@ export async function selectInvocation(
         );
       const id =
         requestId || (!force ? state.currentId || state.pending[0] : undefined);
-      const checkpoint = id
-        ? await prepareInvocation(connection, service, input, id)
-        : await prepareInvocation(connection, service, input);
+      if (!force && knownRequestIds?.length && (!id || !knownRequestIds.includes(id)))
+        throw fail("REQUEST_HISTORY_REVIEW_REQUIRED",
+          "The original request selection is missing or conflicting. Use --resume with the saved request ID in the original installation; do not start a replacement purchase.");
+      const retained = id && (state.currentId === id || state.pending.includes(id) || knownRequestIds?.includes(id));
+      const checkpoint = retained
+        ? await resumeInvocation(connection, service, id, input)
+        : await prepareInvocation(connection, service, input, id);
       if (!state.pending.includes(checkpoint.requestId)) {
         const cached = await cachedResult(connection, checkpoint);
         if (!cached) state.pending.push(checkpoint.requestId);

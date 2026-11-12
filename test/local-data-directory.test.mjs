@@ -1,3 +1,5 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { isolateState } from "./helpers/installed-user.mjs";
 import { installationDirectory } from "../src/installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -26,6 +28,7 @@ async function fixture(t) {
   isolateState(t, root);
   await mkdir(join(root, "state/agentpay"), {recursive:true});
   t.after(() => rm(root, { recursive: true, force: true }));
+  await mkdir(join(root, "user"));
   return {
     userDir: join(root, "user"),
     directory: installationDirectory(),
@@ -45,18 +48,8 @@ test("installation location survives rereads and preserves build checkpoints", a
   );
   assert.equal(JSON.parse(await readFile(state)).walletBuild, "hash");
   assert.equal((await stat(state)).mode & 0o777, 0o600);
-  assert.equal(
-    await resolveUserDataDir({ ...f, env: { AGENTPAY_USER_DATA_DIR: "/env" } }),
-    "/env",
-  );
-  assert.equal(
-    await resolveUserDataDir({
-      ...f,
-      env: { AGENTPAY_USER_DATA_DIR: "/env" },
-      argument: "/explicit",
-    }),
-    "/explicit",
-  );
+  await assert.rejects(resolveUserDataDir({...f,env:{AGENTPAY_USER_DATA_DIR:'/env'}}), /adoption/);
+  await assert.rejects(resolveUserDataDir({...f,argument:'/explicit',env:{}}), /adoption/);
 });
 test("missing or old record uses standard default, not an invented rehearsal path", async (t) => {
   const f = await fixture(t);
@@ -98,7 +91,7 @@ test("active installation lock prevents checkpoint overwrite", async (t) => {
   await writeFile(join(f.directory, "install.lock"), "busy", { mode: 0o600 });
   await assert.rejects(
     rememberUserDataDir({ ...f, dataDir: "/second" }),
-    /installation/,
+    /older installer lock/,
   );
   assert.equal(await resolveUserDataDir({ ...f, env: {} }), "/first");
 });
@@ -113,4 +106,27 @@ test("legacy source location is retained in canonical state without rewriting th
   await rememberUserDataDir({...f,dataDir:'/custom/private'});
   assert.equal(JSON.parse(await readFile(join(f.directory,'state.json'))).oldCheckpoint,'keep');
   assert.equal(await readFile(join(legacy,'state.json'),'utf8'), saved);
+});
+
+test('separate installations retain their data selection after another installation writes shared checkpoints', async t => {
+  const f = await fixture(t);
+  const other = join(f.userDir, '..', 'everyday');
+  await mkdir(other);
+  await rememberUserDataDir({...f, dataDir:'/development-data'});
+  await rememberUserDataDir({userDir:other, dataDir:'/everyday-data'});
+  assert.equal(await resolveUserDataDir({...f, env:{}}), '/development-data');
+  assert.equal(await resolveUserDataDir({userDir:other, env:{}}), '/everyday-data');
+  // A new process must use its own binding, not the last shared checkpoint.
+  const moduleUrl = new URL('../src/local-data-directory.mjs', import.meta.url).href;
+  for (const [userDir, expected] of [[f.userDir, '/development-data'], [other, '/everyday-data']]) {
+    const {stdout: output} = await promisify(execFile)(process.execPath, ['--input-type=module', '-e',
+      `const {resolveUserDataDir}=await import(${JSON.stringify(moduleUrl)}); console.log(await resolveUserDataDir({userDir:process.argv[1],env:{}}));`, userDir],
+      {encoding:'utf8', env:process.env});
+    assert.equal(output.trim(), expected);
+  }
+  await assert.rejects(rememberUserDataDir({...f, dataDir:'/everyday-data'}), /adoption/);
+  assert.equal(await resolveUserDataDir({...f, env:{}}), '/development-data');
+  const alias = join(f.userDir, '..', 'development-link');
+  await symlink(f.userDir, alias, 'dir');
+  assert.equal(await resolveUserDataDir({userDir:alias, env:{}}), '/development-data');
 });

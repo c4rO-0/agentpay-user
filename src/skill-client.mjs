@@ -1,3 +1,4 @@
+import {withDefaultRequest} from "./default-request-owner.mjs";
 // Generic Skill CLI glue. Business input/output validation is supplied by the Skill;
 // payment authority and request recovery remain in the installed client/Runtime.
 // SPDX-License-Identifier: MPL-2.0
@@ -7,6 +8,7 @@ export const skillClientCapabilities = Object.freeze([
   "input-snapshots-v1",
   "output-files-v1",
   "original-request-v1",
+  "default-selection-v1",
 ]);
 import {
   readServiceOffer,
@@ -115,7 +117,7 @@ export async function runSkill({
           "Check the business input against this Skill’s instructions.",
         );
       }
-      checkpoint = await selectInvocation(
+      const select = (knownRequestIds) => selectInvocation(
         connection,
         reference,
         {
@@ -123,8 +125,11 @@ export async function runSkill({
           requestedMaxUsageUnits: units,
           ...(acceptedTerms === undefined ? {} : { acceptedTerms }),
         },
-        { force, ...(requestId === undefined ? {} : { requestId }) },
+        { force, knownRequestIds, ...(requestId === undefined ? {} : { requestId }) },
       );
+      checkpoint = env.AGENTPAY_DEFAULT_SELECTION === '1'
+        ? await withDefaultRequest({service:reference,input:{request},dataDir:connection.dataDir,force},select)
+        : await select();
     } else
       throw new RuntimeClientError(
         "INVALID_ARGUMENTS",
@@ -181,7 +186,7 @@ export async function runSkill({
   } catch (error) {
     const known =
       error instanceof RuntimeClientError ||
-      ["SERVICE_REFERENCE_INVALID"].includes(error.code);
+      ["SERVICE_REFERENCE_INVALID", "ORIGINAL_INSTALLATION_REQUIRED", "ORIGINAL_REQUEST_AMBIGUOUS", "REQUEST_HISTORY_REVIEW_REQUIRED"].includes(error.code);
     write({
       ok: false,
       ...(requestId ? { requestId } : {}),

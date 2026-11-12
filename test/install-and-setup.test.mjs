@@ -14,6 +14,7 @@ test("unified entry installs before setup and propagates guide exit status", asy
   const code = await installAndSetup({
     ...identity,
     write: () => {},
+    activate: async () => { calls.push("activate"); return 0; },
     remember: async (args) => {
       assert.equal(args.dataDir, identity.dataDir);
       calls.push("remember");
@@ -21,6 +22,7 @@ test("unified entry installs before setup and propagates guide exit status", asy
     install: async (args) => {
       assert.equal(args.market, identity.market);
       calls.push("install");
+      await args.beforeApplySettings();
       return { completed: true };
     },
     start: async (args) => {
@@ -29,7 +31,7 @@ test("unified entry installs before setup and propagates guide exit status", asy
       return 7;
     },
   });
-  assert.deepEqual(calls, ["install", "remember", "setup"]);
+  assert.deepEqual(calls, ["install", "activate", "remember", "setup"]);
   assert.equal(code, 7);
 });
 test("installation failure never starts setup or authorizes anything", async () => {
@@ -51,3 +53,12 @@ test("installation failure never starts setup or authorizes anything", async () 
   );
   assert.equal(started, false);
 });
+
+ test('cancelled activation never binds data or starts the guide',async()=>{
+ const calls=[];
+ const result=await installAndSetup({userDir:'/tools/user',dataDir:'/private/user',market:'https://example.test',
+  activate:async()=>2,
+  install:async options=>({completed:false,cancelled:true,exitCode:await options.beforeApplySettings()}),
+  remember:async()=>calls.push('remember'),start:async()=>calls.push('start')});
+ assert.equal(result,2);assert.deepEqual(calls,[]);
+ });

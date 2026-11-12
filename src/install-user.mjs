@@ -1,3 +1,4 @@
+import {withInstallationOperation, installationChildOptions} from './installation-operation.mjs';
 import { installationDirectory, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -70,7 +71,10 @@ async function saveJson(path, value) {
     await unlink(temp).catch(() => {});
   }
 }
-export async function runInstall({
+export async function runInstall(options) {
+  return withInstallationOperation(() => installUnderLock(options));
+}
+async function installUnderLock({
   userDir,
   market,
   dataDir,
@@ -81,6 +85,7 @@ export async function runInstall({
   prepareOnly = false,
   beforePrepare,
   afterPrepare,
+  beforeApplySettings,
 }) {
   userDir = resolve(userDir);
 
@@ -100,17 +105,6 @@ export async function runInstall({
   const stateInfo = await lstat(stateDir);
   if (!stateInfo.isDirectory() || stateInfo.isSymbolicLink() || stateInfo.uid !== process.getuid() || stateInfo.mode & 0o077)
     throw Error('Installation state directory must be owner-held and private.');
-  const lockPath = join(stateDir, "install.lock");
-  let lock;
-  try {
-    lock = await open(lockPath, "wx", 0o600);
-  } catch (e) {
-    if (e.code === "EEXIST")
-      throw Error(
-        `Another installation may be running. Check ${lockPath} before removing a stale lock.`,
-      );
-    throw e;
-  }
   const logPath = join(stateDir, `install-${Date.now()}-${randomUUID()}.log`),
     statePath = join(stateDir, "state.json");
   let state = { version: 1 };
@@ -162,7 +156,7 @@ export async function runInstall({
     const inputs = sourceInstall ? await fingerprint(userDir, ['package.json', 'package-lock.json']) : null;
     if (sourceInstall && (state.userDependencies !== inputs || !initial.ok)) {
       write('1/2 Install the pinned User and Wallet dependencies. This may take a few minutes.');
-      await run('npm', ['ci'], {cwd:userDir, logPath});
+      await run('npm', ['ci', '--ignore-scripts'], {cwd:userDir, logPath});
       state.userDependencies = inputs;
     } else write('1/2 Check installed User and Wallet packages.');
     const checked = await checkLocalInstallation({
@@ -175,10 +169,10 @@ export async function runInstall({
       throw Error(`${failed.message}. ${failed.fix || ""}`);
     }
     await mkdir(privateDir, {recursive:true, mode:0o700});
-    await importSetupFiles(privateDir, userDir);
-    state.dataDir = privateDir;
-    await saveJson(statePath, state);
     if (prepareOnly) {
+      await importSetupFiles(privateDir, userDir);
+      state.dataDir = privateDir;
+      await saveJson(statePath, state);
       if (afterPrepare) await afterPrepare(preparationContext);
       return { completed: true, logPath };
     }
@@ -220,7 +214,16 @@ export async function runInstall({
       "./prepare-onboarding.mjs"
     );
     const config = validatePublicDeployment(JSON.parse(raw));
+    // Keep downloaded settings in memory until the serialized service switch is
+    // approved. A cancelled switch must not alter the other installation's data.
+    if (beforeApplySettings) {
+      const code = await beforeApplySettings();
+      if (code) return {completed:false,cancelled:true,exitCode:code,logPath};
+    }
+    await importSetupFiles(privateDir, userDir);
     await saveJson(join(privateDir, "user-deployment.json"), config);
+    state.dataDir = privateDir;
+    await saveJson(statePath, state);
     write(
       "User, Wallet and Market settings are ready. Continuing to setup.",
     );
@@ -235,9 +238,6 @@ export async function runInstall({
     error.messageDisplayed = true;
     error.logPath = logPath;
     throw error;
-  } finally {
-    await lock.close();
-    await unlink(lockPath);
   }
 }
 async function runCommand(command, args, { cwd, logPath }) {
@@ -246,7 +246,7 @@ async function runCommand(command, args, { cwd, logPath }) {
     await new Promise((resolve, reject) => {
       const child = spawn(command, args, {
         cwd,
-        env: {
+        ...installationChildOptions({env: {
           ...process.env,
           PATH:
             dirname(process.execPath) +
@@ -254,7 +254,7 @@ async function runCommand(command, args, { cwd, logPath }) {
             (process.env.PATH || ""),
           COREPACK_ENABLE_DOWNLOAD_PROMPT: "0",
         },
-        stdio: ["ignore", log.fd, log.fd],
+        stdio: ["ignore", log.fd, log.fd]}),
       });
       child.once("error", (e) =>
         reject(
@@ -263,7 +263,7 @@ async function runCommand(command, args, { cwd, logPath }) {
           ),
         ),
       );
-      child.once("exit", (code) =>
+      child.once("close", (code) =>
         code === 0
           ? resolve()
           : reject(

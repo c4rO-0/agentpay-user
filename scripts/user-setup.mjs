@@ -28,6 +28,10 @@ try {
       "../src/local-data-directory.mjs"
     );
     const { runGuidedEntry } = await import("../src/guided-setup.mjs");
+    const dataDir = await resolveUserDataDir({argument:args[1]});
+    const { activateSetup } = await import('../src/setup-service-selection.mjs');
+    const activation = await activateSetup({dataDir});
+    if (activation) process.exit(activation);
     process.exit(
       await runGuidedEntry({
         userDir: fileURLToPath(new URL("..", import.meta.url)),

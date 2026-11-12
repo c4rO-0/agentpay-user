@@ -1,5 +1,13 @@
 # User documentation
 
+- [Historical request routing](records/historical-request-routing-2026-11-11.md): switch-time indexing, missing records and conservative recovery limits.
+
+- [Local instances and installation recovery](plans/local-instances-and-install-recovery.md): agreed design and implementation sequence.
+
+- [Installation maintenance verification](records/installation-maintenance-2026-11-11.md): inactive maintenance and interrupted-writer recovery, with evidence limits.
+
+- [Isolated client acceptance](records/client-isolated-acceptance-2026-11-11.md): installation, failure retry, uninstall and the interruption blocker.
+
 - [Existing-installation update acceptance](records/npm-update-participant-2026-11-11.md): participant update to User 0.3.6 / Wallet 0.3.3 and retained records.
 
 - [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.

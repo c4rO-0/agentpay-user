@@ -1,3 +1,4 @@
+import {isolateState} from './helpers/installed-user.mjs';
 // SPDX-License-Identifier: MPL-2.0
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,6 +11,7 @@ import {cancelOrder} from '../src/order-cancellation.mjs';
 const address=n=>'0x'+String(n).repeat(40),policyId='0x'+'a'.repeat(64);
 async function fixture(t){
  const dir=await mkdtemp(join(tmpdir(),'platform-addresses-'));t.after(()=>rm(dir,{recursive:true,force:true}));
+ isolateState(t,dir);
  const dataDir=join(dir,'data'),userDir=join(dir,'user'),stateDir=join(dir,'state');
  for(const p of [dataDir,join(dataDir,'runtime'),join(dataDir,'wallet'),userDir])await mkdir(p,{mode:0o700});
  const save=async(path,value)=>writeFile(join(dataDir,path),JSON.stringify(value),{mode:0o600});

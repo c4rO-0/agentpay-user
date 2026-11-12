@@ -1,3 +1,5 @@
+import { installationDirectory } from "./installation-paths.mjs";
+import { assertPrivateFile } from "./private-journal-files.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -14,7 +16,6 @@ import {
 } from "./local-services.mjs";
 const execute = promisify(execFile);
 const userDir = fileURLToPath(new URL("..", import.meta.url));
-const walletCli = walletCliPath();
 async function ctl(...args) {
   return execute("systemctl", ["--user", ...args], {
     timeout: 10000,
@@ -83,7 +84,7 @@ async function ownership(dataDir, settings) {
     } catch {}
     const expected =
       role === "wallet"
-        ? [process.execPath, walletCli, "serve", join(dataDir, "wallet")]
+        ? [process.execPath, walletCliPath(), "serve", join(dataDir, "wallet")]
         : [process.execPath, join(userDir, "src/index.mjs")];
     if (
       !(await guideOwnsProcess({
@@ -143,6 +144,15 @@ export async function finishLocalSetup({
       settlementUrl: config.settlementUrl,
     });
     const settings = await readSettings(dataDir);
+    const selectionPath=join(installationDirectory(),'active-services.json');
+    try {
+      await assertPrivateFile(selectionPath);
+      const selection=JSON.parse(await readFile(selectionPath,'utf8'));
+      if (selection.target?.dataDir===dataDir && ['enabled','disabled'].includes(selection.startupChoice)) {
+        settings.startupChoice=selection.startupChoice;
+        await save({dataDir,...settings});
+      }
+    } catch(e) { if(e.code!=='ENOENT')throw e; }
     await available();
     if (!(await owns(dataDir, settings))) {
       write(

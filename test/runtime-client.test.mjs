@@ -453,3 +453,80 @@ test("maintenance keeps the original request and retries only when requested",as
  maintenance=false;await invokeService(f.connection,service,resumed);
  assert.equal(calls,2);assert.deepEqual(requests[0],requests[1]);
 });
+
+test('historical request indexing blocks cross-install replacement without changing the original checkpoint',async t=>{
+  const {isolateState}=await import('./helpers/installed-user.mjs');
+  const {importHistoricalRequests,withDefaultRequest}=await import('../src/default-request-owner.mjs');
+  const root=await mkdtemp(join(tmpdir(),'historical-routing-'));isolateState(t,root);t.after(()=>rm(root,{recursive:true,force:true}));
+  const a=await fixture(t,(_req,res)=>res.end('{}'));
+  const b=await fixture(t,(_req,res)=>res.end('{}'));
+  for(const request of [{text:'recover original'},{file:{name:'input.bin',bytes:[1,2,3]},options:{mode:'inspect'}}]) {
+    const call={request,requestedMaxUsageUnits:'1'};
+    const original=await selectInvocation(a.connection,service,call);
+    const imported=await importHistoricalRequests(a.dataDir);assert.equal(imported.unclassified,false);
+    let selected=false;
+    await assert.rejects(withDefaultRequest({service,input:call,dataDir:b.dataDir},async()=>{selected=true;}),{code:'ORIGINAL_INSTALLATION_REQUIRED'});
+    assert.equal(selected,false);
+    const resumed=await withDefaultRequest({service,input:call,dataDir:a.dataDir},()=>selectInvocation(a.connection,service,call));
+    assert.equal(resumed.requestId,original.requestId);
+    const forced=await withDefaultRequest({service,input:call,dataDir:b.dataDir,force:true},()=>selectInvocation(b.connection,service,call,{force:true}));
+    assert.notEqual(forced.requestId,original.requestId);
+    await importHistoricalRequests(a.dataDir);
+    const repeated=await withDefaultRequest({service,input:call,dataDir:b.dataDir},()=>selectInvocation(b.connection,service,call));
+    assert.equal(repeated.requestId,forced.requestId);
+    assert.equal((await resumeInvocation(a.connection,service,original.requestId)).requestId,original.requestId);
+  }
+});
+
+test('Skill explains cross-install recovery and sends no invocation to the newly selected Runtime',async t=>{
+ const {isolateState}=await import('./helpers/installed-user.mjs');
+ const {importHistoricalRequests}=await import('../src/default-request-owner.mjs');
+ const root=await mkdtemp(join(tmpdir(),'historical-skill-'));isolateState(t,root);t.after(()=>rm(root,{recursive:true,force:true}));
+ const a=await fixture(t,(_req,res)=>res.end('{}'));
+ let posts=0;const b=await fixture(t,(_req,res)=>{posts++;res.end('{}');});
+ await selectInvocation(a.connection,service,input('previous purchase'));
+ await importHistoricalRequests(a.dataDir);
+ const output=[];
+ assert.equal(await runSkill({service,args:['--invoke',JSON.stringify({text:'previous purchase'})],
+  env:{AGENTPAY_USER_DATA_DIR:b.dataDir,AGENTPAY_DEFAULT_SELECTION:'1'},write:result=>output.push(result),notice:()=>{}}),1);
+ assert.equal(posts,0);
+ assert.equal(output[0].error.code,'ORIGINAL_INSTALLATION_REQUIRED');
+ assert.match(output[0].error.message,/Return to that installation/);
+});
+
+test('missing historical selection or checkpoint never creates a replacement via the Skill entry',async t=>{
+ const {isolateState}=await import('./helpers/installed-user.mjs');
+ const {importHistoricalRequests}=await import('../src/default-request-owner.mjs');
+ const {createHash}=await import('node:crypto');
+ const root=await mkdtemp(join(tmpdir(),'historical-missing-'));isolateState(t,root);t.after(()=>rm(root,{recursive:true,force:true}));
+ for(const missing of ['selection','checkpoint']) {
+  let posts=0;const f=await fixture(t,(_req,res)=>{posts++;res.end('{}');});
+  const request={text:'missing '+missing};
+  const original=await selectInvocation(f.connection,service,{request,requestedMaxUsageUnits:'1'});
+  await importHistoricalRequests(f.dataDir);
+  const path=missing==='selection' ? join(f.dataDir,'runtime/client-pending')
+    : join(f.dataDir,'runtime/client-requests',createHash('sha256').update(original.requestId).digest('hex')+'.json');
+  await rm(path,{recursive:true});
+  const output=[];
+  assert.equal(await runSkill({service,args:['--invoke',JSON.stringify(request)],
+    env:{AGENTPAY_USER_DATA_DIR:f.dataDir,AGENTPAY_DEFAULT_SELECTION:'1'},write:value=>output.push(value),notice:()=>{}}),1);
+  assert.equal(posts,0);
+  assert.equal(output[0].error.code,missing==='selection'?'REQUEST_HISTORY_REVIEW_REQUIRED':'REQUEST_NOT_FOUND');
+ }
+});
+
+test('conflicting old installations require choosing the original request explicitly',async t=>{
+ const {isolateState}=await import('./helpers/installed-user.mjs');
+ const {importHistoricalRequests}=await import('../src/default-request-owner.mjs');
+ const root=await mkdtemp(join(tmpdir(),'historical-conflict-'));isolateState(t,root);t.after(()=>rm(root,{recursive:true,force:true}));
+ let posts=0;const a=await fixture(t,(_req,res)=>{posts++;res.end('{}');});
+ const b=await fixture(t,(_req,res)=>{posts++;res.end('{}');});
+ const original=await selectInvocation(a.connection,service,input('conflict'));
+ await selectInvocation(b.connection,service,input('conflict'));
+ await importHistoricalRequests(a.dataDir);await importHistoricalRequests(b.dataDir);
+ const output=[];
+ assert.equal(await runSkill({service,args:['--invoke',JSON.stringify({text:'conflict'})],
+  env:{AGENTPAY_USER_DATA_DIR:b.dataDir,AGENTPAY_DEFAULT_SELECTION:'1'},write:value=>output.push(value),notice:()=>{}}),1);
+ assert.equal(posts,0);assert.equal(output[0].error.code,'ORIGINAL_REQUEST_AMBIGUOUS');
+ assert.equal((await resumeInvocation(a.connection,service,original.requestId)).requestId,original.requestId);
+});

@@ -7,7 +7,7 @@ import { open } from "node:fs/promises";
 import { createConnection } from "node:net";
 import { join } from "node:path";
 import { randomBytes } from "node:crypto";
-export async function localWalletAdmin(dataDir, method, params = {}) {
+export async function localWalletAdmin(dataDir, method, params = {}, {timeoutMs = 30000} = {}) {
   await checkServiceDirectory(dataDir);
   const h = await open(
     join(dataDir, "wallet/admin.token"),
@@ -40,7 +40,7 @@ export async function localWalletAdmin(dataDir, method, params = {}) {
     };
     const timer = setTimeout(
       () => finish(Error("Wallet did not respond. Run agentpay status.")),
-      30000,
+      timeoutMs,
     );
     socket.setEncoding("utf8");
     socket.once("error", (e) =>

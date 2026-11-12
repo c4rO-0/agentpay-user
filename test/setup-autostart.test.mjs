@@ -151,3 +151,15 @@ test("stale/unsafe PID, wrong process and system operator ownership are not adop
     false,
   );
 });
+
+test('setup inherits selected login preference instead of offering a contradictory choice',async t=>{
+ const {mkdtemp,mkdir,writeFile,rm}=await import('node:fs/promises');
+ const {tmpdir}=await import('node:os');const {join}=await import('node:path');
+ const {isolateState}=await import('./helpers/installed-user.mjs');
+ const root=await mkdtemp(join(tmpdir(),'startup-preference-'));isolateState(t,root);t.after(()=>rm(root,{recursive:true,force:true}));
+ const {installationDirectory}=await import('../src/installation-paths.mjs');const dir=installationDirectory();await mkdir(dir,{recursive:true,mode:0o700});
+ await writeFile(join(dir,'active-services.json'),JSON.stringify({version:1,phase:'selected',target:{dataDir:'/chosen'},startupChoice:'disabled'}),{mode:0o600});
+ const f=fixture('enabled');
+ const result=await finishLocalSetup({...f.options,dataDir:'/chosen',config:{runtimeUrl:'http://127.0.0.1:6490',settlementUrl:'https://example.invalid'},ask:()=>{throw Error('must not ask');},write:()=>{},available:async()=>{},owns:async()=>true});
+ assert.equal(result.state,'declined');
+});

@@ -31,7 +31,9 @@ private key into AgentPay. See [installation and first use](doc/runbooks/user-on
 Program files and private state are separate. Keys, Policies, Orders and cache
 normally live in `~/.local/share/agentpay/user`; an existing custom data directory
 is retained. Installation checkpoints use `~/.local/state/agentpay/user` (or
-`$XDG_STATE_HOME/agentpay/user`). Upgrading program files does not erase either.
+`$XDG_STATE_HOME/agentpay/user` on first setup). AgentPay remembers that location
+so terminal and background services use the same records. Upgrading program files
+does not erase either.
 
 ## Install in a folder instead
 

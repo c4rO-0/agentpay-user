@@ -74,7 +74,7 @@ test("unsafe roots, symlinks, concurrent installer and foreign services are refu
   await assert.rejects(uninstallPlan({ ...f, dataDir: join(f.home, "alias") }));
   const install = installationDirectory();
   await mkdir(install, { mode: 0o700 });
-  await writeFile(join(install, "install.lock"), "busy");
+  await writeFile(join(install, "install.lock"), "busy", {mode:0o600});
   await assert.rejects(uninstallPlan(f), /installer lock/);
   await rm(join(install, "install.lock"));
   const units = join(f.home, ".config/systemd/user");
@@ -132,10 +132,12 @@ test("installation checkpoint and exported settings are cleaned; unrelated repos
     "keep.txt",
   ])
     await writeFile(join(name === "keep.txt" ? parent : f.dataDir, name), "fixture", { mode: 0o600 });
+  await writeFile(join(install,'other-installation.json'),'keep',{mode:0o600});
   const plan = await uninstallPlan(f);
   await removeInstallation(plan, { probe: async () => false });
+  assert.equal(await readFile(join(install,'other-installation.json'),'utf8'),'keep');
   for (const path of [
-    install,
+    join(install, 'state.json'),
     join(f.dataDir, "user-deployment.json"),
     join(f.dataDir, "anvil-onboarding.json"),
   ])
@@ -163,4 +165,78 @@ test("explicit purge retires only matching legacy configuration and cannot reimp
   assert.notEqual(await resolveUserDataDir({userDir:f.userDir,env:{}}),f.dataDir);
   await importSetupFiles(f.dataDir,f.userDir);
   await assert.rejects(readFile(join(f.dataDir,'anvil-onboarding.json')),{code:'ENOENT'});
+});
+
+test('inactive uninstall preserves the other installation service pair and data', async t => {
+  const f = await fixture(t);
+  const other = {userDir:join(f.home,'other-user'), dataDir:join(f.home,'other-data'), node:process.execPath};
+  const unitDir = join(f.home,'.config/systemd/user');
+  await mkdir(unitDir,{recursive:true,mode:0o700});
+  await mkdir(other.dataDir,{mode:0o700});
+  await writeFile(join(other.dataDir,'history'),'keep');
+  const files = autostartFiles(other);
+  for (const [name,body] of Object.entries(files)) await writeFile(join(unitDir,name),body,{mode:0o600});
+  const plan = await uninstallPlan(f);
+  assert.equal(plan.units.length,0);
+  await removeInstallation(plan,{probe:async()=>false,manage:async()=>{throw Error('Must not stop the active installation');}});
+  await assert.rejects(lstat(f.dataDir),{code:'ENOENT'});
+  for (const [name,body] of Object.entries(files)) assert.equal(await readFile(join(unitDir,name),'utf8'),body);
+  assert.equal(await readFile(join(other.dataDir,'history'),'utf8'),'keep');
+});
+
+test('uninstall rechecks a completed switch after confirmation and preserves shared data', async t => {
+  const f = await fixture(t);
+  const plan = await uninstallPlan(f);
+  const unitDir = join(f.home,'.config/systemd/user');
+  await mkdir(unitDir,{recursive:true,mode:0o700});
+  for (const [name,body] of Object.entries(autostartFiles({...f,node:process.execPath,userDir:join(f.home,'another-user')})))
+    await writeFile(join(unitDir,name),body,{mode:0o600});
+  await assert.rejects(removeInstallation(plan,{probe:async()=>false}),/Another installation uses this data/);
+  assert.equal(await readFile(join(f.dataDir,'session-key'),'utf8'),'fixture');
+});
+
+test('uninstall refuses a busy service transition lock and rejects a changed removal scope', async t => {
+  const f = await fixture(t);
+  const {withServiceLifecycleLock} = await import('../src/service-selection.mjs');
+  const plan = await uninstallPlan(f);
+  let release, entered;
+  const ready = new Promise(resolve=>{entered=resolve;});
+  const gate = new Promise(resolve=>{release=resolve;});
+  const transition = withServiceLifecycleLock(async()=>{
+    entered(); await gate;
+    const unitDir=join(f.home,'.config/systemd/user');
+    await mkdir(unitDir,{recursive:true,mode:0o700});
+    for(const [name,body] of Object.entries(autostartFiles({...f,node:process.execPath})))
+      await writeFile(join(unitDir,name),body,{mode:0o600});
+  });
+  await ready;
+  await assert.rejects(removeInstallation(plan,{probe:async()=>false}),/Another AgentPay/);
+  assert.equal(await readFile(join(f.dataDir,'session-key'),'utf8'),'fixture');
+  release(); await transition;
+  await assert.rejects(removeInstallation(plan,{probe:async()=>false}),/changed since confirmation/);
+  assert.equal(await readFile(join(f.dataDir,'session-key'),'utf8'),'fixture');
+});
+
+test('retry after partial unit removal finishes only the remaining managed files', async t => {
+  const f = await fixture(t);
+  const unitDir=join(f.home,'.config/systemd/user');
+  await mkdir(unitDir,{recursive:true,mode:0o700});
+  const files=autostartFiles({...f,node:process.execPath});
+  for(const [name,body] of Object.entries(files)) await writeFile(join(unitDir,name),body,{mode:0o600});
+  await rm(join(unitDir,'agentpay-local-wallet.service'));
+  const plan=await uninstallPlan(f);
+  assert.equal(plan.units.length,2);
+  await removeInstallation(plan,{probe:async()=>false,manage:async()=>({stdout:'MainPID=0\nActiveState=inactive\n'})});
+  await assert.rejects(lstat(f.dataDir),{code:'ENOENT'});
+  for(const name of Object.keys(files)) await assert.rejects(lstat(join(unitDir,name)),{code:'ENOENT'});
+});
+
+test('uninstall can retry a recognized interrupted operation without manual lock deletion',async t=>{
+ const f=await fixture(t);
+ const {installationLockMarker}=await import('../src/installation-operation.mjs');
+ await mkdir(installationDirectory(),{recursive:true,mode:0o700});
+ await writeFile(join(installationDirectory(),'install.lock'),installationLockMarker,{mode:0o600});
+ const plan=await uninstallPlan(f);
+ await removeInstallation(plan,{probe:async()=>false});
+ await assert.rejects(lstat(f.dataDir),{code:'ENOENT'});
 });

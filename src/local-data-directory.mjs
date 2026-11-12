@@ -1,9 +1,11 @@
+import {withInstallationOperation} from './installation-operation.mjs';
+import { readInstallationBinding, rememberInstallationBinding } from "./installation-binding.mjs";
 import { installationDirectory, legacyInstallationDirectory } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { constants } from "node:fs";
-import { lstat, mkdir, open, rename, unlink } from "node:fs/promises";
+import { lstat, mkdir, open, rename, unlink, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -65,13 +67,23 @@ export async function resolveUserDataDir({
   env = process.env,
   userDir = installedUserDir,
 } = {}) {
-  if (argument || env.AGENTPAY_USER_DATA_DIR)
-    return resolve(argument || env.AGENTPAY_USER_DATA_DIR);
+  const binding = await readInstallationBinding(userDir);
+  if (argument || env.AGENTPAY_USER_DATA_DIR) {
+    const selected = resolve(argument || env.AGENTPAY_USER_DATA_DIR);
+    const canonical = await realpath(selected).catch(e => { if (e.code === 'ENOENT') return selected; throw e; });
+    if (binding && canonical !== binding.dataDir)
+      throw Error('This installation is bound to another data folder. Use its configured folder; explicit adoption is required to change it.');
+    return selected;
+  }
+  if (binding) return binding.dataDir;
   const state = await readState(userDir);
   return state.dataDir || join(homedir(), ".local/share/agentpay/user");
 }
 // Uses the existing installer lock and preserves dependency/build checkpoints.
-export async function rememberUserDataDir({
+export async function rememberUserDataDir(options) {
+  return withInstallationOperation(() => rememberUnderLock(options));
+}
+async function rememberUnderLock({
   userDir = installedUserDir,
   dataDir,
 }) {
@@ -84,21 +96,11 @@ export async function rememberUserDataDir({
     throw Error(
       "Installation record directory must be private and owned by you.",
     );
-  const lockPath = join(directory, "install.lock");
-  let lock;
-  try {
-    lock = await open(lockPath, "wx", 0o600);
-  } catch (error) {
-    if (error.code === "EEXIST")
-      throw Error(
-        "Another installation may be running. Retry after it finishes.",
-      );
-    throw error;
-  }
   const temp = join(directory, `location-${randomUUID()}.tmp`);
   let file;
   try {
     const state = await readState(userDir);
+    await rememberInstallationBinding(userDir, dataDir);
     file = await open(temp, "wx", 0o600);
     await file.writeFile(
       JSON.stringify({ ...state, version: 1, dataDir: resolve(dataDir) }) +
@@ -111,7 +113,5 @@ export async function rememberUserDataDir({
   } finally {
     await file?.close();
     await unlink(temp).catch(() => {});
-    await lock.close();
-    await unlink(lockPath);
   }
 }

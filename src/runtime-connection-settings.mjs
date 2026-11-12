@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { randomUUID } from "node:crypto";
 import { readServiceSettings } from "./local-services.mjs";
 
-export async function ensureRuntimeConnection({ dataDir, write = () => {}, refreshClientModule = false, checkOnly = false }) {
+export async function ensureRuntimeConnection({ dataDir, write = () => {}, refreshClientModule = false, previousClientModule, checkOnly = false }) {
   const settings = await readServiceSettings(dataDir);
   const directory = join(dataDir, "runtime"),
     path = join(directory, "connection.json");
@@ -45,6 +45,7 @@ export async function ensureRuntimeConnection({ dataDir, write = () => {}, refre
         throw Error("conflict");
       if (saved.clientModule !== expected.clientModule) {
         if (!refreshClientModule || typeof saved.clientModule !== 'string' || !isAbsolute(saved.clientModule) || !saved.clientModule.endsWith('/src/runtime-client.mjs')) throw Error('conflict');
+        if (previousClientModule !== undefined && saved.clientModule !== previousClientModule) throw Error('conflict');
         // Explicit repair after stopping services can relocate trusted client code.
         // URL, credential, request identities and authorization remain unchanged.
         if (!checkOnly) {

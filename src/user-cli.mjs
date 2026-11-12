@@ -289,8 +289,7 @@ export async function runUserCli(
   }
   if (command === "service") {
     if (["start", "restart"].includes(action) && !values.length) {
-      const prepared = await run([script("autostart"), "prepare"]);
-      return prepared || run([script("autostart"), action]);
+      return run([script("autostart"), action]);
     }
     if (action === "stop" && !values.length)
       return run([script("autostart"), "stop"]);

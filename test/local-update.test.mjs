@@ -1,3 +1,4 @@
+import {isolateState} from './helpers/installed-user.mjs';
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -11,6 +12,11 @@ import {
   checkUpdatePair,
   updateSnapshot,
 } from "../src/local-update.mjs";
+test.beforeEach(async t => {
+  const root = await mkdtemp(join(tmpdir(),'repair-maintenance-'));
+  isolateState(t,root);
+  t.after(()=>rm(root,{recursive:true,force:true}));
+});
 function fixture() {
   const calls = [],
     lines = [],
@@ -34,6 +40,7 @@ function fixture() {
     ask: async () => "confirm",
     snapshot: async () => ({ inputs: "source", outputs: "build" }),
     officialTest: async () => ({ status: "ready" }),
+    serviceScope: async () => ({active:true}),
     service: async (action) => {
       calls.push(action);
     },
@@ -322,4 +329,19 @@ test("repair never reports success when an old process survives or omits its ver
     assert.equal(f.state.localUpdate.status,'pending');
     assert(!f.lines.some(x=>x.includes('Repair complete.')));
   }
+});
+
+test('inactive repair checks packages and client files without stopping or starting services',async()=>{
+ const f=fixture();
+ f.opts.serviceScope=async()=>({active:false});
+ f.opts.wallet=async()=>{throw Error('Do not contact the active Wallet');};
+ f.opts.runtime=async()=>{throw Error('Do not contact the active Runtime');};
+ assert.equal(await applyLocalUpdate(f.opts),0);
+ assert.deepEqual(f.calls,['build']);
+ assert.equal(f.state.localUpdate.status,'complete');
+ assert.match(f.lines.join('\n'),/remains inactive/);
+ assert.match(f.lines.join('\n'),/agentpay service start/);
+ f.calls.length=0;
+ assert.equal(await applyLocalUpdate({...f.opts,ask:async()=>{throw Error('Unchanged inactive repair must not ask');}}),0);
+ assert.deepEqual(f.calls,[]);
 });

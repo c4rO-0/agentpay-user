@@ -1,3 +1,5 @@
+import {withInstallationOperation, installationChildOptions} from './installation-operation.mjs';
+import {maintenanceServiceScope} from './service-selection.mjs';
 import { requireRunningSoftware } from "./software-versions.mjs";
 import { walletPackage } from "./wallet-package.mjs";
 // Apply installed packages. Preserve identity/history and startup preferences;
@@ -112,12 +114,12 @@ async function manage(action, { userDir, dataDir, logPath }) {
         [join(userDir, "scripts/autostart.mjs"), action],
         {
           shell: false,
-          env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
-          stdio: ["ignore", file.fd, file.fd],
+          ...installationChildOptions({env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
+          stdio: ["ignore", file.fd, file.fd]}),
         },
       );
       child.once("error", reject);
-      child.once("exit", (code) =>
+      child.once("close", (code) =>
         code === 0
           ? done()
           : reject(Error("Background service operation failed.")),
@@ -127,7 +129,11 @@ async function manage(action, { userDir, dataDir, logPath }) {
     await file.close();
   }
 }
-export async function applyLocalUpdate({
+export async function applyLocalUpdate(options = {}) {
+  try { return await withInstallationOperation(() => repairUnderLock(options)); }
+  catch(error) { (options.write || console.log)("Repair stopped. " + error.message); return 1; }
+}
+async function repairUnderLock({
   userDir = installedUserDir,
   dataDir,
   write = console.log,
@@ -143,13 +149,15 @@ export async function applyLocalUpdate({
   connection = ensureRuntimeConnection,
   prepare = runInstall,
   service = manage,
+  serviceScope = maintenanceServiceScope,
   wallet = localWalletAdmin,
   runtime = readRuntimeStatus,
   pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
 } = {}) {
   let phase = "preflight",
     logPath,
-    selected;
+    selected,
+    activeServices = true;
   try {
     write(
       "\n------------------------------------------------------------\n> Repair User and Wallet\n------------------------------------------------------------",
@@ -165,6 +173,8 @@ export async function applyLocalUpdate({
     const pair = await pairCheck(userDir);
     await checkDirectory(dataDir);
     await settings(dataDir);
+    const scope = await serviceScope({userDir,dataDir});
+    activeServices = scope.active;
     write(
       `1/3 Check local files · User ${pair.userVersion} / Wallet ${pair.walletVersion}`,
     );
@@ -186,12 +196,18 @@ export async function applyLocalUpdate({
           applied.inputs === selected.inputs &&
           applied.outputs === selected.outputs
         ) {
+          if (!scope.active) {
+            await connection({dataDir,write,refreshClientModule:true});
+            phase = "unchanged";
+            write("This installation is up to date and remains inactive. Running services were not changed.");
+            return false;
+          }
           let runningMatches = false;
           try {
             requireRunningSoftware(await wallet(dataDir, "status"), await runtime(dataDir), { ...pair, protocolVersion: pair.typesDependency });
             runningMatches = true;
           } catch { /* Keep repair available for old, stopped or unreported processes. */ }
-          if (runningMatches) {
+          if (runningMatches && scope.active) {
             await connection({ dataDir, write });
             phase = "unchanged";
             write("Local installation and running versions are up to date. Background services were not changed.");
@@ -205,7 +221,8 @@ export async function applyLocalUpdate({
             : "Installed program changes need to be applied.",
         );
         write(
-          "Wallet and Runtime will pause, verify installed files and restart. Wallet will need unlocking afterwards.",
+          scope.active ? "Wallet and Runtime will pause, verify installed files and restart. Wallet will need unlocking afterwards."
+            : "This inactive installation will be repaired. The running Wallet and Runtime will not change.",
         );
         if (!force) {
           while (true) {
@@ -234,6 +251,11 @@ export async function applyLocalUpdate({
           inputs: selected.inputs,
         };
         await context.saveState();
+        if (!scope.active) {
+          phase = "building";
+          write("2/3 Check this installation's packages. Active services are unchanged.");
+          return;
+        }
         await service("prepare-repair", { userDir, dataDir, logPath });
         phase = "stopping";
         write(
@@ -248,6 +270,13 @@ export async function applyLocalUpdate({
         if (built.inputs !== selected.inputs)
           throw Error("Installed files changed during repair.");
         await connection({ dataDir, write, refreshClientModule: true });
+        if (!scope.active) {
+          context.state.localUpdate = {status:"complete", ...built};
+          await context.saveState();
+          phase = "ready";
+          write("3/3 Inactive installation checked. It has not been started.");
+          return;
+        }
         phase = "starting";
         write("3/3 Start Wallet and Runtime.");
         await service("start", { userDir, dataDir, logPath });
@@ -288,20 +317,22 @@ export async function applyLocalUpdate({
     if (!result?.completed || phase !== "ready")
       throw Error("Repair did not finish.");
     write(
-      "\nRepair complete. Wallet and Runtime are running in the background.",
+      scope.active ? "\nRepair complete. Wallet and Runtime are running in the background."
+        : "\nRepair complete. This installation remains inactive; existing services were kept.",
     );
     write(
       "Keys, spending permission and Order records were kept. Login startup preference is unchanged.",
     );
     await officialTest({ userDir, dataDir, write });
-    write("Next: agentpay wallet unlock\nThen: agentpay status");
+    write(scope.active ? "Next: agentpay wallet unlock\nThen: agentpay status" : "To switch to this installation: agentpay service start");
     return 0;
   } catch (error) {
     if (phase === "preflight")
       write("Repair stopped before pausing services. " + error.message);
     else if (phase === "building")
       write(
-        "Repair could not finish. Wallet and Runtime remain stopped; your local data was kept.",
+        activeServices ? "Repair could not finish. Wallet and Runtime remain stopped; your local data was kept."
+          : "Repair could not finish. The active installation was not changed; your local data was kept.",
       );
     else
       write(

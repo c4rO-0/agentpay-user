@@ -1,3 +1,5 @@
+import { installedServiceSelection, withServiceLifecycleLock } from "./service-selection.mjs";
+import { installationBindingPath } from "./installation-binding.mjs";
 import { installationDirectory, legacyInstallationDirectory } from "./installation-paths.mjs";
 import { walletPackage } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -6,8 +8,7 @@ import { walletPackage } from "./wallet-package.mjs";
 import { lstat, realpath, readFile, rm, unlink } from "node:fs/promises";
 import { dirname, join, relative, resolve, parse, isAbsolute } from "node:path";
 import { homedir } from "node:os";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
+import {runInstallationCommand, installationLockMarker} from "./installation-operation.mjs";
 import { createInterface } from "node:readline/promises";
 import { autostartFiles, isManagedUnit } from "./autostart-files.mjs";
 import {
@@ -15,7 +16,7 @@ import {
   installedUserDir,
 } from "./local-data-directory.mjs";
 import { readServiceSettings, listenerPresent } from "./local-services.mjs";
-const execute = promisify(execFile);
+const execute = runInstallationCommand;
 const inside = (parent, path) => {
   const r = relative(parent, path);
   return r === "" || (!r.startsWith("..") && !parse(r).root);
@@ -43,9 +44,13 @@ export async function uninstallPlan({
   home = homedir(),
   node = process.execPath,
   removeData = false,
+  underLock = false,
 }) {
   dataDir = resolve(dataDir);
-  userDir = resolve(userDir);
+  userDir = await realpath(resolve(userDir)).catch(error => {
+    if (error.code === "ENOENT") return resolve(userDir);
+    throw error;
+  });
   home = resolve(home);
   let walletDir;
   try { walletDir = walletPackage(userDir).directory; } catch { walletDir = userDir; }
@@ -84,10 +89,15 @@ export async function uninstallPlan({
     if (e.code === "ENOENT") return null;
     throw e;
   });
-  if (lock)
-    throw Error(
-      "An installer lock exists. Finish or inspect that installation before uninstalling.",
-    );
+  if (lock && !underLock) {
+    // A v2 marker can remain after interruption; the operation lock, acquired
+    // after confirmation, decides whether its writers have actually exited.
+    const path = join(installDir, "install.lock");
+    await target(path, {privateMode:true});
+    if (lock.size !== Buffer.byteLength(installationLockMarker) ||
+        await readFile(path, "utf8") !== installationLockMarker)
+      throw Error("An older installer lock exists. Keep it for review before uninstalling.");
+  }
   const install = await target(installDir, {
     directory: true,
     privateMode: true,
@@ -101,14 +111,22 @@ export async function uninstallPlan({
       if (
         saved.version !== 1 ||
         typeof saved.dataDir !== "string" ||
-        !isAbsolute(saved.dataDir) ||
-        resolve(saved.dataDir) !== dataDir
+        !isAbsolute(saved.dataDir)
       )
         throw Error(
           "Installation record points to another data directory; no files were removed.",
         );
-      targets.push({ ...install, checkpoint: true });
+      if (resolve(saved.dataDir) === dataDir) targets.push({ ...state, checkpoint: true });
 
+    }
+  }
+  if (removeData) {
+    const path = await installationBindingPath(userDir).catch(e => {if(e.code==='ENOENT')return null;throw e;});
+    const binding = path && await target(path, {privateMode:true});
+    if (binding) {
+      const saved = JSON.parse(await readFile(binding.path,'utf8'));
+      if (saved.dataDir !== dataDir) throw Error('Binding changed; no data was removed.');
+      targets.push({...binding,checkpoint:true});
     }
   }
   // Retire only the old source checkpoint that names this exact data directory.
@@ -135,7 +153,14 @@ export async function uninstallPlan({
   const unitDir = join(home, ".config/systemd/user"),
     generated = autostartFiles({ node, userDir, dataDir }),
     units = [];
-  for (const [name, body] of Object.entries(generated)) {
+  // A valid pair owned by a different installation is not an uninstall target.
+  const owner = await installedServiceSelection(unitDir, undefined, {allowPartial:true}).catch(error => {
+    throw Error('Service files are not a consistent managed file set: ' + error.message);
+  });
+  const foreign = owner && owner.userDir !== userDir;
+  if (foreign && owner.dataDir === dataDir && removeData)
+    throw Error('Another installation uses this data folder. Its data cannot be deleted here.');
+  for (const [name, body] of Object.entries(foreign ? {} : generated)) {
     const file = await target(join(unitDir, name));
     if (!file) continue;
     for (const path of [
@@ -158,14 +183,14 @@ export async function uninstallPlan({
       );
     units.push({ ...file, name });
   }
-  return { dataDir, targets, units, settings, removeData };
+  return { dataDir, targets, units, settings, removeData, scope: {dataDir,userDir,home,node,removeData} };
 }
 async function unchanged(item) {
   const fresh = await target(item.path, item);
   if (!fresh || fresh.dev !== item.dev || fresh.ino !== item.ino)
     throw Error("An uninstall target changed. No further files were removed.");
 }
-export async function removeInstallation(
+async function removeConfirmedInstallation(
   plan,
   {
     manage = async (args) =>
@@ -232,6 +257,34 @@ export async function removeInstallation(
     await rm(item.path, { recursive: item.directory, force: false });
   }
 }
+// The preview is not authority: a service switch can happen while the user reads
+// the confirmation. Rebuild it under the same lock used by start/stop/switch.
+export async function removeInstallation(plan, options = {}) {
+  return withServiceLifecycleLock(async () => {
+    const current = await uninstallPlan({...plan.scope, underLock:true});
+    const signature = value => JSON.stringify({
+      targets: value.targets, units: value.units, settings: value.settings,
+    });
+    if (signature(current) !== signature(plan))
+      throw Error('Installation or services changed since confirmation. Run uninstall again to review the current scope.');
+    const selectionPath = join(installationDirectory(), 'active-services.json');
+    let selection;
+    try {
+      await target(selectionPath, {privateMode:true});
+      selection = JSON.parse(await readFile(selectionPath, 'utf8'));
+      if (['preparing','stopping'].includes(selection.phase))
+        throw Error('A service switch is unfinished. Complete it before uninstalling.');
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
+    await removeConfirmedInstallation(current, options);
+    if (selection?.target?.userDir === plan.scope.userDir &&
+        selection?.target?.dataDir === plan.dataDir) {
+      // Keep an unavailable selection, rather than falling back to another Wallet.
+      const {atomicWritePrivate} = await import('./private-journal-files.mjs');
+      await atomicWritePrivate(selectionPath, JSON.stringify({...selection, phase:'stopped'}) + '\n');
+    }
+  });
+}
+
 export async function uninstallLocal({
   ask,
   write = console.log,
@@ -256,7 +309,7 @@ export async function uninstallLocal({
   write(
     "It does not revoke Safe permissions or cancel on-chain Orders. Resolve pending Orders and revoke the Safe permission first if you intend to retire it.",
   );
-  write("Services will stop. Removal is limited to:");
+  write(selected.units.length ? "Selected services will stop. Removal is limited to:" : "No managed services will be stopped. Removal is limited to:");
   for (const item of [...selected.units, ...selected.targets])
     write(`  ${item.path}`);
   const confirmation = removeData ? "DELETE LOCAL AGENTPAY DATA" : "REMOVE AGENTPAY SERVICES";
@@ -293,6 +346,7 @@ export async function uninstallLocal({
   write(
     `Selected services and data removal complete. On-chain permissions remain unchanged.
 To remove a global program installation: npm uninstall --global @c4roa0/agentpay-user
+For a folder-local npm installation, run npm uninstall @c4roa0/agentpay-user from its installation folder.
 For a source checkout, you may now delete the User program folder.`,
   );
   return 0;

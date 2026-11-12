@@ -8,7 +8,8 @@ refreshes managed service paths under the installer lock. Existing client connec
 URLs and caller credentials must match before a client-module path can be refreshed.
 A mismatch stops preparation rather than rewriting transaction identity.
 
-Installation checkpoints live in XDG state storage; old source-install checkpoints
+Installation checkpoints use the saved per-user state location, initially chosen
+from XDG state storage; old source-install checkpoints
 are read to preserve a custom data-directory selection. Deployment settings are
 copied into private User data only when no canonical file exists. Neither path
 changes keys, Policies, requests or recovery records.

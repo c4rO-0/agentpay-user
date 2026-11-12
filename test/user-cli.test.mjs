@@ -19,8 +19,8 @@ test("grouped services preserve lifecycle/startup separation and reject old/unsa
     },
   };
   await runUserCli(["service", "start"], opts);
-  assert.equal(calls[0].at(-1), "prepare");
-  assert.equal(calls[1].at(-1), "start");
+  assert.equal(calls[0].at(-1), "start");
+
   await runUserCli(["service", "autostart", "off"], opts);
   assert.equal(calls.at(-1).at(-1), "disable");
   await runUserCli(["wallet", "unlock"], opts);

@@ -1,3 +1,4 @@
+import {withInstallationOperation,runInstallationCommand} from './installation-operation.mjs';
 // SPDX-License-Identifier: MPL-2.0
 // Deliberate transport changes only. Never replace a Policy, request, or result.
 import {open,mkdir,lstat,rename,unlink,readFile} from 'node:fs/promises';
@@ -5,8 +6,6 @@ import {constants} from 'node:fs';
 import {join,dirname} from 'node:path';
 import {homedir} from 'node:os';
 import {randomUUID} from 'node:crypto';
-import {execFile} from 'node:child_process';
-import {promisify} from 'node:util';
 import {installedUserDir} from './local-data-directory.mjs';
 import {deploymentFilePath,installationDirectory} from './installation-paths.mjs';
 import {readPrivateJson,deploymentChanges} from './deployment-status.mjs';
@@ -18,7 +17,7 @@ import {settlementProfileBlocker} from './readiness-profile.mjs';
 import {readRuntimeStatus} from './runtime-status.mjs';
 import {readSettlementAddresses} from './settlement-address-history.mjs';
 
-const execute=promisify(execFile);
+const execute=runInstallationCommand;
 const normalize=value=>new URL(value).href.replace(/\/+$/,'');
 const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
 const pendingPath=dir=>join(dir,'runtime/endpoint-update.pending.json');
@@ -102,12 +101,11 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
  if(!metadata.response.ok||!metadata.result?.ok||!/^[a-f0-9]{64}$/.test(metadata.result.result?.sha256||''))
   throw Error('The new package address could not be checked. Current addresses are kept.');
  if(!changed)return {changed:false,apply:async()=>{}};
- return {changed:true,urls,async apply({write=console.log,manage=runtimeControl,stateDir=installationDirectory(),saveConnection=async()=>{}}={}){
+ return {changed:true,urls,async apply(options={}){return withInstallationOperation(()=>applyAddresses(options));}};
+ async function applyAddresses({write=console.log,manage=runtimeControl,stateDir=installationDirectory(),saveConnection=async()=>{}}={}){
   await mkdir(stateDir,{recursive:true,mode:0o700});
   const stat=await lstat(stateDir);
   if(!stat.isDirectory()||stat.isSymbolicLink()||stat.uid!==process.getuid()||(stat.mode&0o077))throw Error('Unsafe installation state directory.');
-  const lockPath=join(stateDir,'install.lock');let lock;
-  try{lock=await open(lockPath,'wx',0o600);}catch(e){if(e.code==='EEXIST')throw Error('Another setup or update is running. Retry market connect when it finishes.');throw e;}
   let updating=false;
   try{
    if(!same(await readPrivateJson(join(dataDir,'market-connection.json')),connectionBefore)||!same(await readPrivateJson(join(dataDir,'wallet/policy.json')),policy)||!same(await readServiceSettings(dataDir),settings)||!same(await readPrivateJson(publicPath),previousPublic)||!same(await readPrivateJson(await deploymentFilePath(dataDir,userDir,'anvil-onboarding.json')),setup))
@@ -133,6 +131,5 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
    await unlink(pendingPath(dataDir));
    write('Platform addresses updated. Your Wallet, permission and Order records were kept.');
   }catch(e){throw Error('Address update did not finish.\n'+e.message+'\n'+(updating?'Some connection settings may already be saved. Wallet keys, Policies and Orders were kept.':'No connection addresses were changed.')+'\nNext: agentpay market connect --market '+origin);}
-  finally{await lock.close();await unlink(lockPath);}
- }};
+ }
 }

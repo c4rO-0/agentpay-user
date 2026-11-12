@@ -31,7 +31,7 @@ try {
       ? walletCliPath()
       : join(userDir, "src/index.mjs");
   const env = Object.fromEntries(
-    ["HOME", "PATH", "LANG", "LC_ALL", "TZ", "TMPDIR"]
+    ["HOME", "PATH", "LANG", "LC_ALL", "TZ", "TMPDIR", "XDG_STATE_HOME"]
       .filter((k) => process.env[k])
       .map((k) => [k, process.env[k]]),
   );

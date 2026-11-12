@@ -1,3 +1,5 @@
+import { publishRuntimeReady } from "./runtime-selection-ready.mjs";
+import { acquireRuntimeOwner } from "./runtime-owner.mjs";
 import { runtimeSoftware } from "./software-versions.mjs";
 // Authenticated local invocation engine. Preserve durable request/payment checkpoints before
 // network calls; startup reconciliation observes history without creating replacement purchases.
@@ -15,6 +17,7 @@ import {
 import { serviceUrl } from "./service-url.mjs";
 import { createRuntimeRecovery } from "./runtime-recovery.mjs";
 import { constants } from "node:fs";
+import { dirname } from "node:path";
 import { open } from "node:fs/promises";
 import { assertOrderCanContinue } from "./order-closure.mjs";
 import { invocationResults } from "./invocation-result.mjs";
@@ -37,6 +40,9 @@ import { fetchJsonWithTimeout } from "./transport.mjs";
 import { readFinalizationDisclosure } from "./finalization-disclosure.mjs";
 import { walletIpcError } from "./wallet-ipc-error.mjs";
 
+// Retain the FileHandle for the entire server lifetime; process exit releases it.
+const runtimeOwner = await acquireRuntimeOwner();
+process.once('exit', () => { void runtimeOwner; });
 const host = String(process.env.AGENTPAY_USER_HOST || "127.0.0.1").trim();
 if (!["127.0.0.1", "localhost", "::1"].includes(host))
   throw Error("User Runtime must listen on loopback");
@@ -785,6 +791,9 @@ const server = createServer(async (req, res) => {
 });
 
 server.listen(port, host, () => {
+  void publishRuntimeReady(dirname(dirname(callerCredentialFile))).catch(error=>{
+    console.error('Default Runtime connection could not be refreshed:',error.message);
+  });
   process.stdout.write(
     `${JSON.stringify({
       ready: true,

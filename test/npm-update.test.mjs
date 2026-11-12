@@ -18,7 +18,7 @@ async function fixture(t, local = false) {
  await writeFile(join(dataDir,'runtime/local-services.json'),'{}',{mode:0o600});
  await writeFile(join(dataDir,'keep'),'private fixture',{mode:0o600});
  const calls=[],messages=[];
- const options={userDir,dataDir,write:s=>messages.push(s),ask:async()=> 'confirm',
+ const options={userDir,dataDir,serviceScope:async()=>({active:true}),write:s=>messages.push(s),ask:async()=> 'confirm',
  npm:async args=>{
   if(args[0]==='root')return npmRoot;
   if(args[0]==='prefix')return join(root,'prefix');
@@ -134,4 +134,34 @@ test('transitive, custom-source and changed project dependencies stop before ser
  assert.equal(await updateFromNpm({...f.options,ask:async()=>{
   await writeFile(file,JSON.stringify({dependencies:{[name]:'0.3.2'}}));return 'confirm';
  }}),1);assert.deepEqual(f.calls,[]);
+});
+
+test('inactive project update keeps the selected service pair and private data unchanged',async t=>{
+ const f=await fixture(t,true);
+ const {maintenanceServiceScope}=await import('../src/service-selection.mjs');
+ const {autostartFiles}=await import('../src/autostart-files.mjs');
+ const unitDir=join(f.root,'units');await mkdir(unitDir,{mode:0o700});
+ const active={node:process.execPath,userDir:join(f.root,'active-user'),dataDir:join(f.root,'active-data')};
+ const files=autostartFiles(active);
+ for(const [name,body] of Object.entries(files))await writeFile(join(unitDir,name),body,{mode:0o600});
+ assert.equal(await updateFromNpm({...f.options,
+  serviceScope:options=>maintenanceServiceScope({...options,unitDir}),
+  service:async()=>{throw Error('Inactive update must not change services');},
+  repair:async()=>{assert.equal((await maintenanceServiceScope({userDir:f.userDir,dataDir:f.dataDir,unitDir})).active,false);f.calls.push('inactive repair');},
+ }),0);
+ assert.deepEqual(f.calls,['requirements','install','inactive repair']);
+ for(const [name,body] of Object.entries(files))assert.equal(await readFile(join(unitDir,name),'utf8'),body);
+ assert.equal(await readFile(join(f.dataDir,'keep'),'utf8'),'private fixture');
+});
+
+test('retry finishes interrupted repair even when npm already installed the target version',async t=>{
+ const f=await fixture(t,true);
+ assert.equal(await updateFromNpm({...f.options,repair:async()=>{throw Error('interrupted repair');}}),1);
+ assert.equal(JSON.parse(await readFile(join(f.userDir,'package.json'))).version,'0.3.1');
+ f.calls.length=0;
+ assert.equal(await updateFromNpm(f.options),0);
+ assert.deepEqual(f.calls,['new repair']);
+ f.calls.length=0;
+ assert.equal(await updateFromNpm(f.options),0);
+ assert.deepEqual(f.calls,['current official test']);
 });

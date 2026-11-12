@@ -367,7 +367,7 @@ export function createInvocationStore(path, serviceBinding = null) {
   });
 }
 
-function hashInvocationKey(value) {
+export function hashInvocationKey(value) {
   const normalized = String(value || "").trim();
   if (!/^[A-Za-z0-9._:-]{8,128}$/.test(normalized))
     throw coded(

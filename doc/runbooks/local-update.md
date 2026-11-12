@@ -27,10 +27,13 @@ registry dependency, not a transitive dependency or a linked/custom-source packa
 
 It checks the published User version and shows its exact Wallet dependency. Confirm
 to continue, or cancel without changing services. `agentpay update -f` skips only
-this confirmation. The updater checks requirements in a temporary installation directory, stops configured services,
+this confirmation. The updater checks requirements in a temporary installation directory, stops this installation’s selected services,
 installs the confirmed version and invokes the new version's repair to refresh
 services and verify its pinned official test Skill. No paid test runs automatically.
-Other installed Skills and original requests are kept. Wallet needs unlocking after
+An inactive installation stays inactive: updating or repairing it does not stop the
+selected Wallet/Runtime. Use `agentpay service start` from that installation when you
+want to switch. Another command changing services or program files will ask you to
+wait and retry. Other installed Skills and original requests are kept. Wallet needs unlocking after
 restart. A current User version still checks the official test Skill.
 
 Only genuine npm installations are updated. A source checkout or `npm link`
@@ -42,7 +45,8 @@ ship usable runtime artifacts. It never independently selects the newest Wallet.
 
 If npm fails after services stop, keep your private data. Review the shown log;
 reinstall the intended User version with npm if program files are incomplete, then
-run `agentpay repair`. Interrupted installers may leave a lock to inspect. Repair
+run `agentpay repair`. If the updater was interrupted, rerun `agentpay update`: it retains the confirmed
+version and finishes repair even if npm already installed it. Repair
 failure is not reported as update success. A newer update cannot silently downgrade
 a version changed while you were reviewing the confirmation.
 
@@ -64,8 +68,10 @@ Wallet starts locked after restart. No Wallet compilation is required.
 
 If preparation fails after stopping services, they remain stopped. Resolve the
 reported cause and repeat repair; the log path is shown. An interrupted run may
-leave an installation lock: inspect it before removing it. There is no automatic
-code rollback. Running-package negotiation is not implemented; complete the managed
+leave a lock marker. New-format operations allow retry after all writer processes
+exit; while a writer is alive, wait for it to finish. Do not delete a lock to bypass
+that check. An older lock whose writer cannot be identified is preserved for review.
+There is no automatic code rollback. Running-package negotiation is not implemented; complete the managed
 restart before relying on a newly installed version.
 
 ## Uninstall

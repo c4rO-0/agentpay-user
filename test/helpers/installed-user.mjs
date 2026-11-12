@@ -14,8 +14,12 @@ export async function installedUser(root) {
 }
 export function isolateState(t, root) {
   const previous = process.env.XDG_STATE_HOME;
+  const previousHome = process.env.HOME;
+  process.env.HOME=join(root,'home');
   process.env.XDG_STATE_HOME=join(root,'state');
   t.after(() => {
+    if(previousHome === undefined) delete process.env.HOME;
+    else process.env.HOME=previousHome;
     if(previous === undefined) delete process.env.XDG_STATE_HOME;
     else process.env.XDG_STATE_HOME=previous;
   });

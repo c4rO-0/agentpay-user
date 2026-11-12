@@ -5,6 +5,7 @@ import { rememberUserDataDir } from "./local-data-directory.mjs";
 import { spawn } from "node:child_process";
 import { join } from "node:path";
 import { runInstall } from "./install-user.mjs";
+import { activateSetup } from './setup-service-selection.mjs';
 
 export async function installAndSetup({
   userDir,
@@ -13,9 +14,13 @@ export async function installAndSetup({
   install = runInstall,
   start = startGuide,
   remember = rememberUserDataDir,
+  activate = activateSetup,
   write = console.log,
 }) {
-  const result = await install({ userDir, market, dataDir, write });
+  const result = await install({ userDir, market, dataDir, write,
+    beforeApplySettings: () => activate({dataDir,write}),
+  });
+  if (result?.cancelled) return result.exitCode;
   if (!result?.completed)
     throw Error(
       "Installation did not complete. Run the same Install command to resume.",
