@@ -1,7 +1,7 @@
 # User TODO
 
 - [x] Verify local official Skill files before downloading and stream update repair progress (2026-11-12; targeted checks).
-- [ ] Publish and verify the local official-Skill check optimization in the next User patch.
+- [x] Publish local official-Skill verification and streaming update progress in User 0.3.9; tag and npm integrity verified (2026-11-12).
 
 - [x] Publish User 0.3.8 with matching v0.3.8 tag; full CI, standalone package and public registry integrity passed (2026-11-12).
 

@@ -2,7 +2,12 @@
 
 ## Official Skill local verification — 2026-11-12
 
-User 0.3.9 candidate: update/repair verifies the release-pinned local ZIP and its extracted
+Published as `v0.3.9` at `8fbae4e`. Full GitHub behavior and standalone package
+checks passed; npm latest and archive integrity independently verified. Wallet stays
+0.3.3, Protocol 0.14.3 and official test Skill 1.2.1.
+[Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43162494802).
+
+User 0.3.9: update/repair verifies the release-pinned local ZIP and its extracted
 files before using the network. Matching files skip download; edited or incomplete
 extracted files are preserved with guidance. Software-update repair progress streams
 as it happens. Targeted update/package regressions passed; the actual pinned 1.2.1
