@@ -1,5 +1,42 @@
 # AgentPay User progress
 
+## User 0.3.19 release candidate — 2026-11-13
+
+Close older update journals after verifying a manually installed newer release,
+with confirmation and fresh repair checks. Cancellation/failure/scope mismatch or
+program changes during verification keep the journal for retry. No downgrade or
+new payment. Wallet remains 0.3.4 and Protocol 0.14.3. Release checks and publication
+are pending; participant 0.3.18 repair already succeeded, update recovery has not.
+
+
+## Participant repair passed; newer-install update recovery — 2026-11-13
+
+Participant installed User 0.3.18 through npm and completed repair with Wallet
+0.3.4; service readiness and the pinned official Skill check passed. The older
+0.3.16 update journal still blocked update. The new recovery branch verifies the
+exact installed newer release/dependencies, asks before final checks (unless -f),
+and removes the old journal only after successful repair/verification. Cancellation,
+verification failure or a different data folder preserve recovery state; no downgrade,
+reinstall, authorization or payment is initiated by this branch. Specific scope and
+package errors replace the generic CHECK_FAILED for these conditions.
+Focused tests use real temporary files and controlled npm/service boundaries; they
+cover cancel, failed retry, successful completion, subsequent latest-version lookup,
+and mismatched dependencies/data scope. This fix is not published yet. Participant
+unlock/status and configured A/B switching remain pending.
+
+
+## Participant old-updater recovery gate — 2026-11-13
+
+Participant update still ran User 0.3.16 because its pending update record selects
+the already-installed old version and retries repair before checking latest. The
+0.3.18 fix was never loaded. Prepared a normal npm install of 0.3.18 followed by
+its repair; no state record deletion, authorization or purchase. Participant execution
+is pending. A separate updater gap remains: after installing a newer version by npm,
+the older pending target currently blocks future update rather than reconciling the
+installed version. Resolve with verified same-installation/data recovery, no downgrade
+and no premature journal removal; do not claim the full update loop is closed.
+
+
 ## User 0.3.18 publication verified — 2026-11-13
 
 GitHub run 43378486830 completed successfully. Public npm version and latest both

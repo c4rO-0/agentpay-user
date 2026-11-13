@@ -14,10 +14,19 @@ For an npm installation inside a project folder, run its own command:
 ./node_modules/.bin/agentpay update
 ```
 
-Directory-local update support starts with User 0.3.3. For an older directory
-installation, run `npm install --save-exact @c4roa0/agentpay-user@0.3.3` in its
-original program folder, then `./node_modules/.bin/agentpay repair`. Future versions
-can be installed with the command above. Keep your private data directory.
+If an older updater is stuck retrying a failed repair, install the recovery release
+in that same project folder, then run its updater:
+
+```sh
+npm install --save-exact @c4roa0/agentpay-user@0.3.19
+./node_modules/.bin/agentpay update
+```
+
+The new updater recognizes that the installed version is newer than the unfinished
+update. It verifies the published version and its dependencies, then asks to finish
+the checks. Confirm to continue or enter `q` to leave everything as it is. It keeps
+the newer version and closes the old update record only after checks succeed. Do
+not delete recovery records or uninstall your Wallet to bypass this condition.
 
 Both forms update the installation that owns the command, regardless of the
 terminal's working directory. Directory installs update their direct User dependency

@@ -196,3 +196,62 @@ test('current-version recovery retains repair checkpoint after units are selecte
  assert.equal(await updateFromNpm(options),0);
  assert.deepEqual(f.calls,['new repair']);
 });
+
+test('newer npm installation completes an older failed update without downgrade, preserving retry on failure',async t=>{
+ const f=await fixture(t,true);
+ assert.equal(await updateFromNpm({...f.options,repair:async()=>{throw Error('old repair failed');}}),1);
+ const installed=JSON.parse(await readFile(join(f.userDir,'package.json'),'utf8'));
+ installed.version='0.3.2';
+ await writeFile(join(f.userDir,'package.json'),JSON.stringify(installed));
+ const npm=async(args,options)=>{
+  if(args[0]==='view'){assert.equal(args[1],name+'@0.3.2');return JSON.stringify(installed);}
+  return f.options.npm(args,options);
+ };
+ f.calls.length=0;
+ assert.equal(await updateFromNpm({...f.options,npm,ask:async()=> 'q'}),0);
+ assert.deepEqual(f.calls,[]);
+ let questions=0;
+ const ask=async()=>{questions++;return 'confirm';};
+ assert.equal(await updateFromNpm({...f.options,npm,ask,repair:async()=>{throw Error('new repair interrupted');}}),1);
+ assert.equal(await updateFromNpm({...f.options,npm,ask}),0);
+ assert.equal(questions,2); // Failed checks kept the recovery record for retry.
+ assert.deepEqual(f.calls,['new repair']); // No stop/install/downgrade branch.
+ assert.equal(await readFile(join(f.dataDir,'keep'),'utf8'),'private fixture');
+ f.calls.length=0;
+ assert.equal(await updateFromNpm({...f.options,npm:async(args,options)=>{if(args[0]==='view'){assert.equal(args[1],name+'@latest');return JSON.stringify(installed);}return npm(args,options);},ask:async()=>{throw Error('completed recovery prompted again');}}),0);
+ assert.deepEqual(f.calls,['current official test']); // Journal closed after success.
+});
+
+test('newer installation recovery rejects mismatched published dependencies and another data folder',async t=>{
+ const f=await fixture(t,true);
+ assert.equal(await updateFromNpm({...f.options,repair:async()=>{throw Error('interrupted');}}),1);
+ const installed=JSON.parse(await readFile(join(f.userDir,'package.json'),'utf8'));
+ installed.version='0.3.2';await writeFile(join(f.userDir,'package.json'),JSON.stringify(installed));
+ const npm=async(args,options)=>args[0]==='view'
+  ? JSON.stringify({...installed,dependencies:{...installed.dependencies,'@c4roa0/agentpay-wallet':'0.4.0'}})
+  : f.options.npm(args,options);
+ f.calls.length=0;f.messages.length=0;
+ assert.equal(await updateFromNpm({...f.options,npm}),1);
+ assert(f.messages.some(s=>s.includes('UPDATE_RECOVERY_PACKAGE_MISMATCH')));
+ assert.deepEqual(f.calls,[]);
+ assert.equal(await updateFromNpm({...f.options,npm,dataDir:join(f.root,'another-data')}),1);
+ assert(f.messages.some(s=>s.includes('UPDATE_RECOVERY_SCOPE_MISMATCH')));
+ assert.deepEqual(f.calls,[]);
+});
+
+
+test('a version changed during recovery keeps the journal for a verified retry',async t=>{
+ const f=await fixture(t,true);
+ assert.equal(await updateFromNpm({...f.options,repair:async()=>{throw Error('interrupted');}}),1);
+ const installed=JSON.parse(await readFile(join(f.userDir,'package.json'),'utf8'));
+ installed.version='0.3.2';await writeFile(join(f.userDir,'package.json'),JSON.stringify(installed));
+ const npm=async(args,options)=>args[0]==='view'?JSON.stringify(installed):f.options.npm(args,options);
+ assert.equal(await updateFromNpm({...f.options,npm,force:true,repair:async()=>{
+  installed.version='0.3.3';await writeFile(join(f.userDir,'package.json'),JSON.stringify(installed));
+ }}),1);
+ assert(f.messages.some(s=>s.includes('UPDATE_RECOVERY_CHANGED')));
+ let confirmations=0;
+ assert.equal(await updateFromNpm({...f.options,npm,ask:async()=>{confirmations++;return 'confirm';}}),0);
+ assert.equal(confirmations,1);
+ assert.equal(await readFile(join(f.dataDir,'keep'),'utf8'),'private fixture');
+});

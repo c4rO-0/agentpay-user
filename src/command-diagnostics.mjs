@@ -10,6 +10,9 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 const exec = promisify(execFile);
 const definitions = {
+  UPDATE_RECOVERY_CHANGED: ['Installed program files changed while the update was being checked.', 'Run update again from this installation to verify its current version. The recovery record was kept.'],
+  UPDATE_RECOVERY_SCOPE_MISMATCH: ['The unfinished update belongs to another data folder.', 'Run update from its original installation. Keep both data folders and the recovery record.'],
+  UPDATE_RECOVERY_PACKAGE_MISMATCH: ['Installed packages do not match the release being recovered.', 'Reinstall the intended User version with npm, then run update again. The old recovery record is kept; no downgrade was attempted.'],
   GUIDE_PROCESS_REVIEW_REQUIRED: ['A saved Setup process could not be safely identified.', 'Keep its PID record and data. Contact support to identify the process; do not kill a process just because it uses the port.'],
   GUIDE_PROCESS_STOP_TIMEOUT: ['The verified Setup process did not stop in time.', 'No forced termination was used. Inspect service logs and retry the same service operation after it exits.'],
   RUNNING_VERSION_UNVERIFIED: ['Running software differs from the installed packages.', 'The old process may still be running. Review the service details below before retrying repair.'],

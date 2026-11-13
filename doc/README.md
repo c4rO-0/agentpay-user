@@ -68,3 +68,5 @@ Private platform histories and harnesses are retained outside this public tree.
 - [npm publication](runbooks/npm-publication.md): archive checks, initial upload and GitHub Trusted Publisher.
 
 - [Command diagnostics and repair review](records/2026-11-13-diagnostics-repair-review.md): failure reporting and isolated process ownership findings.
+
+- [Unfinished update recovery](records/2026-11-13-update-recovery.md): completing an older update after npm installs a newer version.

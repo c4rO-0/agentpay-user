@@ -106,7 +106,7 @@ async function updateUnderLock({
         throw Error('Invalid update recovery record. Keep it for review.');
     } catch(error) { if(error.code !== 'ENOENT') throw error; }
     dataDir ??= await resolveUserDataDir({userDir});
-    if (pending && pending.dataDir !== dataDir) throw Error('The interrupted update belongs to another data folder. Keep its recovery record for review.');
+    if (pending && pending.dataDir !== dataDir) throw Object.assign(Error('The interrupted update belongs to another data folder. Keep its recovery record for review.'),{code:'UPDATE_RECOVERY_SCOPE_MISMATCH'});
     const scope = await serviceScope({userDir,dataDir,resumeUpdate:true});
     const resumeSwitch = async options => {
       if (!scope.resumeSwitch) return;
@@ -115,11 +115,36 @@ async function updateUnderLock({
       const output = await service('activate-setup',options);
       if(output)write(output);
     };
-    if (pending && current.version === pending.targetVersion) {
+    const supersedes = pending && newer(current.version,pending.targetVersion);
+    if (pending && (current.version === pending.targetVersion || supersedes)) {
+      // npm may have installed a repair release while the old updater was stuck.
+      // Verify that exact installed release; never resume by downgrading to the
+      // old target. Keep the original journal until fresh repair has succeeded.
+      let expectedWallet=pending.walletVersion, expectedProtocol=pending.protocolVersion;
+      if(supersedes) {
+        const published=JSON.parse(await npm(['view',name+'@'+current.version,'--json'],{cwd:target.prefix}));
+        expectedWallet=published.dependencies?.['@c4roa0/agentpay-wallet'];
+        expectedProtocol=published.dependencies?.['@c4roa0/agentpay-protocol'];
+        if(published.name!==name || published.version!==current.version ||
+          !stable(expectedWallet)||!stable(expectedProtocol)||
+          current.dependencies?.['@c4roa0/agentpay-wallet']!==expectedWallet||
+          current.dependencies?.['@c4roa0/agentpay-protocol']!==expectedProtocol)
+          throw Object.assign(Error('Installed packages do not match this published release.'),{code:'UPDATE_RECOVERY_PACKAGE_MISMATCH'});
+        write(`User ${current.version} is installed. An earlier update to ${pending.targetVersion} still needs its final checks.`);
+        write('Keep the installed version and finish its checks. Services may restart; Wallet may need unlocking. No downgrade or payment.');
+        if(!force) {
+          let answer;
+          do {
+            answer=String(await ask("Type 'confirm' to finish, or 'q' to cancel")).trim().toLowerCase();
+            if(!['confirm','q'].includes(answer))write("Enter 'confirm' or 'q'.");
+          } while(!['confirm','q'].includes(answer));
+          if(answer==='q'){write('Update cancelled. The previous recovery record was kept.');return 0;}
+        }
+      }
       installing = true;
-      if (current.dependencies?.['@c4roa0/agentpay-wallet'] !== pending.walletVersion ||
-          current.dependencies?.['@c4roa0/agentpay-protocol'] !== pending.protocolVersion)
-        throw Error('The interrupted update has mismatched dependencies. Reinstall the confirmed User version, then retry.');
+      if (current.dependencies?.['@c4roa0/agentpay-wallet'] !== expectedWallet ||
+          current.dependencies?.['@c4roa0/agentpay-protocol'] !== expectedProtocol)
+        throw Object.assign(Error('The interrupted update has mismatched dependencies. Reinstall the confirmed User version, then retry.'),{code:'UPDATE_RECOVERY_PACKAGE_MISMATCH'});
       write('Continuing the interrupted update. Checking installed packages and service settings.');
       const configured = await lstat(join(dataDir,'runtime/local-services.json')).then(s=>s.isFile(),e=>{if(e.code==='ENOENT')return false;throw e;});
       if (configured) {
@@ -127,12 +152,15 @@ async function updateUnderLock({
         const output = await repair({env:{...process.env,AGENTPAY_USER_DATA_DIR:dataDir},cwd:target.prefix,timeout:600000});
         if(output)write(output);
       } else await officialTest({userDir,dataDir,write});
+      const checked=JSON.parse(await readFile(join(userDir,'package.json'),'utf8'));
+      if(checked.name!==name || checked.version!==current.version ||
+        checked.dependencies?.['@c4roa0/agentpay-wallet']!==expectedWallet ||
+        checked.dependencies?.['@c4roa0/agentpay-protocol']!==expectedProtocol)
+        throw Object.assign(Error('Installed packages changed during update recovery.'),{code:'UPDATE_RECOVERY_CHANGED'});
       await unlink(progressPath);
       write(`User ${current.version} update completed. No paid test was started.`);
       return 0;
     }
-    if(pending && newer(current.version,pending.targetVersion))
-      throw Error('Installed User is newer than the interrupted update. Keep the recovery record for review; no downgrade was attempted.');
     const metadata = JSON.parse(await npm(['view',name + '@' + (pending?.targetVersion || 'latest'),'--json'], {cwd:target.prefix}));
     if (metadata.name !== name || !stable(metadata.version) ||
         !stable(metadata.dependencies?.['@c4roa0/agentpay-wallet']) ||

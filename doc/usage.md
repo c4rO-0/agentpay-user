@@ -142,3 +142,9 @@ copy the terminal error codes instead.
 
 Keep the original Wallet and Order files. A failed command may have applied some
 changes already; do not repeat a purchase to repair a setup or connectivity problem.
+
+If npm has already installed a newer User version while an older update was
+unfinished, `agentpay update` verifies the installed release and offers to finish
+its checks. It keeps the newer version. Confirm to continue, or enter `q` to keep
+the recovery record without changing services. The old record is closed only after
+the checks succeed; keys, permissions and Orders stay in their data folder.
