@@ -23,7 +23,7 @@ the same as the explicitly paid `agentpay payment test` command.
 | Feature | Suites |
 | --- | --- |
 | CLI and local state | `user-cli`, `run-launcher`, `local-info`, `local-data-directory`, `status-panel`, `unlock`, `wallet-ipc-error` |
-| Installation and guided setup | `install-*`, `prepare-*`, `guided-setup`, `user-setup-guide`, `setup-local`, `anvil-onboarding*`, `demo-*`, `authorization-question-checkpoint` |
+| Installation and guided setup | `install-*`, `prepare-*`, `guided-setup`, `user-setup-guide`, `setup-local`, `anvil-onboarding*`, `demo-*`, `authorization-question-checkpoint`, `setup-helper`, `purchase-readiness-process`, `health` |
 | Services and repair | `local-services*`, `local-update`, `setup-autostart`, `autostart-cli`, `repair-market-wallet`, `uninstall-local` |
 | Owner and permission | `owner-*`, `safe-policy-plan`, `policy-*`, `renew-policy`, `restore-wallet`, `deployment-status` |
 | Invocation and recovery | `multi-service-runtime`, `runtime-client`, `runtime-recovery`, `runtime-connection-settings`, `invocation-store`, `invocation-result`, `transport-timeout` |
@@ -82,3 +82,7 @@ against the current grouped commands and action-scoped behavior. The portable-pa
 test now executes the exported server instead of merely checking source strings.
 No product authority was relaxed to make tests pass. Current verification results
 are in [the source review](../doc/security/public-source-review-2026-11-06.md).
+
+The npm archive acceptance command also runs the owner-page and official-test
+helper checks from an independently installed package. Its platform and payment
+responses are controlled fixtures; it does not authorize or spend live funds.

@@ -1,3 +1,4 @@
+import { captureNode } from "../src/anvil-onboarding.mjs";
 import { requireRunningSoftware } from "../src/software-versions.mjs";
 import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -5,8 +6,7 @@ import { walletCliPath } from "../src/wallet-package.mjs";
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { spawn, execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import { mkdtemp, mkdir, rm, readFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join } from "node:path";
@@ -16,8 +16,7 @@ import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { initializeCapabilities } from "@c4roa0/agentpay-wallet/local";
 import { initializeCallerCredential } from "../src/caller-auth.mjs";
 import { saveServiceSettings } from "../src/local-services.mjs";
-const exec = promisify(execFile),
-  cli = walletCliPath(),
+const cli = walletCliPath(),
   runner = fileURLToPath(
     new URL("../scripts/local-service.mjs", import.meta.url),
   );
@@ -73,14 +72,8 @@ test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate 
     }
     throw error;
   }
-  const status = async () =>
-    JSON.parse(
-      (
-        await exec(process.execPath, [cli, "status", join(dir, "wallet")], {
-          timeout: 3000,
-        })
-      ).stdout,
-    );
+  // Exercise the same captured Wallet CLI path used by guided setup.
+  const status = () => captureNode(cli, ["status", join(dir, "wallet")]);
   const first = start("wallet");
   assert.equal((await wait(status)).locked, true);
   const runtime = start("runtime");

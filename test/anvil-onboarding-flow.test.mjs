@@ -8,7 +8,6 @@ import { createHash } from "node:crypto";
 import { hashPrivateRequest } from "@c4roa0/agentpay-protocol";
 import {
   runAnvilOnboarding,
-  childFailureSummary,
 } from "../src/anvil-onboarding.mjs";
 import { buildSafePolicyPlan } from "../src/safe-policy-plan.mjs";
 import {
@@ -508,15 +507,6 @@ test("unreachable rehearsal RPC pauses before local or chain operations with rec
   assert.match(f.output.join("\n"), /saved settings are kept/);
 });
 
-test("child failure reports Runtime error rather than the source-code excerpt", () => {
-  const stderr =
-    "file:///private/user/scripts/test.mjs:53\nthrow new Error(`User Runtime HTTP ${response.status}`);\n      ^\n\nError: User Runtime HTTP 502: SKILL_INVOCATION_FAILED: fetch failed\n    at file:///private/user/scripts/test.mjs:53:40";
-  assert.equal(
-    childFailureSummary(stderr),
-    "User Runtime HTTP 502: SKILL_INVOCATION_FAILED: fetch failed",
-  );
-  assert.doesNotMatch(childFailureSummary(stderr), /throw|file:\/\//);
-});
 
 test("restoration draft never falls back to owner authorization when chain verification fails", async () => {
   const f = fixture();

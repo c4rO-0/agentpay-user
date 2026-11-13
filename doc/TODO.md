@@ -1,15 +1,19 @@
 # User TODO
 
+- [x] Fix Setup paid-test helper rejecting HTTPS Settlement; preserve loopback-only Runtime and original request identity (controlled process regression).
+- [x] Propagate reviewed captured-helper failure categories and bound captured output; preserve original requests and omit private exceptions.
+- [ ] Publish the Setup HTTPS test fix and resume participant B's saved setup; verify original test/order state before claiming payment completion.
+
 - [x] Include owner/preview web assets in npm and resolve the ethers browser bundle from the installed dependency; distinguish program-asset errors from missing Wallet files.
 - [x] Publish User 0.3.15 after installed-package owner-page checks; CI, npm integrity and web asset contents verified.
-- [ ] Participant updates B to 0.3.15 and resumes its original authorization draft.
+- [x] Participant B reached the paid-test step after the owner-page fix; authorization completion is reported by guide progress, not separately reconciled here.
 
-- [ ] Correct participant health interpretation: unfinished B has no running Wallet/Runtime yet; label setup-needed rather than suggesting a network fault. Settlement /health is intentionally excluded from the current public ingress allowlist; use an existing supported public read endpoint or report this probe unavailable, never weaken ingress or infer backend outage from this 404. Host-local /health returned 200, on-chain, chain 31337 on 2026-11-13.
+- [x] Correct participant health interpretation: unfinished B has no running Wallet/Runtime yet; label setup-needed rather than suggesting a network fault. Settlement /health is intentionally excluded from the current public ingress allowlist; now use the existing public purchase-readiness endpoint for connectivity without depending on a particular Provider; ingress remains unchanged. Host-local /health returned 200, on-chain, chain 31337 on 2026-11-13.
 
 - [x] Add read-only `agentpay health` with bounded probes, safe reports and no installation/data changes (controlled verification).
 - [x] Increase combined setup and policy-preview RPC checks to 30 seconds; reproduce a successful read slower than five seconds.
 - [x] Publish diagnostics/interaction fixes as User 0.3.14 with Wallet 0.3.4; CI, npm latest and archive integrity verified.
-- [ ] Participant updates B to 0.3.14, runs health, resumes saved setup and completes A/B switching acceptance.
+- [ ] Resume B with the next reviewed patch and complete its paid test and configured A/B switching acceptance; diagnostics update and owner approval already progressed beyond 0.3.14.
 
 - [x] Review failure guidance across install/setup steps (dependencies, settings, Wallet creation/unlock, authorization, local services, Market connection and official test): report failed step, sanitized known cause, preserved progress and specific recovery action; distinguish retryable/repair-required/user-cancelled/uncertain transaction states. Never infer non-submission after an uncertain write or advise a replacement purchase. Avoid raw JSON-only errors and blind continue loops.
 

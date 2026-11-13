@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Verify the archive consumers receive, without a sibling repository or local Wallet build.
 import {execFileSync} from 'node:child_process';
-import {mkdtemp,mkdir,readFile,copyFile,rm} from 'node:fs/promises';
+import {mkdtemp,mkdir,readFile,copyFile,cp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname,join,resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -28,8 +28,10 @@ try {
  const help=run(join(consumer,'node_modules/.bin/agentpay'),['help'],consumer);
  if(!help.includes('update [-f]') || !help.includes('policy help'))throw Error('Installed command unavailable');
  await mkdir(join(installed,'test'));
- for(const file of ['local-services-process.test.mjs','owner-approval-server.test.mjs']) await copyFile(join(source,'test',file),join(installed,'test',file));
+ for(const file of ['local-services-process.test.mjs','owner-approval-server.test.mjs','setup-helper.test.mjs','multi-service-runtime.test.mjs']) await copyFile(join(source,'test',file),join(installed,'test',file));
  console.log(run(process.execPath,['--test','test/local-services-process.test.mjs','test/owner-approval-server.test.mjs'],installed));
+ await cp(join(source,'test/fixtures'),join(installed,'test/fixtures'),{recursive:true});
+ console.log(run(process.execPath,['--test','--test-name-pattern=official connectivity suite|captured helper','test/setup-helper.test.mjs','test/multi-service-runtime.test.mjs'],installed));
  console.log('Verified archive: '+archive);
  console.log('SHA256: '+createHash('sha256').update(await readFile(archive)).digest('hex'));
 } finally {await rm(root,{recursive:true,force:true});}

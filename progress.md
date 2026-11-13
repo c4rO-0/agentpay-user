@@ -1,5 +1,33 @@
 # AgentPay User progress
 
+## Setup payment-test HTTPS regression — 2026-11-13
+
+Participant B reached the paid-test step and received only STEP_FAILED. Inspection
+found that its legacy helper incorrectly required loopback HTTP for Settlement as
+well as Runtime. HTTPS Settlement therefore failed before request creation in this
+helper. It now uses the shared platform URL validator while retaining local Runtime
+loopback restrictions. Controlled process acceptance uses an HTTPS Settlement base,
+one simulated Order and original-request receipt confirmation; no live payment was
+performed. Participant payment completion remains unverified. User 0.3.16 is prepared for publication with Wallet 0.3.4 unchanged. Wider review also replaced raw captured-helper errors with reviewed
+categories, bounded captured output without killing uncertain financial work,
+and moved purchase-readiness RPC reads to the cancellable transport. Readiness
+now compares Policy fields using the same normalization as setup and stops further
+chain checks after a failed initial inspection. Readiness blockers also carry
+reviewed diagnostic categories so the guide can explain a timeout or network
+failure rather than printing only CHAIN_POLICY_UNAVAILABLE. Health uses the existing public
+purchase-readiness endpoint for connectivity (not payment readiness); unfinished
+setup is distinguished from local service failure. No nginx route was opened.
+
+Controlled verification: setup/recovery and multi-service process tests passed;
+health's former expectation that unfinished setup must fail was updated, and all
+five health/readiness checks passed, including a command exiting while the RPC
+server remained stalled. Installed candidate archive acceptance passed nine checks
+covering actual service restart, owner-page assets, the official-test helper with
+an HTTPS platform base and sanitized child failure. These are simulated services,
+not participant payment or full A/B acceptance. The earlier locally packed 0.3.15 candidate was not the published 0.3.15 artifact;
+the release version is 0.3.16.
+
+
 ## npm owner approval assets — 2026-11-13
 
 Participant B passed chain inspection but confirmation failed before opening the

@@ -7,6 +7,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import { lstat, open, readFile, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { serviceBase } from "../src/service-url.mjs";
 import { loadActiveSkill } from "../src/active-skill.mjs";
 import {
   loadRuntimeConnection,
@@ -29,7 +30,9 @@ if (
   );
 }
 const dataDir = resolve(dataArg);
-const settlementUrl = localUrl(settlementArg);
+// Settlement is a platform endpoint, possibly behind HTTPS path ingress.
+// Only the local Runtime remains restricted to loopback.
+const settlementUrl = new URL(serviceBase(settlementArg, "Settlement URL"));
 const userUrl = localUrl(userArg);
 const runtimeDir = join(dataDir, "runtime");
 const walletDir = join(dataDir, "wallet");

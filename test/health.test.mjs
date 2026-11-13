@@ -106,8 +106,8 @@ test("health checks contracts over HTTP, reports a failed read safely and never 
         resolveDirectory: async () => dir,
         write: (s) => lines.push(s),
       }),
-      1,
-    ); // Wallet has not been created.
+      failure ? 1 : 0,
+    ); // Unfinished setup is reported separately from failed checks.
     const out = lines.join("\n");
     assert.match(out, /\[OK\] Chain RPC/);
     assert.match(out, /Policy contract read/);
@@ -190,8 +190,8 @@ test("HTTP 200 proxy pages do not pass platform health checks", async (t) => {
     }
     res.end(
       JSON.stringify(
-        req.url.endsWith("/health")
-          ? { ok: true, mode: "on-chain" }
+        req.url.includes("/agentpay/purchase-readiness?")
+          ? { ok: true, result: { blockers: ["UNKNOWN_SERVICE"], settlementProfile: { chainId: 31337, assetAddress: address(2), factoryAddress: address(3), registryAddress: address(4) } } }
           : {
               chainId: 31337,
               module: address(1),
@@ -237,11 +237,13 @@ test("HTTP 200 proxy pages do not pass platform health checks", async (t) => {
         : /\[!\] Market HTTP.*INVALID_HEALTH_RESPONSE/,
     );
     assert.doesNotMatch(out.join("\n"), /DO_NOT_SHARE|proxy failure/);
+    assert.match(out.join("\n"), /setup is unfinished/);
+    assert.doesNotMatch(out.join("\n"), /LOCAL_SERVICE_UNAVAILABLE/);
   }
   assert.deepEqual(paths, [
-    "/settlement/health",
+    "/settlement/agentpay/purchase-readiness?skillId=0x" + "0".repeat(64) + "&profileHash=0x" + "0".repeat(64),
     "/market/web/onboarding/user-config",
-    "/settlement/health",
+    "/settlement/agentpay/purchase-readiness?skillId=0x" + "0".repeat(64) + "&profileHash=0x" + "0".repeat(64),
     "/market/web/onboarding/user-config",
   ]);
 });

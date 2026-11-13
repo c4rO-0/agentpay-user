@@ -771,11 +771,21 @@ test("official connectivity suite uses the common client and confirms the origin
   await selectInstalledBundle(f.dir, installed.directory);
   const execute = promisify(execFile),
     script = resolve("scripts/random-model-ack-smoke.mjs");
+  // A platform URL may be remote; the local Runtime must remain loopback.
+  await assert.rejects(
+    execute(process.execPath, [script, "invoke", f.dir,
+      "https://platform.example/settlement", "https://runtime.example"],
+      { timeout: 5000 }),
+    /private loopback URL required/,
+  );
+  await assert.rejects(readFile(join(f.dir, "runtime/model-ack-smoke.json")),
+    { code: "ENOENT" });
+  assert.equal(f.orders.size, 0);
   const invoke = JSON.parse(
     (
       await execute(
         process.execPath,
-        [script, "invoke", f.dir, "http://127.0.0.1:1", f.runtimeUrl],
+        [script, "invoke", f.dir, "https://platform.example/settlement", f.runtimeUrl],
         { timeout: 5000 },
       )
     ).stdout,
@@ -784,7 +794,7 @@ test("official connectivity suite uses the common client and confirms the origin
     (
       await execute(
         process.execPath,
-        [script, "confirm", f.dir, "http://127.0.0.1:1", f.runtimeUrl],
+        [script, "confirm", f.dir, "https://platform.example/settlement", f.runtimeUrl],
         { timeout: 5000 },
       )
     ).stdout,

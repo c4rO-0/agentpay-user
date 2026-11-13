@@ -1,5 +1,5 @@
 import { ReadOnlyRpc } from "./read-only-rpc.mjs";
-import { CHAIN_CHECK_TIMEOUT_MS, formatSetupFailure } from "./setup-diagnostics.mjs";
+import { CHAIN_CHECK_TIMEOUT_MS, formatSetupFailure, failureGuidance } from "./setup-diagnostics.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -149,33 +149,43 @@ async function runNode(script, args, { env = ownEnv, stdio = "inherit" } = {}) {
   if (code !== 0)
     throw Object.assign(Error(`STEP_FAILED: ${script.split("/").at(-1)} (${code})`),{code:"STEP_FAILED"});
 }
-export function childFailureSummary(stderr) {
-  const message = String(stderr).match(/^(?:[A-Za-z]*Error): (.+)$/m)?.[1];
-  return message
-    ? message.slice(0, 400)
-    : "The subprocess failed without a readable error message.";
-}
-async function captureNode(script, args) {
-  const child = spawn(process.execPath, [script, ...args], {
+// Captured helpers use a small diagnostic envelope instead of forwarding a raw
+// stack or private RPC response. Their stdout remains the command's JSON result.
+export async function captureNode(script, args) {
+  const helper = fileURLToPath(new URL('../scripts/setup-helper.mjs', import.meta.url));
+  const child = spawn(process.execPath, [helper, script, ...args], {
     env: ownEnv,
     stdio: ["ignore", "pipe", "pipe"],
   });
-  let output = "",
-    error = "";
+  let output = "", error = "", oversized = false;
   for (const [stream, append] of [
     [child.stdout, (part) => (output += part)],
     [child.stderr, (part) => (error += part)],
-  ])
-    stream.on("data", (part) => append(String(part)));
+  ]) stream.on("data", part => {
+    // Do not kill a potentially financial helper just for diagnostic output.
+    // Bound memory, drain the pipes, and preserve uncertain-operation semantics.
+    if (Buffer.byteLength(output) + Buffer.byteLength(error) + part.length > 1048576) oversized = true;
+    else if (!oversized) append(String(part));
+  });
   const code = await new Promise((resolveExit, reject) => {
     child.once("error", reject);
-    child.once("exit", resolveExit);
+    // close waits for both captured pipes to drain, unlike exit.
+    child.once("close", resolveExit);
   });
-  if (code !== 0)
-    throw Object.assign(Error(
-      `STEP_FAILED: ${script.split("/").at(-1)} (${code}): ${childFailureSummary(error)}`,
-    ), {code:"STEP_FAILED"});
-  return JSON.parse(output);
+  if (code !== 0 || oversized) {
+    let cause;
+    if (!oversized) for (const line of error.split('\n')) {
+      try {
+        const value = JSON.parse(line)?.agentpaySetupFailure;
+        if (typeof value === 'string') cause = { code: value };
+      } catch { /* Unstructured output is never displayed. */ }
+    }
+    // Wallet CLI may report a failed operation as JSON rather than throwing.
+    if (!cause && !oversized) try { cause = { code: JSON.parse(output)?.error?.code }; } catch {}
+    throw Object.assign(Error('Setup helper failed'), {code: 'STEP_FAILED', cause});
+  }
+  try { return JSON.parse(output); }
+  catch { throw Object.assign(Error('Invalid setup helper response'), {code: 'STEP_FAILED'}); }
 }
 async function withRpc(config, work) {
   const rpc = new ReadOnlyRpc(config.rpcUrl);
@@ -983,6 +993,10 @@ export async function runAnvilOnboarding({
           checkedFor = null;
           advancing = false;
           write(`Purchase not ready: ${(result.blockers || []).join(", ")}`);
+          for (const diagnostic of result.diagnostics || []) {
+            const guidance = failureGuidance({code: diagnostic.code});
+            write(`${guidance.reason} ${guidance.next}`);
+          }
           continue;
         }
         const max = result

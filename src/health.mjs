@@ -229,7 +229,8 @@ export async function runHealth({
     }
   } else write("[WAIT] Chain RPC not configured");
 
-  await check("Local Wallet", async () => {
+  if (!policy) write("[WAIT] Local services: setup is unfinished. Continue agentpay setup; services may not be started yet.");
+  else await check("Local Wallet", async () => {
     const result = await localWalletAdmin(
       dataDir,
       "status",
@@ -249,7 +250,9 @@ export async function runHealth({
         url.hash
       )
         throw Object.assign(Error(), { code: "INVALID_SERVICE_URL" });
-      url.pathname = url.pathname.replace(/\/$/, "") + path;
+      const suffix = new URL(path, "http://placeholder");
+      url.pathname = url.pathname.replace(/\/$/, "") + suffix.pathname;
+      url.search = suffix.search;
       let response;
       try {
         response = await fetch(url, {
@@ -300,20 +303,23 @@ export async function runHealth({
       }
     });
   }
-  if (cfg.runtimeUrl)
+  if (policy && cfg.runtimeUrl)
     await http(
       "Local Runtime",
       cfg.runtimeUrl,
       "/health",
       (b) => b?.ok === true && b.result?.role === "user-runtime",
     );
-  else write("[WAIT] Local Runtime address not configured");
+  else if (policy) write("[WAIT] Local Runtime address not configured");
   if (cfg.settlementUrl)
     await http(
       "Settlement HTTP",
       cfg.settlementUrl,
-      "/health",
-      (b) => b?.ok === true && ["on-chain", "runtime-only"].includes(b.mode),
+      "/agentpay/purchase-readiness?skillId=0x" + "0".repeat(64) + "&profileHash=0x" + "0".repeat(64),
+      (b) => b?.ok === true && Array.isArray(b.result?.blockers) &&
+        Number.isSafeInteger(b.result?.settlementProfile?.chainId) &&
+        ["assetAddress", "factoryAddress", "registryAddress"].every(k =>
+          /^0x[0-9a-fA-F]{40}$/.test(b.result.settlementProfile[k])),
     );
   if (receipt?.marketOrigin)
     await http(

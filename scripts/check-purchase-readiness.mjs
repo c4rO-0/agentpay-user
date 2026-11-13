@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { sameWalletPolicy } from "../src/anvil-onboarding-state.mjs";
+import { ReadOnlyRpc } from "../src/read-only-rpc.mjs";
+import { CHAIN_CHECK_TIMEOUT_MS, failureGuidance } from "../src/setup-diagnostics.mjs";
 import { parseServiceReference } from "../src/service-reference.mjs";
 import { serviceUrl } from "../src/service-url.mjs";
 // Read-only business readiness: no Order preparation, signature, nonce or funds.
 import { readFile, lstat } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { Contract, JsonRpcProvider } from "ethers";
+import { Contract } from "ethers";
 import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { callWallet } from "@c4roa0/agentpay-wallet";
 import {
@@ -36,12 +39,14 @@ const config = JSON.parse(await readFile(resolve(configArg), "utf8"));
 const settlement = localOrHttps(settlementArg);
 const runtime = localOrHttps(runtimeArg);
 const blockers = [];
+const diagnostics = [];
 const facts = {};
 const check = async (code, work) => {
   try {
     return await work();
-  } catch {
+  } catch (error) {
     blockers.push(code);
+    diagnostics.push({check: code, code: failureGuidance(error).code});
     return null;
   }
 };
@@ -95,17 +100,15 @@ if (wallet && delegate) {
   if (!wallet.policy) blockers.push("WALLET_POLICY_UNBOUND");
   else if (
     plan &&
-    JSON.stringify(wallet.policy) !== JSON.stringify(plan.walletPolicy)
+    !sameWalletPolicy(wallet.policy, plan.walletPolicy)
   )
     blockers.push("WALLET_POLICY_MISMATCH");
 }
 if (plan) {
-  chain = new JsonRpcProvider(plan.rpcUrl, plan.chainId, {
-    staticNetwork: true,
-  });
+  chain = new ReadOnlyRpc(plan.rpcUrl);
   try {
     const state = await check("CHAIN_POLICY_UNAVAILABLE", () =>
-      inspectSafePolicy(chain, plan),
+      boundedRead(chain, () => inspectSafePolicy(chain, plan)),
     );
     if (state) {
       if (!state.moduleEnabled) blockers.push("MODULE_NOT_ENABLED");
@@ -198,10 +201,8 @@ if (skill) {
       blockers.push("PROVIDER_ID_MISMATCH");
   }
 }
-if (plan && quote) {
-  const provider = new JsonRpcProvider(plan.rpcUrl, plan.chainId, {
-    staticNetwork: true,
-  });
+if (plan && quote && facts.policy) {
+  const provider = new ReadOnlyRpc(plan.rpcUrl);
   try {
     const qualified = await check("REGISTRY_UNAVAILABLE", async () => {
       const registry = new Contract(
@@ -209,11 +210,11 @@ if (plan && quote) {
         ["function isQualified(bytes32,bytes32,address) view returns(bool)"],
         provider,
       );
-      return registry.isQualified(
+      return boundedRead(provider, () => registry.isQualified(
         skill.skillId,
         skill.profileHash,
         quote.seller,
-      );
+      ));
     });
     if (qualified === false) blockers.push("SKILL_NOT_QUALIFIED");
     if (quote.asset.toLowerCase() !== plan.token.toLowerCase())
@@ -236,7 +237,7 @@ if (plan && quote) {
         ["function balanceOf(address) view returns(uint256)"],
         provider,
       );
-      return token.balanceOf(plan.safe);
+      return boundedRead(provider, () => token.balanceOf(plan.safe));
     });
     if (balance != null && balance < maximum)
       blockers.push("SAFE_TOKEN_BALANCE_LOW");
@@ -253,6 +254,7 @@ process.stdout.write(
       ok: true,
       readyToPurchase: blockers.length === 0,
       blockers: [...new Set(blockers)],
+      diagnostics,
       facts,
       note: "Snapshot only; Order creation rechecks all limits and current Quote",
     },
@@ -272,4 +274,17 @@ function localOrHttps(input) {
   )
     throw new Error("HTTPS_OR_LOOPBACK_REQUIRED");
   return url;
+}
+
+// Aggregate inspection has one deadline; cancellation closes the HTTP work too.
+async function boundedRead(provider, work) {
+  let timer;
+  try {
+    return await Promise.race([work(), new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        provider.destroy();
+        reject(Object.assign(Error(), {code: 'CHAIN_CHECK_TIMEOUT'}));
+      }, CHAIN_CHECK_TIMEOUT_MS);
+    })]);
+  } finally { clearTimeout(timer); }
 }

@@ -18,6 +18,26 @@ export function failureGuidance(error) {
     pending.push(e.cause, e.error, e.info);
   }
   const has = (...values) => values.some((c) => codes.includes(c));
+  const requestFailures = {
+    SERVICE_MAINTENANCE: ["The service is under maintenance.", "Wait for maintenance to end, then resume the same request."],
+    SERVICE_NOT_READY: ["The service is not ready to accept this request.", "Check the service status, then resume the same request."],
+    ORDER_ALREADY_SETTLED: ["Payment is complete, but the original result is unavailable locally.", "Run agentpay orders list to review recovery options. Do not pay again for this result."],
+    ORDER_CLOSING: ["The original Order is being closed.", "Check agentpay orders list; do not submit another payment."],
+    ORDER_CANCELLED: ["The original Order was cancelled.", "Review it in agentpay orders list. Keep the saved request."],
+    ORDER_REFUNDED: ["The original Order was refunded.", "Review it in agentpay orders list. Keep the saved request."],
+    ORDER_EXPIRED: ["The original Order expired without payment.", "Review it in agentpay orders list; this request cannot complete the test."],
+    ORDER_TERMS_MISMATCH: ["The Order differs from the accepted terms.", "Keep the original request and contact support before continuing."],
+    POLICY_UNBOUND: ["Wallet has no verified spending permission bound.", "Resume agentpay setup to finish authorization and binding."],
+    POLICY_MIGRATION_PENDING: ["A spending-permission update is unfinished.", "Resume the saved authorization update before continuing this request."],
+    RUNTIME_RECOVERY_REQUIRED: ["Runtime history needs review before this request can continue.", "Run agentpay status and agentpay orders list. Keep the original records."],
+    SETTLEMENT_REQUEST_REJECTED: ["Settlement did not accept this operation.", "Check the original Order status and service logs before resuming; do not create a replacement request."],
+    RUNTIME_REQUEST_FAILED: ["Runtime could not finish this request.", "Run agentpay health and inspect agentpay service logs runtime. Keep the original request."],
+  };
+  const requestCode = codes.find(c => Object.hasOwn(requestFailures, c));
+  if (requestCode) {
+    const [reason, next] = requestFailures[requestCode];
+    return {code: requestCode, reason, next};
+  }
   let code, reason, next;
   if (
     has(
@@ -36,6 +56,7 @@ export function failureGuidance(error) {
     ];
   } else if (
     has(
+      "NETWORK_UNAVAILABLE",
       "ECONNREFUSED",
       "ECONNRESET",
       "ENOTFOUND",
@@ -81,13 +102,7 @@ export function failureGuidance(error) {
       "Installed User and Wallet versions do not match.",
       "Run agentpay update, then agentpay repair if requested. Keep your private data.",
     ];
-  } else if (has("STEP_FAILED")) {
-    [code, reason, next] = [
-      "STEP_FAILED",
-      "A helper program stopped before this step could finish.",
-      "Check the message above and run agentpay health. For running services, inspect agentpay service logs wallet or agentpay service logs runtime.",
-    ];
-  } else if (has("ANVIL_SAFE_OWNER_OR_THRESHOLD_MISMATCH")) {
+  } else if (has("SAFE_APPROVAL_MISMATCH", "ANVIL_SAFE_OWNER_OR_THRESHOLD_MISMATCH")) {
     [code, reason, next] = [
       "SAFE_APPROVAL_MISMATCH",
       "The Safe owner or approval threshold does not match this setup.",
@@ -113,13 +128,13 @@ export function failureGuidance(error) {
       "The saved owner address is not an owner of this Safe.",
       "Check the owner account in your wallet and the Safe address; keep your saved key.",
     ];
-  } else if (has("CALL_EXCEPTION", "BAD_DATA")) {
+  } else if (has("CONTRACT_READ_FAILED", "CALL_EXCEPTION", "BAD_DATA")) {
     [code, reason, next] = [
       "CONTRACT_READ_FAILED",
       "A contract could not return the expected data.",
       "Run agentpay health to identify the contract; check its address and deployment version.",
     ];
-  } else if (has("EACCES", "EPERM", "UNSAFE_LOCAL_FILE")) {
+  } else if (has("LOCAL_FILE_ACCESS", "EACCES", "EPERM", "UNSAFE_LOCAL_FILE")) {
     [code, reason, next] = [
       "LOCAL_FILE_ACCESS",
       "Local files could not be read safely.",
@@ -139,6 +154,7 @@ export function failureGuidance(error) {
     ];
   } else if (
     has(
+      "LOCAL_SERVICE_UNAVAILABLE",
       "LOCKED",
       "WALLET_LOCKED",
       "WALLET_NOT_RUNNING",
@@ -151,6 +167,14 @@ export function failureGuidance(error) {
       "Wallet or Runtime is not ready.",
       "Run agentpay status; unlock Wallet if requested, or inspect agentpay service logs wallet and agentpay service logs runtime.",
     ];
+  } else if (has("LOCAL_SETUP_REQUIRED", "TEST_RUNTIME_CONNECTION_MISMATCH")) {
+    [code, reason, next] = ["LOCAL_SETUP_REQUIRED", "The local Runtime connection is missing or does not match this setup.", "Run agentpay repair, then resume this saved setup. Keep the original test record."];
+  } else if (has("ORIGINAL_REQUEST_NOT_FOUND", "REQUEST_NOT_FOUND", "REQUEST_CONFLICT", "LEGACY_TEST_REVIEW_REQUIRED")) {
+    [code, reason, next] = ["REQUEST_CONFLICT", "The original test request could not be safely resumed.", "Check agentpay orders list and contact support. Keep the original request; do not start a replacement purchase."];
+  } else if (has("QUOTE_TERMS_CHANGED", "QUOTE_TERMS_CONFLICT")) {
+    [code, reason, next] = ["QUOTE_TERMS_CHANGED", "The quote differs from the terms accepted for this request.", "Review the original request and current quote before continuing. Do not create another request to bypass this check."];
+  } else if (has("STEP_FAILED")) {
+    [code, reason, next] = ["STEP_FAILED", "A helper program stopped without a recognized error category.", "Run agentpay health and share this step and report with support. For running services, inspect agentpay service logs wallet or agentpay service logs runtime."];
   } else {
     code =
       codes.find((c) =>
