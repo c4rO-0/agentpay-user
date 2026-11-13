@@ -22,7 +22,7 @@ const cli = walletCliPath(),
     new URL("../scripts/local-service.mjs", import.meta.url),
   );
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-test("real guide-owned Wallet/Runtime block managed startup; verified handoff permits locked restart", async (t) => {
+test("real process ownership gates handoff and preserves Wallet on managed restart", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "local-service-process-")),
     children = [];
   const completions = new Map();
@@ -111,7 +111,22 @@ test("real guide-owned Wallet/Runtime block managed startup; verified handoff pe
   assert.equal(first.exitCode,null);
   assert.equal(runtime.exitCode,null);
   await writeFile(walletPid,String(first.pid),{mode:0o600});
-  await stopGuideProcesses(target,{write:()=>{}});
+  // Children inherit the runner's cgroup. A system service (including a CI
+  // runner service) is intentionally outside the product's adoption boundary.
+  // Assert that denial, then clean up only children we created. Do not inject a
+  // fake cgroup or weaken the product guard to force positive handoff coverage.
+  const groups=await Promise.all([first,runtime].map(c=>readFile(`/proc/${c.pid}/cgroup`,'utf8')));
+  const systemOwned=groups.some(group=>/\/system.slice\/|agentpay-local-(?:wallet|runtime)\.service/.test(group));
+  if(systemOwned) {
+    await assert.rejects(stopGuideProcesses(target,{write:()=>{}}),{code:'GUIDE_PROCESS_REVIEW_REQUIRED'});
+    assert.equal(first.exitCode,null);
+    assert.equal(runtime.exitCode,null);
+    t.diagnostic('System-managed fixture: verified handoff denial; fixture owner performs cleanup. Positive handoff requires a user-session environment.');
+    runtime.kill('SIGTERM');first.kill('SIGTERM');
+  } else {
+    await stopGuideProcesses(target,{write:()=>{}});
+    t.diagnostic('User-session fixture: verified successful product handoff.');
+  }
   await completions.get(first);
   await completions.get(runtime);
   // An interrupted caller can repeat handoff after the children have exited.

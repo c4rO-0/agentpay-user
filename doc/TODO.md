@@ -1,5 +1,6 @@
 # User TODO
-- [ ] Resolve User v0.3.17 CI failure (run 43377098217, Verify User behavior). Local 468 tests/package checks passed; npm publication did not run. Preserve the release tag and inspect the exact failing test before selecting a new release or rerun.
+- [x] Correct the process test assumption behind v0.3.17 CI ownership refusal: assert user-session adoption or system-managed rejection from real cgroup evidence; production guards remain unchanged.
+- [ ] Verify v0.3.18 CI, npm publication and archive integrity before participant repair. Preserve the failed v0.3.17 tag.
 
 
 - [x] Add common User command failure diagnostics: operation, reviewed cause/code, child exit/version evidence, partial-change guidance and private sanitized report; automatically inspect service state on service failures.

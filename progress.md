@@ -1,13 +1,24 @@
 # AgentPay User progress
 
+## User 0.3.18 release candidate — 2026-11-13
+
+The maintainer supplied the v0.3.17 failure: real-process handoff was refused at
+ownership validation. The test now observes the real cgroup: user-session fixtures
+must hand off successfully; system-managed fixtures must reject handoff without
+stopping either child. Only the test owner then cleans up its own children to
+verify managed restart. No production guard, cgroup injection or CI-only bypass
+was added. CI diagnostic output distinguishes these evidence scopes. The v0.3.17
+tag remains unchanged. Wallet stays 0.3.4; npm publication is pending for 0.3.18.
+
+
 ## User 0.3.17 CI gate — 2026-11-13
 
 Source/tag v0.3.17 points to 86757e1c0b620e25c978e782a04eecf36e0c6d31.
 Local full suite passed 468 tests and standalone archive checks passed. GitHub run
 43377098217 failed at Verify User behavior before publishing; npm release is not
 confirmed. Public annotations contain only exit code 1; log download returns 403.
-Exact failing test output is requested from the maintainer. Do not overwrite the
-tag or bypass tests. Resolve this gate before participant update instructions.
+The maintainer subsequently supplied the failure; see the 0.3.18 follow-up above.
+Do not overwrite this tag or treat it as a published npm release.
 
 
 ## User 0.3.17 release candidate — 2026-11-13

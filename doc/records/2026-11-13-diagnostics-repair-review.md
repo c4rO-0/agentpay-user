@@ -70,3 +70,14 @@ the process lifetime/state; complete ownership checks remain required before any
 signal. All 468 tests in the final full suite passed. Standalone archive installation
 and real-process/package tests also passed. Manifest, lockfile and update pair use User 0.3.17;
 Wallet remains 0.3.4. Publication and participant acceptance are recorded separately.
+
+## CI ownership boundary follow-up
+
+The v0.3.17 CI failure was GUIDE_PROCESS_REVIEW_REQUIRED in the real-process
+handoff test. Its expectation assumed the test runner belonged to a user session.
+The test now reads the actual cgroup and asserts the corresponding outcome:
+user-session adoption succeeds, while system-managed children remain untouched.
+Cleanup of rejected children belongs to the test that spawned them, not the product.
+Both paths exercise real processes and preserve the encrypted key. No test skips,
+mock cgroups or production protection changes were introduced. Positive adoption
+coverage cannot be claimed for a CI run whose fixture is system-managed.
