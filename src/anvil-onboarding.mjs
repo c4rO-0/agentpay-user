@@ -1,3 +1,4 @@
+import { ReadOnlyRpc } from "./read-only-rpc.mjs";
 import { CHAIN_CHECK_TIMEOUT_MS, formatSetupFailure } from "./setup-diagnostics.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -27,7 +28,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getAddress, formatUnits, JsonRpcProvider, Contract } from "ethers";
+import { getAddress, formatUnits, Contract } from "ethers";
 import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { buildSafePolicyPlan, inspectSafePolicy } from "./safe-policy-plan.mjs";
 import { executeAnvilOwnerCall } from "./safe-owner-anvil.mjs";
@@ -177,9 +178,7 @@ async function captureNode(script, args) {
   return JSON.parse(output);
 }
 async function withRpc(config, work) {
-  const rpc = new JsonRpcProvider(config.rpcUrl, undefined, {
-    batchMaxCount: 1,
-  });
+  const rpc = new ReadOnlyRpc(config.rpcUrl);
   let timer;
   try {
     return await Promise.race([

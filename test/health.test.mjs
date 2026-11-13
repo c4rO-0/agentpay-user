@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // Real local HTTP transport, controlled chain responses: no actual chain/payment acceptance.
 import test from "node:test";
+import { spawn } from "node:child_process";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import {
@@ -275,17 +276,31 @@ test("health stops chain probing after a stalled read times out", async (t) => {
     }),
     { mode: 0o600 },
   );
-  const out = [];
-  const start = Date.now();
+  // Keep the server alive until the child exits: closing it first would hide
+  // dangling in-flight HTTP sockets after the diagnostic timeout.
+  const source = `import {runHealth} from ${JSON.stringify(new URL("../src/health.mjs", import.meta.url).href)}; process.exitCode=await runHealth({resolveDirectory:async()=>${JSON.stringify(dir)}});`;
+  const child = spawn(process.execPath, ["--input-type=module", "-e", source], {
+    stdio: ["ignore", "pipe", "pipe"],
+  });
+  let out = "",
+    forced = false;
+  child.stdout.on("data", (b) => (out += b));
+  child.stderr.on("data", (b) => (out += b));
+  const timer = setTimeout(() => {
+    forced = true;
+    child.kill();
+  }, 45000);
+  const code = await new Promise((resolve, reject) => {
+    child.once("error", reject);
+    child.once("exit", resolve);
+  }).finally(() => clearTimeout(timer));
   assert.equal(
-    await runHealth({
-      resolveDirectory: async () => dir,
-      write: (s) => out.push(s),
-    }),
-    1,
+    forced,
+    false,
+    "diagnostic must exit without closing the RPC server",
   );
-  assert.ok(Date.now() - start < 45000);
-  assert.match(out.join("\n"), /Remaining chain checks skipped after timeout/);
+  assert.equal(code, 1, out);
+  assert.match(out, /Remaining chain checks skipped after timeout/);
   assert.equal(methods.filter((m) => m === "eth_getCode").length, 1);
   assert.ok(!methods.includes("eth_call"));
 });

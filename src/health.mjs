@@ -4,7 +4,8 @@
 import { join } from "node:path";
 import { readFile, lstat } from "node:fs/promises";
 import { createRequire } from "node:module";
-import { JsonRpcProvider, Contract } from "ethers";
+import { Contract } from "ethers";
+import { ReadOnlyRpc } from "./read-only-rpc.mjs";
 import {
   resolveUserDataDir,
   installedUserDir,
@@ -122,7 +123,7 @@ export async function runHealth({
   }
   if (cfg.rpcUrl) {
     try {
-      rpc = new JsonRpcProvider(cfg.rpcUrl, undefined, { batchMaxCount: 1 });
+      rpc = new ReadOnlyRpc(cfg.rpcUrl);
       const connected = await check("Chain RPC", () =>
         rpcRead(async () => {
           const id = (await rpc.getNetwork()).chainId;

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
+import { ReadOnlyRpc } from "../src/read-only-rpc.mjs";
 import { CHAIN_CHECK_TIMEOUT_MS } from "../src/setup-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { readFile } from "node:fs/promises";
 import { createInterface } from "node:readline/promises";
-import { JsonRpcProvider } from "ethers";
 import { inspectSafePolicy } from "../src/safe-policy-plan.mjs";
 import { runPolicyTerminalGuide } from "../src/policy-terminal-guide.mjs";
 let terminal;
@@ -40,9 +40,7 @@ try {
     ask: (prompt) => terminal.question(prompt),
     write: (message) => process.stdout.write(`${message}\n`),
     inspect: async (plan) => {
-      const rpc = new JsonRpcProvider(plan.rpcUrl, undefined, {
-        staticNetwork: false,
-      });
+      const rpc = new ReadOnlyRpc(plan.rpcUrl);
       let timeout;
       try {
         return await Promise.race([

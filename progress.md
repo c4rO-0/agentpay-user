@@ -2,9 +2,13 @@
 
 ## Setup diagnostics release candidate — 2026-11-13
 
-User 0.3.13 candidate keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
+User 0.3.14 candidate keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
 further chain probes after RPC timeout and reject HTTP 200 proxy/error pages rather
-than treating them as valid platform responses.
+than treating them as valid platform responses. An additional process-level check
+found that ethers provider destruction alone leaves HTTP work pending. The final
+patch uses abortable, bounded HTTP for read-only RPC checks and verifies process
+exit while the test RPC server is still running. User 0.3.13 was published during
+this review; v0.3.14 supersedes it without moving the existing tag.
 
 Participant read-only diagnostics found valid contracts and owner but an 8.744-second
 combined preflight, exceeding the former five-second limit. Setup and policy preview
