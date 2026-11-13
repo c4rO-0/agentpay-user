@@ -1,5 +1,13 @@
 # AgentPay User progress
 
+## Published 0.3.20 — 2026-11-13
+
+Release tag v0.3.20 identifies a0e0f66bb3c3ad0044241a64bc8b08345b9e0bb5.
+GitHub publication run 43443805718 passed publication checks; public npm
+archive integrity was independently verified against the local release artifact.
+This publishes the nickname fix; Market deployment remains separate.
+
+
 ## Nickname validation release 0.3.20 — 2026-11-13
 
 User 0.3.20 pins published Wallet 0.3.5. Local full behavior verification passed
