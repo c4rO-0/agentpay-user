@@ -27,5 +27,6 @@ try {
   });
 } catch (error) {
   if (!error.messageDisplayed) console.error(error.message);
+  console.error('For a read-only diagnostic report, run agentpay health. Keep your saved data.');
   process.exitCode = 1;
 }

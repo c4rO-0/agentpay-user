@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { CHAIN_CHECK_TIMEOUT_MS } from "../src/setup-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -206,7 +207,7 @@ try {
             return await Promise.race([
               inspectSafePolicy(rpc, plan),
               new Promise((_, reject) => {
-                timer = setTimeout(() => reject(Error("timeout")), 10000);
+                timer = setTimeout(() => reject(Object.assign(Error("CHAIN_CHECK_TIMEOUT"), {code:"CHAIN_CHECK_TIMEOUT"})), CHAIN_CHECK_TIMEOUT_MS);
               }),
             ]);
           } finally {
@@ -219,5 +220,6 @@ try {
   });
 } catch (error) {
   console.error(error.message);
+  console.error('For a read-only diagnostic report, run agentpay health. Keep your saved data.');
   process.exitCode = 1;
 }

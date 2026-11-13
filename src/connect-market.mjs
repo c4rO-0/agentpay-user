@@ -420,6 +420,7 @@ Runtime will restart; your spending permission stays the same.`);
               ? "Wallet still cannot connect. Run agentpay market connect again to prepare it."
               : String(e.message || "Could not connect Wallet."),
     );
+    write("If the cause is unclear, run agentpay health. Your saved Wallet and Orders are kept.");
     return 1;
   } finally {
     if (token && origin) {

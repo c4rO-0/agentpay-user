@@ -28,6 +28,8 @@
 
 ## User guides
 
+- [Read-only health diagnostics](usage.md#diagnose-a-problem)
+
 - [Owner browser approval](runbooks/safe-owner-web.md)
 - [Renew or revoke permission](runbooks/policy-renewal.md)
 - [Deployment authorization update](runbooks/deployment-authorization-update.md)

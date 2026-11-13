@@ -66,6 +66,7 @@ export const helpText =
     "User and Wallet",
     [
       ["status", "Check services, permission and Order warnings"],
+      ["health", "Read-only diagnostics to share with support"],
       ["install --market URL", "Install and continue setup"],
       ["setup", "Continue setup"],
       ["update [-f]", "Check npm and update User, Wallet and the official test Skill"],
@@ -226,7 +227,7 @@ export async function runUserCli(
     return 0;
   }
   if (
-    ["update", "repair", "install", "setup", "status", "uninstall"].includes(command) &&
+    ["update", "repair", "install", "setup", "status", "health", "uninstall"].includes(command) &&
     rest.length === 1 &&
     isHelp(action)
   ) {
@@ -252,6 +253,10 @@ export async function runUserCli(
   ) {
     write(topicHelp(command, action));
     return 0;
+  }
+  if (command === "health" && !rest.length) {
+    const { runHealth } = await import("./health.mjs");
+    return runHealth({write});
   }
   if (command === "install" && rest.length === 2 && action === "--market")
     return run([script("install-user"), ...rest]);

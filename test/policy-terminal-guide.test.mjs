@@ -66,7 +66,7 @@ test("cancellation and failed chain checks never report authorization", async ()
       throw Error("private RPC secret");
     },
   });
-  assert.match(result.chainError, /failed/);
+  assert.match(result.chainError, /could not complete/);
   assert.doesNotMatch(result.chainError, /secret/);
 });
 test("missing Safe guidance identifies the required network without another yes/no gate", async () => {

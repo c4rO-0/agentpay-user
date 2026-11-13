@@ -131,3 +131,18 @@ test("public network configuration accepts supported EVM identities without sele
   ])
     assert.throws(() => validatePublicDeployment({ ...config, ...change }));
 });
+
+test('default owner wallet and invalid confirmation preserve the entered settings',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'confirm-settings-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ const inputPath=join(dir,'deployment.json'),outputPath=join(dir,'setup.json');
+ await writeFile(inputPath,JSON.stringify(config));
+ const answers=['0x'+'5'.repeat(40),'0x'+'6'.repeat(40),'','','','yes','confirm'];
+ const output=[];
+ const result=await prepareOnboarding({inputPath,outputPath,ask:async()=>{assert.ok(answers.length);return answers.shift();},write:s=>output.push(s)});
+ assert.equal(result.ownerSigner,'external');
+ assert.equal(result.safe,'0x'+'5'.repeat(40));
+ assert.match(output.join('\n'),/recommended/);
+ assert.equal(output.filter(s=>s.includes('Your entries are kept')).length,2);
+ assert.deepEqual(JSON.parse(await readFile(outputPath,'utf8')),result);
+});

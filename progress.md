@@ -1,5 +1,55 @@
 # AgentPay User progress
 
+## Setup diagnostics release candidate — 2026-11-13
+
+User 0.3.13 candidate keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
+further chain probes after RPC timeout and reject HTTP 200 proxy/error pages rather
+than treating them as valid platform responses.
+
+Participant read-only diagnostics found valid contracts and owner but an 8.744-second
+combined preflight, exceeding the former five-second limit. Setup and policy preview
+now allow 30 seconds. Saving settings reprompts on blank/invalid confirmation;
+owner-wallet approval is explicitly the default, with test-signer guards unchanged.
+
+New `agentpay health` performs read-only local settings, chain/contract, local
+service and configured platform HTTP checks. It prints safe categories, durations
+and next steps without credentials, URLs, personal paths or Order contents. It does
+not switch installations, unlock, sign, repair or create requests. Setup failures
+use reviewed categories and retained-progress guidance; installation and Market
+failures point to diagnostics while retaining existing specific guidance/log paths.
+
+65 targeted checks passed, including actual local HTTP with controlled chain
+responses, a combined setup check slower than five seconds, invalid confirmation,
+privacy and unchanged diagnostic storage. These are controlled regressions, not
+completion of participant B setup or full configured A/B switching. Package release
+and participant continuation remain pending.
+
+
+## Second-installation participant findings — 2026-11-12
+
+Participant verified User 0.3.12 / Wallet 0.3.4, fresh-install info guidance and
+switch-back from unfinished B to A. A retained its saved Policy, Market connection
+and two settled Orders. The older missing local result remains a separate warning.
+B subsequently created a separate execution key but stopped at the read-only Safe
+and contract check, before authorization submission. A subsequent eth_chainId probe
+returned 31337; this alone does not establish the failed check's cause or validate
+B's saved deployment. Full configured A/B switching remains unverified.
+
+User expanded the requirement to all installation/setup failure paths: show the
+failed step, sanitized cause, saved progress and a specific next action. Preserve
+uncertain transaction identities; do not claim no transaction was submitted unless
+the failure is known to occur before submission.
+
+Deferred until the current rehearsal is ready for fixes: use a clear owner-wallet
+label and explicit default instead of unexplained external/anvil choices; keep the
+save-confirmation prompt open on blank/invalid input (q or Ctrl+C exits); replace
+blanket chain-check failure with a safe error category and a concrete next action.
+Distinguish transport/timeouts, wrong network, missing contract and unreadable Safe
+or contract responses where identifiable. Do not guess the cause, print raw RPC
+payloads/credentials, or advise repeated continue without a diagnostic path. Keep
+saved inputs and make clear that this preflight has not submitted a transaction.
+
+
 ## User 0.3.12 published — 2026-11-12
 
 Pins published Wallet 0.3.4 for actionable RPC errors. Includes single-start update

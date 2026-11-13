@@ -233,7 +233,7 @@ async function installUnderLock({
       mode: 0o600,
     }).catch(() => {});
     write(
-      `Installation stopped. ${error.message}\nAfter resolving the cause, rerun the same Install command. Log: ${logPath}`,
+      `Installation stopped. ${error.message}\nAfter resolving the cause, rerun the same Install command. For connection diagnostics: agentpay health. Log: ${logPath}`,
     );
     error.messageDisplayed = true;
     error.logPath = logPath;

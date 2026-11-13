@@ -1,3 +1,4 @@
+import { CHAIN_CHECK_TIMEOUT_MS, formatSetupFailure } from "./setup-diagnostics.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -145,7 +146,7 @@ async function runNode(script, args, { env = ownEnv, stdio = "inherit" } = {}) {
     child.once("exit", resolveExit);
   });
   if (code !== 0)
-    throw Error(`STEP_FAILED: ${script.split("/").at(-1)} (${code})`);
+    throw Object.assign(Error(`STEP_FAILED: ${script.split("/").at(-1)} (${code})`),{code:"STEP_FAILED"});
 }
 export function childFailureSummary(stderr) {
   const message = String(stderr).match(/^(?:[A-Za-z]*Error): (.+)$/m)?.[1];
@@ -170,9 +171,9 @@ async function captureNode(script, args) {
     child.once("exit", resolveExit);
   });
   if (code !== 0)
-    throw Error(
+    throw Object.assign(Error(
       `STEP_FAILED: ${script.split("/").at(-1)} (${code}): ${childFailureSummary(error)}`,
-    );
+    ), {code:"STEP_FAILED"});
   return JSON.parse(output);
 }
 async function withRpc(config, work) {
@@ -184,7 +185,7 @@ async function withRpc(config, work) {
     return await Promise.race([
       work(rpc),
       new Promise((_, reject) => {
-        timer = setTimeout(() => reject(Error("ANVIL_RPC_TIMEOUT")), 5000);
+        timer = setTimeout(() => reject(Object.assign(Error("CHAIN_CHECK_TIMEOUT"), {code:"CHAIN_CHECK_TIMEOUT"})), CHAIN_CHECK_TIMEOUT_MS);
       }),
     ]);
   } finally {
@@ -422,10 +423,13 @@ export async function runAnvilOnboarding({
           "EHOSTUNREACH",
           "ENETUNREACH",
           "ANVIL_RPC_TIMEOUT",
+          "CHAIN_CHECK_TIMEOUT",
         ].includes(code),
       )
-    )
-      throw error;
+    ) {
+      step("Setup paused · Network and token check", formatSetupFailure(error, {preflight:true}));
+      return {completed:false,stage:"network_check_failed"};
+    }
     const rpc = new URL(config.rpcUrl);
     step(
       "Setup paused · Network unavailable",
@@ -437,7 +441,10 @@ export async function runAnvilOnboarding({
     tokenFacts.decimals !== config.tokenDecimals ||
     (config.tokenSymbol && tokenFacts.symbol !== config.tokenSymbol)
   )
-    throw Error("TOKEN_METADATA_MISMATCH");
+    {
+      step("Setup paused · Currency mismatch", "The token decimals or symbol differ from the saved deployment. Check platform settings with agentpay health. Your saved settings are kept; no transaction was submitted by this check.");
+      return {completed:false,stage:"token_metadata_mismatch"};
+    }
   step(
     "AgentPay · Wallet setup",
     `Connected to network eip155:${config.chainId}.`,
@@ -491,7 +498,7 @@ export async function runAnvilOnboarding({
       try {
         chain = await ops.chainState(config, plan);
       } catch (error) {
-        chainProblem = error.message;
+        chainProblem = formatSetupFailure(error, {preflight:true});
       }
     const wallet = local.delegate ? await ops.openWallet(walletDir) : null;
     const bound = Boolean(
@@ -571,7 +578,7 @@ export async function runAnvilOnboarding({
       );
     if (chainProblem)
       write(
-        `Chain status unavailable: ${chainProblem}. Check your RPC connection before authorization or binding.`,
+        chainProblem,
       );
     const stage = ["initialize"].includes(next)
       ? "1/4 Create local Wallet"
@@ -1029,7 +1036,7 @@ export async function runAnvilOnboarding({
     } catch (error) {
       advancing = false;
       write(
-        `Step stopped: ${error.message}. Resolve the cause, then choose 'continue' to resume the saved step; no replacement request is needed.`,
+        `${stage} stopped.\n${formatSetupFailure(error)}`,
       );
     }
   }

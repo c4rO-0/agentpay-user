@@ -1,11 +1,21 @@
 # User TODO
 
+- [x] Add read-only `agentpay health` with bounded probes, safe reports and no installation/data changes (controlled verification).
+- [x] Increase combined setup and policy-preview RPC checks to 30 seconds; reproduce a successful read slower than five seconds.
+- [ ] Publish diagnostics/interaction fixes, then resume participant B's saved setup and complete A/B switching acceptance.
+
+- [x] Review failure guidance across install/setup steps (dependencies, settings, Wallet creation/unlock, authorization, local services, Market connection and official test): report failed step, sanitized known cause, preserved progress and specific recovery action; distinguish retryable/repair-required/user-cancelled/uncertain transaction states. Never infer non-submission after an uncertain write or advise a replacement purchase. Avoid raw JSON-only errors and blind continue loops.
+
 - [x] Participant 0.3.11 update resumed original installation; unlock/status confirmed original Policy, Market connection and two settled Orders after restoring Anvil forwarding.
 - [x] Prepare resumed switch without premature startup; preserve repair checkpoint across current-version interruption.
 - [x] Show setup guidance for a fresh unfinished installation, without treating missing established Wallet files as new setup.
 - [x] Classify chain RPC transport failure in Wallet and show actionable User recovery guidance; controlled RPC/IPC tests passed.
 - [x] Publish Wallet 0.3.4 and User 0.3.12 with exact pairing; CI and npm integrity verified.
-- [ ] Participant update to User 0.3.12 / Wallet 0.3.4; verify guidance and complete second-installation switching.
+- [x] Participant updated to User 0.3.12 / Wallet 0.3.4; fresh-install guidance and switch-back from unfinished B preserved A's identity and two settled Orders.
+- [ ] Diagnose B's read-only chain preflight failure, then finish configured A/B switching acceptance.
+- [x] Clarify Safe owner signer choices and make the owner-wallet default explicit.
+- [x] Keep save confirmation open on blank/invalid input; explain confirm/q and preserve the draft. Exit only on q or interruption.
+- [x] Replace generic setup chain-check failure with sanitized cause/category and actionable guidance; preserve saved draft, avoid blind continue loops, and state no transaction submitted. Verify representative failure categories without exposing raw RPC credentials or payloads.
 
 - [x] Allow update of an exact confirmed stopped switch target, then resume using new code; preserve retry checkpoint and reject other targets/live services (controlled verification).
 - [x] Publish User 0.3.11 update recovery and document one-time bootstrap for older blocked updaters; tag/package integrity verified.

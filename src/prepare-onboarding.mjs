@@ -138,12 +138,13 @@ export async function prepareOnboarding({
     );
     section("Owner approval");
     write(
-      "Choose how to approve Safe operations. External uses your own wallet; anvil uses the prepared private test owner.",
+      "Use your own wallet, such as MetaMask, to approve Safe operations (recommended). The test signer is only for a prepared local Anvil rehearsal.",
     );
     const ownerSigner = await field(
-      "Owner signer: external or anvil (Enter for external)",
+      "Approval method: Enter for My wallet, or type test for the Anvil test signer",
       (v) => {
-        v = v || "external";
+        v = v.toLowerCase();
+        v = v === "test" ? "anvil" : (!v || v === "wallet" ? "external" : v);
         if (
           !["external", "anvil"].includes(v) ||
           (v === "anvil" &&
@@ -156,7 +157,7 @@ export async function prepareOnboarding({
           throw Error();
         return v;
       },
-      "Enter external or anvil.",
+      "Press Enter for My wallet. Type test only for a prepared local Anvil signer.",
     );
     section("3/3 · Local Runtime");
     write(
@@ -182,11 +183,12 @@ export async function prepareOnboarding({
       `Safe:          ${safe}\nOwner:         ${ownerAddress}\nLocal Runtime: http://127.0.0.1:${port}`,
     );
     write("Saving these settings does not authorize spending.");
-    if (
-      (await ask("Type 'confirm' to save, or 'q' to cancel")).trim() !==
-      "confirm"
-    )
-      throw Error("Cancelled; no configuration saved.");
+    for (;;) {
+      const answer = (await ask("Type 'confirm' to save, or 'q' to cancel")).trim().toLowerCase();
+      if (answer === 'confirm') break;
+      if (answer === 'q') throw Error('Cancelled; no configuration saved.');
+      write("Enter 'confirm' to save, or 'q' to cancel. Your entries are kept while you choose.");
+    }
     const config = {
       ...deployment,
       safe,

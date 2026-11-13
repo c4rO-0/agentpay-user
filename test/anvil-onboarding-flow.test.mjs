@@ -616,3 +616,32 @@ test("the same owner approval and binding flow resumes on another configured cha
   assert.equal(f.state.policy.chainId, 31338);
   assert.equal(f.state.policy.policyId, f.draft.policyId);
 });
+
+test('setup keeps a slow but valid contract preflight alive beyond five seconds without signing',async t=>{
+ const {createServer}=await import('node:http');
+ const {Interface}=await import('ethers');
+ const abi=new Interface(['function getOwners() view returns(address[])','function getThreshold() view returns(uint256)','function isModuleEnabled(address) view returns(bool)','function policies(address,bytes32) view returns(address,address,address,address,uint256,uint256,uint256,uint64,uint64,bool)']);
+ const f=fixture(),methods=[];
+ const server=createServer(async(req,res)=>{
+  let body='';for await(const part of req)body+=part;
+  const m=JSON.parse(body);methods.push(m.method);let result;
+  if(m.method==='eth_chainId')result='0x7a69';
+  else if(m.method==='eth_getCode'){await new Promise(r=>setTimeout(r,1100));result='0x6000';}
+  else if(m.method==='eth_call'){
+   const call=abi.parseTransaction({data:m.params[0].data});
+   const v=call.name==='getOwners'?[[config.ownerAddress]]:call.name==='getThreshold'?[1]:call.name==='isModuleEnabled'?[true]:[at(0),at(0),at(0),at(0),0,0,0,0,0,false];
+   result=abi.encodeFunctionResult(call.name,v);
+  }else{res.statusCode=500;res.end();return;}
+  res.setHeader('Content-Type','application/json');res.end(JSON.stringify({jsonrpc:'2.0',id:m.id,result}));
+ });
+ await new Promise(r=>server.listen(0,'127.0.0.1',r));t.after(()=>new Promise(r=>server.close(r)));
+ const rpcUrl=`http://127.0.0.1:${server.address().port}`;
+ f.state.draft.rpcUrl=rpcUrl;
+ delete f.operations.chainState;
+ const start=Date.now();await f.run(['q'],{rpcUrl});
+ assert.ok(Date.now()-start>5000);
+ assert.doesNotMatch(f.output.join('\n'),/Chain status unavailable|took too long/);
+ assert.ok(methods.filter(m=>m==='eth_getCode').length===5);
+ assert.ok(methods.every(m=>['eth_chainId','eth_getCode','eth_call'].includes(m)));
+ assert.equal(f.calls.length,0);
+});

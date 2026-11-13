@@ -8,6 +8,7 @@ internal scripts for ordinary setup.
 | --- | --- |
 | Install or continue setup | `agentpay install --market URL`, then `agentpay setup` when returning |
 | Check local state | `agentpay status` |
+| Diagnose connectivity or setup | `agentpay health` |
 | Unlock / lock | `agentpay wallet unlock`, `agentpay wallet lock` |
 | Start / stop / restart | `agentpay service start`, `stop`, `restart` |
 | Login startup | `agentpay service autostart on` / `off` |
@@ -86,3 +87,40 @@ Manual `agentpay orders status ORDER_ID` also retries without making a payment.
 
 Update recovery prepares the selected installation first; repair performs the
 final service start. If interrupted between these steps, rerun `agentpay update`.
+
+## Diagnose a problem
+
+From the installation that is having trouble, run:
+
+```sh
+agentpay health
+```
+
+For a folder-local npm installation, use `./node_modules/.bin/agentpay health`.
+The command prints each check as it runs, including its duration, failure category
+and suggested next action. It can diagnose an incomplete setup; Wallet does not
+need to be unlocked. Missing configuration or stopped services will be reported,
+not created or started. An inactive installation may therefore show local service
+failures even when the other installation is running normally.
+
+Checks cover installed versions, saved settings, RPC/network, deployed contracts,
+Safe ownership and Module setting, Policy reads, local Wallet/Runtime and configured
+platform HTTP endpoints. HTTP reachability is not a login or payment test. A
+readable expired or revoked Policy does not permit new payments; use `agentpay
+status` for readiness. Each chain read has a 30-second limit; HTTP probes have a
+10-second limit. After an RPC timeout, remaining chain checks are skipped. Platform
+probes verify the expected JSON response, so an HTTP 200 proxy error page does not
+count as a healthy endpoint. The command makes no automatic retry loop.
+
+The report includes public contract addresses and timing information. It omits
+private keys, tokens, request/result contents, URLs and personal paths. Review it
+before sharing; do not attach your data directory or raw service logs by default.
+No request is signed, no purchase is made and no local files are changed by health.
+
+Setup retains entered limits after a failed network check. A failure before
+submission is labelled as such; after a submitted transaction, resume the same
+step to verify it instead of creating a new authorization or purchase. When saving
+local settings, Enter or an unrecognized answer keeps the confirmation prompt open;
+only `confirm` saves, while `q` or Ctrl+C exits. Owner approval defaults to your own
+wallet (for example MetaMask); the test signer remains restricted to a prepared
+local Anvil deployment.

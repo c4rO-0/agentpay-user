@@ -104,3 +104,11 @@ Locking Wallet or disconnecting Market does not revoke on-chain spending permiss
 
 Original User code is **MPL 2.0**. See [LICENSE](LICENSE), [third-party notices](NOTICE.md)
 and [security reporting](SECURITY.md). Wallet and Protocol retain their own licenses.
+
+## When setup needs help
+
+Run `agentpay health` from the affected installation for a read-only diagnostic
+report. It checks saved settings, chain contracts and reachable services, and gives
+next steps for failures. You can send the report to support; it omits credentials,
+URLs, personal file paths and Order contents. It does not unlock Wallet, change
+settings or make a payment. See [diagnostics](doc/usage.md#diagnose-a-problem).

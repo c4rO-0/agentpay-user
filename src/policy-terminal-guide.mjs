@@ -1,3 +1,4 @@
+import { formatSetupFailure } from "./setup-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -309,9 +310,8 @@ async function runGuideOnce({
   if (!demo)
     try {
       chainState = await inspect(plan);
-    } catch {
-      chainError =
-        "Chain check failed. Check the RPC, network, Safe and deployment before retrying.";
+    } catch (error) {
+      chainError = formatSetupFailure(error, {preflight:true});
     }
   if (chainError) {
     write(chainError);
