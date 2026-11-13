@@ -2,7 +2,8 @@
 
 - [x] Fix Setup paid-test helper rejecting HTTPS Settlement; preserve loopback-only Runtime and original request identity (controlled process regression).
 - [x] Propagate reviewed captured-helper failure categories and bound captured output; preserve original requests and omit private exceptions.
-- [ ] Publish the Setup HTTPS test fix and resume participant B's saved setup; verify original test/order state before claiming payment completion.
+- [x] Publish User 0.3.16 Setup HTTPS/diagnostics fixes; matching tag, full CI and npm archive integrity verified.
+- [ ] Participant B updates to 0.3.16 and resumes saved setup; verify original test/order state before claiming payment completion.
 
 - [x] Include owner/preview web assets in npm and resolve the ethers browser bundle from the installed dependency; distinguish program-asset errors from missing Wallet files.
 - [x] Publish User 0.3.15 after installed-package owner-page checks; CI, npm integrity and web asset contents verified.

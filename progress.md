@@ -8,7 +8,7 @@ well as Runtime. HTTPS Settlement therefore failed before request creation in th
 helper. It now uses the shared platform URL validator while retaining local Runtime
 loopback restrictions. Controlled process acceptance uses an HTTPS Settlement base,
 one simulated Order and original-request receipt confirmation; no live payment was
-performed. Participant payment completion remains unverified. User 0.3.16 is prepared for publication with Wallet 0.3.4 unchanged. Wider review also replaced raw captured-helper errors with reviewed
+performed. Participant payment completion remains unverified. User 0.3.16 is published with Wallet 0.3.4 unchanged. Wider review also replaced raw captured-helper errors with reviewed
 categories, bounded captured output without killing uncertain financial work,
 and moved purchase-readiness RPC reads to the cancellable transport. Readiness
 now compares Policy fields using the same normalization as setup and stops further
@@ -26,6 +26,10 @@ covering actual service restart, owner-page assets, the official-test helper wit
 an HTTPS platform base and sanitized child failure. These are simulated services,
 not participant payment or full A/B acceptance. The earlier locally packed 0.3.15 candidate was not the published 0.3.15 artifact;
 the release version is 0.3.16.
+Published tag `v0.3.16` points to `076377f`. [Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43361067283)
+passed the full behavior suite, installed-package acceptance and registry integrity.
+Independent download verified npm latest 0.3.16, Wallet 0.3.4 and archive SHA-512.
+Participant B should update and resume its original setup, retaining the saved request.
 
 
 ## npm owner approval assets — 2026-11-13
