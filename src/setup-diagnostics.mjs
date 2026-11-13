@@ -73,6 +73,8 @@ export function failureGuidance(error) {
       "The service returned an unexpected response instead of its health data.",
       "Check the configured service path and proxy routing. Share this report with support if it persists.",
     ];
+  } else if (has("OWNER_APPROVAL_ASSET_MISSING")) {
+    [code,reason,next]=['OWNER_APPROVAL_ASSET_MISSING','The installed program is missing the Safe approval page.','Update User, then resume agentpay setup. Your Wallet and draft are kept; this failure occurs before the approval page starts.'];
   } else if (has("SOFTWARE_VERSION_MISMATCH")) {
     [code, reason, next] = [
       "SOFTWARE_VERSION_MISMATCH",

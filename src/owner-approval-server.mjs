@@ -7,7 +7,8 @@ import { constants } from "node:fs";
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
 import { readFile, mkdtemp, writeFile, mkdir, open } from "node:fs/promises";
-import { join } from "node:path";
+import { join, dirname } from "node:path";
+import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { Interface, isAddress, isHexString } from "ethers";
@@ -70,25 +71,29 @@ export function validateOwnerPlan({ source, calls }) {
     })),
   };
 }
+async function approvalAsset(path) {
+  try { return await readFile(path); }
+  catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+    throw Object.assign(Error('Owner approval page assets are missing from the installed package.'), {code:'OWNER_APPROVAL_ASSET_MISSING'});
+  }
+}
+
 export async function ownerAssets(input) {
   const plan = validateOwnerPlan(input);
   const assets = new Map([
     [
       "index.html",
-      await readFile(new URL("../web/owner-approval.html", import.meta.url)),
+      await approvalAsset(new URL("../web/owner-approval.html", import.meta.url)),
     ],
     [
       "owner-approval.js",
-      await readFile(new URL("../web/owner-approval.js", import.meta.url)),
+      await approvalAsset(new URL("../web/owner-approval.js", import.meta.url)),
     ],
     [
       "ethers.js",
-      await readFile(
-        new URL(
-          "../node_modules/ethers/dist/ethers.umd.min.js",
-          import.meta.url,
-        ),
-      ),
+      // Resolve the installed dependency: npm may hoist it above this package.
+      await approvalAsset(join(dirname(createRequire(import.meta.url).resolve('ethers')), '..', 'dist', 'ethers.umd.min.js')),
     ],
     [
       "plan.js",

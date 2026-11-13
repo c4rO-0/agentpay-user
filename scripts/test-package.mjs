@@ -18,7 +18,7 @@ try {
  await mkdir(env.HOME,{mode:0o700});
  const packed=JSON.parse(run('npm',['pack','--ignore-scripts','--json','--pack-destination',output],source))[0];
  const paths=packed.files.map(x=>x.path);
- for(const name of ['LICENSE','NOTICE.md','SECURITY.md','scripts/agentpay-cli.mjs','scripts/update.mjs','src/index.mjs'])
+ for(const name of ['LICENSE','NOTICE.md','SECURITY.md','scripts/agentpay-cli.mjs','scripts/update.mjs','src/index.mjs','web/owner-approval.html','web/owner-approval.js','web/policy-preview.html','web/policy-preview.js'])
   if(!paths.includes(name))throw Error('Missing package file: '+name);
  if(paths.some(x=>x.startsWith('test/') || x.startsWith('node_modules/') || /(?:^|\/)\.env(?:\.|$)|\.keystore\.json$|\.token$|\.log$/.test(x)))throw Error('Unexpected private/test material in archive');
  const archive=join(output,packed.filename),consumer=join(root,'consumer');
@@ -28,8 +28,8 @@ try {
  const help=run(join(consumer,'node_modules/.bin/agentpay'),['help'],consumer);
  if(!help.includes('update [-f]') || !help.includes('policy help'))throw Error('Installed command unavailable');
  await mkdir(join(installed,'test'));
- await copyFile(join(source,'test/local-services-process.test.mjs'),join(installed,'test/local-services-process.test.mjs'));
- console.log(run(process.execPath,['--test','test/local-services-process.test.mjs'],installed));
+ for(const file of ['local-services-process.test.mjs','owner-approval-server.test.mjs']) await copyFile(join(source,'test',file),join(installed,'test',file));
+ console.log(run(process.execPath,['--test','test/local-services-process.test.mjs','test/owner-approval-server.test.mjs'],installed));
  console.log('Verified archive: '+archive);
  console.log('SHA256: '+createHash('sha256').update(await readFile(archive)).digest('hex'));
 } finally {await rm(root,{recursive:true,force:true});}

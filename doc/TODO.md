@@ -1,5 +1,10 @@
 # User TODO
 
+- [x] Include owner/preview web assets in npm and resolve the ethers browser bundle from the installed dependency; distinguish program-asset errors from missing Wallet files.
+- [ ] Publish User 0.3.15 after installed-package owner-page checks, then resume participant B's original authorization draft.
+
+- [ ] Correct participant health interpretation: unfinished B has no running Wallet/Runtime yet; label setup-needed rather than suggesting a network fault. Settlement /health is intentionally excluded from the current public ingress allowlist; use an existing supported public read endpoint or report this probe unavailable, never weaken ingress or infer backend outage from this 404. Host-local /health returned 200, on-chain, chain 31337 on 2026-11-13.
+
 - [x] Add read-only `agentpay health` with bounded probes, safe reports and no installation/data changes (controlled verification).
 - [x] Increase combined setup and policy-preview RPC checks to 30 seconds; reproduce a successful read slower than five seconds.
 - [x] Publish diagnostics/interaction fixes as User 0.3.14 with Wallet 0.3.4; CI, npm latest and archive integrity verified.

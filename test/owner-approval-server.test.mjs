@@ -43,6 +43,11 @@ test("server serves fixed public assets; wrong host, cross-site, writes and trav
   });
   const origin = "http://127.0.0.1:" + server.address().port;
   assert.equal((await fetch(origin + prefix)).status, 200);
+  for (const name of ['owner-approval.js','ethers.js']) {
+    const asset=await fetch(origin+prefix+name);
+    assert.equal(asset.status,200);
+    assert.ok((await asset.text()).length>100,'browser script must be served');
+  }
   const plan = await (await fetch(origin + prefix + "plan.js")).text();
   assert.doesNotMatch(plan, /NEVER_EXPORT|privateKey/);
   for (const [path, options] of [

@@ -1,5 +1,17 @@
 # AgentPay User progress
 
+## npm owner approval assets — 2026-11-13
+
+Participant B passed chain inspection but confirmation failed before opening the
+Safe approval page. The npm file allowlist omitted web assets and the browser
+ethers bundle used a source-only node_modules path. User 0.3.15 candidate includes
+the static web assets, resolves ethers from the installed dependency, and reports
+missing program assets separately from missing Wallet data. The package acceptance
+entry now runs the owner-page HTTP/export tests from the installed archive, including
+loading both browser scripts. No saved key, draft or Policy needs replacement.
+Publication and participant browser approval remain pending.
+
+
 ## Setup diagnostics published — 2026-11-13
 
 User 0.3.14 keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
