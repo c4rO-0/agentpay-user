@@ -4,12 +4,15 @@
 
 Participant B passed chain inspection but confirmation failed before opening the
 Safe approval page. The npm file allowlist omitted web assets and the browser
-ethers bundle used a source-only node_modules path. User 0.3.15 candidate includes
+ethers bundle used a source-only node_modules path. User 0.3.15 includes
 the static web assets, resolves ethers from the installed dependency, and reports
 missing program assets separately from missing Wallet data. The package acceptance
 entry now runs the owner-page HTTP/export tests from the installed archive, including
 loading both browser scripts. No saved key, draft or Policy needs replacement.
-Publication and participant browser approval remain pending.
+Published as `v0.3.15` at `6a5a142`. [Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43355135810)
+passed full tests, installed-package acceptance and registry integrity. Independent
+npm download verified SHA-512 and all four web assets. Participant browser approval
+remains pending; no live authorization was performed by these tests.
 
 
 ## Setup diagnostics published — 2026-11-13

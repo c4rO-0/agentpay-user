@@ -1,7 +1,8 @@
 # User TODO
 
 - [x] Include owner/preview web assets in npm and resolve the ethers browser bundle from the installed dependency; distinguish program-asset errors from missing Wallet files.
-- [ ] Publish User 0.3.15 after installed-package owner-page checks, then resume participant B's original authorization draft.
+- [x] Publish User 0.3.15 after installed-package owner-page checks; CI, npm integrity and web asset contents verified.
+- [ ] Participant updates B to 0.3.15 and resumes its original authorization draft.
 
 - [ ] Correct participant health interpretation: unfinished B has no running Wallet/Runtime yet; label setup-needed rather than suggesting a network fault. Settlement /health is intentionally excluded from the current public ingress allowlist; use an existing supported public read endpoint or report this probe unavailable, never weaken ingress or infer backend outage from this 404. Host-local /health returned 200, on-chain, chain 31337 on 2026-11-13.
 
