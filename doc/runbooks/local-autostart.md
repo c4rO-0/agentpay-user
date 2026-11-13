@@ -6,7 +6,9 @@ This does not enable startup before login or require administrator access/linger
 
 ## Enable during setup
 
-After the official connectivity test succeeds, the Linux terminal guide asks once
+On Linux, Setup starts Wallet and Runtime through systemd user services. This does
+not enable login startup by itself. After the official connectivity test succeeds,
+the terminal guide asks once
 whether Wallet and Runtime should start automatically when you log in. Choosing yes
 installs/enables the services and reminder without restarting current processes.
 Choosing no keeps manual startup. Your choice is remembered; q leaves it undecided.
@@ -15,8 +17,7 @@ or creating another payment. Manual enable/disable updates the same preference.
 
 The installer verifies that existing listeners belong to its matching guide processes
 or existing user services. Missing/stale PID records, mismatched arguments/data paths,
-and system-managed processes block automatic adoption. It never kills a PID from a
-saved file. On the private shared host, operator services remain operator-managed.
+and system-managed processes block automatic adoption. A PID file alone never authorizes stopping a process. On the private shared host, operator services remain operator-managed.
 
 ## Manage after setup
 
@@ -27,12 +28,13 @@ The terminal setup start step saves your public Runtime/Settlement addresses in
 ./run service autostart on
 ```
 
-This installs and enables the services for the next login. It does not replace or
-stop current terminal-started or operator-managed processes. Current guide processes are left running; the handoff is deferred until they exit
-or the computer restarts. Do not run two managers for the same Wallet.
-If a login happens while old processes still run, managed startup refuses the occupied
-socket/port; inspect status and explicitly stop the old processes before using start.
-After a clean login, use `./run wallet unlock` to resume signing.
+This enables the services for the next login without restarting them. To apply an
+installed update now, use `agentpay repair`. Older Setup versions left independent
+background processes running. Repair/start/stop can retire those processes only
+after checking their private PID records, exact command, data directory and live
+process identity. They request normal termination and wait; they never force-kill
+an unknown listener. If identification fails, keep the data and share the diagnostic
+report. A restarted Wallet needs `agentpay wallet unlock`.
 
 If you completed setup before this feature, an operator can save the matching public
 addresses once with `node scripts/autostart.mjs configure RUNTIME_URL SETTLEMENT_URL`.
@@ -42,8 +44,8 @@ Do not change endpoints to work around an incomplete request or Policy migration
 ## Manage
 
 From User, `./run status` shows the services. Use `start` or
-`stop` for these managed processes. Before manually starting them, stop any existing
-terminal/operator-managed instance explicitly. A live Wallet socket or Runtime port
+`stop` for these managed processes. Unrecognized terminal/operator-managed instances
+still require explicit review. A live Wallet socket or Runtime port
 is rejected; it is never removed to take over an existing process.
 
 `./run service autostart off` disables login startup without stopping current processes.
@@ -78,14 +80,12 @@ during bounded checking, inspect service status; notification is not a health mo
 
 ## Acceptance scope
 
-Isolated process tests verify locked Wallet/Runtime startup, duplicate Wallet refusal,
-stop/restart with unchanged test key and no invocation. Unit/CLI tests and systemd
-file validation passed. The terminal installer now offers deferred automatic startup after its successful
-connectivity test; it does not immediately replace guide processes. The participant reported successful Wallet restart/lock/unlock and a manually triggered
-desktop reminder. Runtime exited with status 1; its journal is still required. Actual
-login/reboot and complete Runtime recovery acceptance remain pending. macOS launchd support is pending.
-Do not manually enable these user services on the shared rehearsal host while its operator
-services use the same data/socket/port. No existing rehearsal service was changed.
+Isolated real-process tests verify guide-owned endpoint conflicts, rejection of a
+stale PID that points to an unrelated process, verified handoff, repeated handoff,
+and managed startup with the same encrypted key and no new Order. Service-manager
+command orchestration is tested with controlled fixtures, not a participant login
+or real systemd handoff. Participant A/B switching and recovery after this fix remain
+pending. macOS launchd support remains deferred. No deployed service was changed.
 
 The `startupChoice` field in local-services.json records the requested preference,
 not proof that systemd enable/start succeeded. Use status to inspect actual services.

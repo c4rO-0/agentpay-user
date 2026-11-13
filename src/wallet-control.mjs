@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -38,7 +39,8 @@ export async function controlWallet(
   let dataDir;
   try {
     dataDir = await resolveDirectory({ argument: args[0], env });
-  } catch {
+  } catch (error) {
+    await reportCommandFailure(error,{operation:`Wallet ${action} · local check`,write,effect:"This local check did not change spending permission."});
     write(
       "Your saved installation directory could not be read. Check the installation record or explicitly select your existing User data directory.",
     );
@@ -48,7 +50,8 @@ export async function controlWallet(
     walletCli = walletCliPath();
   try {
     if (!(await inspect(walletCli)).isFile()) throw Error();
-  } catch {
+  } catch (error) {
+    await reportCommandFailure(error,{operation:`Wallet ${action} · local check`,write,effect:"This local check did not change spending permission."});
     write(
       "Wallet executable could not be found or read. Complete agentpay install --market YOUR_MARKET_URL first.",
     );
@@ -66,6 +69,7 @@ export async function controlWallet(
     );
     if (!token.isFile() || !privateEntry(token)) throw Error();
   } catch (error) {
+    await reportCommandFailure(error,{operation:`Wallet ${action} · local check`,write,effect:"This local check did not change spending permission."});
     write(
       error.code === "ENOENT"
         ? `Wallet setup files are missing in: ${walletDir}`
@@ -80,6 +84,7 @@ export async function controlWallet(
     const sock = await inspect(join(walletDir, "wallet.sock"));
     if (!sock.isSocket() || !privateEntry(sock)) throw Error();
   } catch (error) {
+    await reportCommandFailure(error,{operation:`Wallet ${action} · local check`,write,effect:"This local check did not change spending permission."});
     write(
       error.code === "ENOENT"
         ? "No Wallet socket was found for this installation. Run agentpay service start, then agentpay status."
@@ -94,7 +99,8 @@ export async function controlWallet(
       );
       return 1;
     }
-  } catch {
+  } catch (error) {
+    await reportCommandFailure(error,{operation:`Wallet ${action} · local check`,write,effect:"This local check did not change spending permission."});
     write(
       "Could not check the Wallet connection. Run agentpay status; inspect agentpay service logs wallet if it remains unavailable.",
     );

@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -321,6 +322,7 @@ export async function runCacheManagement(
     }
     return 0;
   } catch (error) {
+    await reportCommandFailure(error,{operation:"Cache operation",write,effect:"Some file operations may already have completed. Check the cache before retrying; no payment is started by cache management."});
     write("Cache operation stopped: " + safe(error.message));
     write(
       offline

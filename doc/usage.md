@@ -124,3 +124,21 @@ local settings, Enter or an unrecognized answer keeps the confirmation prompt op
 only `confirm` saves, while `q` or Ctrl+C exits. Owner approval defaults to your own
 wallet (for example MetaMask); the test signer remains restricted to a prepared
 local Anvil deployment.
+
+## When a command fails
+
+Read the failed operation and error code printed in the terminal. The following
+instruction explains what to check or which saved operation to resume. A service
+startup failure also checks the systemd user units on Linux and reports recognized
+causes from recent service logs, such as a port already in use. Recent log evidence
+may describe an earlier attempt; it does not by itself identify the process owner.
+
+Unexpected failures save a private `diagnostic-….json` report and print its path.
+This report contains reviewed error categories, exit status, code locations and
+available service evidence. It excludes raw exception text, credentials and private
+request contents. Share this report and the command you ran with support; inspect
+an installation log separately before sharing it. If the report cannot be saved,
+copy the terminal error codes instead.
+
+Keep the original Wallet and Order files. A failed command may have applied some
+changes already; do not repeat a purchase to repair a setup or connectivity problem.

@@ -1,3 +1,4 @@
+import {reportCommandFailure,childCause} from "./command-diagnostics.mjs";
 import {withInstallationOperation, installationChildOptions} from './installation-operation.mjs';
 import { installationDirectory, importSetupFiles } from "./installation-paths.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -229,6 +230,7 @@ async function installUnderLock({
     );
     return { completed: true, logPath };
   } catch (error) {
+    await reportCommandFailure(error,{operation:"Install · package preparation",write,logPath});
     await appendFile(logPath, `Installation stopped: ${error.message}\n`, {
       mode: 0o600,
     }).catch(() => {});
@@ -258,21 +260,31 @@ async function runCommand(command, args, { cwd, logPath }) {
       });
       child.once("error", (e) =>
         reject(
-          Error(
-            `${command} could not start (${e.code}). Check that it is installed and on PATH.`,
-          ),
+          Object.assign(Error("Installation helper could not start", {cause:e}), {code:"COMMAND_FAILED"}),
         ),
       );
       child.once("close", (code) =>
         code === 0
           ? resolve()
           : reject(
-              Error(
-                `${command} ${args.join(" ")} failed (exit ${code}). See the install log.`,
-              ),
+              Object.assign(Error("Installation helper failed"), {code:"COMMAND_FAILED",exitCode:code}),
             ),
       );
     });
+  } catch (error) {
+    // Read only a bounded log tail for recognized error categories. Do not echo
+    // package-manager output, which can contain credential-bearing registry URLs.
+    const reader = await open(logPath, "r").catch(() => null);
+    if (reader) {
+      try {
+        const size = (await reader.stat()).size;
+        const buffer = Buffer.alloc(Math.min(size, 16384));
+        await reader.read(buffer, 0, buffer.length, Math.max(0, size-buffer.length));
+        error.cause ||= childCause(buffer.toString("utf8"));
+      } catch { /* Diagnostic reads must not replace the original failure. */ }
+      finally { await reader.close().catch(() => {}); }
+    }
+    throw error;
   } finally {
     await log.close();
   }

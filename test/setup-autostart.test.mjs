@@ -55,12 +55,14 @@ test("saved yes retries partial enable without asking again", async () => {
       await finishLocalSetup({
         ...g.options,
         enable: async () => {
-          throw Error("interrupted");
+          throw Object.assign(Error("private setup output"),{code:"ENOSPC"});
         },
       })
     ).state,
     "pending",
   );
+  assert(g.messages.some(m=>m.includes("ENOSPC")));
+  assert(!g.messages.some(m=>m.includes("private setup output")));
   assert.equal(
     (await finishLocalSetup({ ...g.options, ask: () => assert.fail() })).state,
     "enabled",

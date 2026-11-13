@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {reportCommandFailure} from "../src/command-diagnostics.mjs";
 import { ReadOnlyRpc } from "../src/read-only-rpc.mjs";
 import { CHAIN_CHECK_TIMEOUT_MS } from "../src/setup-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
@@ -219,7 +220,8 @@ try {
     },
   });
 } catch (error) {
-  console.error(error.message);
+  await reportCommandFailure(error,{operation:'Setup'});
+
   console.error('For a read-only diagnostic report, run agentpay health. Keep your saved data.');
   process.exitCode = 1;
 }

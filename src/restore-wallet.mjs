@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -245,6 +246,7 @@ export async function runWalletRestore({
     );
     return 0;
   } catch (e) {
+    if(e.code!=="CANCELLED") await reportCommandFailure(e,{operation:"Restore Wallet",write});
     write(
       restoreMessages[e.code] ||
         e.message ||

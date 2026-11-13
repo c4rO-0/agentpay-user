@@ -1,3 +1,4 @@
+import {stopGuideProcesses} from "../src/guide-process-handoff.mjs";
 import { captureNode } from "../src/anvil-onboarding.mjs";
 import { requireRunningSoftware } from "../src/software-versions.mjs";
 import { walletCliPath } from "../src/wallet-package.mjs";
@@ -7,7 +8,7 @@ import { walletCliPath } from "../src/wallet-package.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { spawn } from "node:child_process";
-import { mkdtemp, mkdir, rm, readFile } from "node:fs/promises";
+import { mkdtemp, mkdir, rm, readFile, writeFile } from "node:fs/promises";
 import { createServer } from "node:net";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
@@ -15,13 +16,13 @@ import { fileURLToPath } from "node:url";
 import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
 import { initializeCapabilities } from "@c4roa0/agentpay-wallet/local";
 import { initializeCallerCredential } from "../src/caller-auth.mjs";
-import { saveServiceSettings } from "../src/local-services.mjs";
+import { saveServiceSettings, runtimeEnvironment, readServiceSettings } from "../src/local-services.mjs";
 const cli = walletCliPath(),
   runner = fileURLToPath(
     new URL("../scripts/local-service.mjs", import.meta.url),
   );
 const pause = (ms) => new Promise((r) => setTimeout(r, ms));
-test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate Wallet", async (t) => {
+test("real guide-owned Wallet/Runtime block managed startup; verified handoff permits locked restart", async (t) => {
   const dir = await mkdtemp(join(tmpdir(), "local-service-process-")),
     children = [];
   const completions = new Map();
@@ -54,8 +55,14 @@ test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate 
     runtimeUrl: `http://127.0.0.1:${port}`,
     settlementUrl: "https://unused.invalid/settlement",
   });
-  function start(role) {
-    const c = spawn(process.execPath, [runner, role, dir], { stdio: "ignore" });
+  const settings=await readServiceSettings(dir);
+  function start(role, guide=false) {
+    const args=guide
+      ? role==='wallet' ? [cli,'serve',join(dir,'wallet')]
+        : [fileURLToPath(new URL('../src/index.mjs',import.meta.url))]
+      : [runner,role,dir];
+    const env=guide && role==='runtime' ? {...process.env,...runtimeEnvironment(dir,settings)} : process.env;
+    const c = spawn(process.execPath, args, { stdio: "ignore",env });
     children.push(c);
     completions.set(c, new Promise((resolve) => c.once("exit", resolve)));
     return c;
@@ -74,9 +81,9 @@ test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate 
   }
   // Exercise the same captured Wallet CLI path used by guided setup.
   const status = () => captureNode(cli, ["status", join(dir, "wallet")]);
-  const first = start("wallet");
+  const first = start("wallet",true);
   assert.equal((await wait(status)).locked, true);
-  const runtime = start("runtime");
+  const runtime = start("runtime",true);
   await wait(async () => {
     const r = await fetch(`http://127.0.0.1:${port}/health`, {
       signal: AbortSignal.timeout(1000),
@@ -92,15 +99,37 @@ test("real isolated Wallet/Runtime restart stays locked and rejects a duplicate 
   const duplicate = start("wallet");
   assert.equal(await completions.get(duplicate), 1);
   assert.equal((await status()).locked, true);
-  first.kill("SIGTERM");
+  const duplicateRuntime=start('runtime');
+  assert.equal(await completions.get(duplicateRuntime),1);
+  assert.equal(runtime.exitCode,null);
+  const target={node:process.execPath,userDir:fileURLToPath(new URL('..',import.meta.url)),dataDir:dir};
+  const walletPid=join(dir,'runtime/wallet-guide.pid'),runtimePid=join(dir,'runtime/user-runtime-guide.pid');
+  await writeFile(runtimePid,String(runtime.pid),{mode:0o600});
+  // A stale record pointing at an unrelated live process must prevent all signals.
+  await writeFile(walletPid,String(process.pid),{mode:0o600});
+  await assert.rejects(stopGuideProcesses(target,{write:()=>{}}),{code:'GUIDE_PROCESS_REVIEW_REQUIRED'});
+  assert.equal(first.exitCode,null);
+  assert.equal(runtime.exitCode,null);
+  await writeFile(walletPid,String(first.pid),{mode:0o600});
+  await stopGuideProcesses(target,{write:()=>{}});
   await completions.get(first);
+  await completions.get(runtime);
+  // An interrupted caller can repeat handoff after the children have exited.
+  await stopGuideProcesses(target,{write:()=>{}});
   start("wallet");
   assert.equal((await wait(status)).locked, true);
   assert.deepEqual(
     await readFile(join(dir, "wallet/session.keystore.json")),
     key,
   );
-  assert.equal(runtime.exitCode, null);
+  const managedRuntime=start('runtime');
+  await wait(async()=>{
+    const response=await fetch(`http://127.0.0.1:${port}/health`,{signal:AbortSignal.timeout(1000)});
+    const body=await response.json();
+    assert.equal(body.result.role,'user-runtime');
+    requireRunningSoftware(await status(),body.result);
+  });
+  assert.equal(managedRuntime.exitCode,null);
   await assert.rejects(readFile(join(dir, "runtime/invocations.json")), {
     code: "ENOENT",
   });

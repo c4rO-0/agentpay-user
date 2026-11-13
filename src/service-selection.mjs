@@ -1,3 +1,4 @@
+import {stopGuideProcesses} from "./guide-process-handoff.mjs";
 import {importHistoricalRequests} from './default-request-owner.mjs';
 // SPDX-License-Identifier: MPL-2.0
 // One managed service pair per OS user. A switch never changes Wallet identity.
@@ -124,6 +125,7 @@ export async function withServiceSelection({target, action, ask, write = console
       }
     }
     if (different) {
+      await stopGuideProcesses(previous,{write});
       const settings = await previousServiceSettings(previous.dataDir);
       if (await listenerPresent(join(previous.dataDir,'wallet/wallet.sock')) ||
           (settings && await listenerPresent({host:'127.0.0.1',port:Number(new URL(settings.runtimeUrl).port)})))

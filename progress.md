@@ -1,5 +1,57 @@
 # AgentPay User progress
 
+## User 0.3.17 release candidate — 2026-11-13
+
+Release includes managed Linux Setup startup, verified legacy-process handoff and
+command failure diagnostics. Wallet remains 0.3.4; Protocol remains 0.14.3. Source,
+manifest and tag must match. Publication/registry verification and participant repair
+remain pending; no participant services or transaction records were changed here.
+
+
+## Managed Setup and legacy process handoff — 2026-11-13
+
+Implemented Linux Setup startup through the existing systemd user-service path;
+login startup remains a separate preference. Repair/start/stop and confirmed
+installation switching retire only verified legacy guide processes, with bounded
+SIGTERM waiting, no forced kill, and PID record retirement after exit. Missing,
+foreign or mismatched live identities do not authorize signalling. Setup now checks
+running package/interface versions, rather than accepting any healthy old Runtime.
+Isolated real-process and controlled service-manager verification is recorded in
+User's diagnostics/repair review. No participant services, Policies or Orders were
+changed. Release and participant repair/A-B acceptance remain pending.
+
+
+## Command failure diagnostics — 2026-11-13
+
+User commands now share a failure boundary and private diagnostic reports. Setup,
+repair/update, service management, Wallet/Policy, Market connection, Orders and cache
+operations retain reviewed causes and recovery guidance. Service subprocess errors
+preserve exit status and running/installed versions; failed service operations
+collect bounded read-only systemd state and recognized journal failure categories.
+Raw journals and arbitrary exceptions are not copied into the shareable report.
+Controlled subprocess tests cover cause propagation, report permissions, secret
+omission and service evidence. This does not repair the detached-process/systemd
+ownership gap below; participant recovery and publication are still pending.
+
+
+Review follow-up: automatic-startup errors and install-log read failures now retain
+the original cause. Isolated real-process reproduction confirms guide endpoints
+block managed startup; explicit shutdown of test-owned processes permits restart.
+Automatic handoff is now implemented above; participant process ownership and recovery remain unverified.
+
+## Participant setup/service ownership gap — 2026-11-13
+
+B completed the official paid test and reported one settled Order. Status then
+showed installed User 0.3.16 with running Runtime 0.3.15. Repair stopped/started
+systemd units but readiness still reported the old Runtime; both units subsequently
+showed failed with exit code 1. Code inspection confirms Setup starts detached
+processes and finishLocalSetup only enables future login startup; systemd stop does
+not cover those guide processes. Participant read-only process ownership verification
+is pending before any signals or handoff. Do not repeat the paid test or reset data.
+The implementation above addresses this ownership gap. Participant repair and
+configured A/B switching must still verify the real systemd handoff before closeout.
+
+
 ## Setup payment-test HTTPS regression — 2026-11-13
 
 Participant B reached the paid-test step and received only STEP_FAILED. Inspection
@@ -8,7 +60,7 @@ well as Runtime. HTTPS Settlement therefore failed before request creation in th
 helper. It now uses the shared platform URL validator while retaining local Runtime
 loopback restrictions. Controlled process acceptance uses an HTTPS Settlement base,
 one simulated Order and original-request receipt confirmation; no live payment was
-performed. Participant payment completion remains unverified. User 0.3.16 is published with Wallet 0.3.4 unchanged. Wider review also replaced raw captured-helper errors with reviewed
+performed. Participant B subsequently reported successful delivery/receipt and one settled Order; the remaining service ownership failure is recorded above. User 0.3.16 is published with Wallet 0.3.4 unchanged. Wider review also replaced raw captured-helper errors with reviewed
 categories, bounded captured output without killing uncertain financial work,
 and moved purchase-readiness RPC reads to the cancellable transport. Readiness
 now compares Policy fields using the same normalization as setup and stops further

@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -355,6 +356,7 @@ export async function runOrderSupport(
     );
     return 0;
   } catch (e) {
+    await reportCommandFailure(e,{operation:"Order operation",write,effect:"Keep the original Order and request. No replacement purchase is started by this error handler."});
     write(
       ["WALLET_LOCKED", "LOCKED"].includes(e.code)
         ? "Wallet is locked. Run agentpay wallet unlock, then repeat this command."

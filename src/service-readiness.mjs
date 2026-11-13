@@ -11,6 +11,7 @@ export async function waitForServiceReadiness(dataDir, {
   timeoutMs = 15000,
   pause = ms => new Promise(resolve => setTimeout(resolve, ms)),
 } = {}) {
+  let lastError;
   const deadline = Date.now() + timeoutMs;
   do {
     try {
@@ -20,10 +21,11 @@ export async function waitForServiceReadiness(dataDir, {
       requireRunningSoftware(w,r);
       return;
     } catch (error) {
+      lastError=error;
       if (error.code === 'RUNNING_VERSION_UNVERIFIED') throw error;
       if (Date.now() >= deadline) break;
       await pause(300);
     }
   } while (Date.now() < deadline);
-  throw Error('Wallet and Runtime readiness could not be confirmed. Default Skill access stays paused. Run agentpay status, then retry agentpay service start.');
+  throw Object.assign(Error('Wallet and Runtime readiness could not be confirmed. Default Skill access stays paused. Run agentpay status, then retry agentpay service start.'),{code:'SERVICE_READINESS_FAILED',cause:lastError});
 }

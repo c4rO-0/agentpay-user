@@ -1,4 +1,6 @@
-import {withInstallationOperation, installationChildOptions} from './installation-operation.mjs';
+import {runServiceCommand} from "./service-command.mjs";
+import {reportCommandFailure} from "./command-diagnostics.mjs";
+import {withInstallationOperation} from './installation-operation.mjs';
 import {maintenanceServiceScope} from './service-selection.mjs';
 import { requireRunningSoftware } from "./software-versions.mjs";
 import { walletPackage } from "./wallet-package.mjs";
@@ -9,9 +11,8 @@ import { walletPackage } from "./wallet-package.mjs";
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { ensureRuntimeConnection } from "./runtime-connection-settings.mjs";
 import { prepareOfficialTestUpdate } from "./official-test-update.mjs";
-import { readFile, open, lstat } from "node:fs/promises";
+import { readFile, lstat } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { spawn } from "node:child_process";
 import {
   installedUserDir,
   resolveUserDataDir,
@@ -105,33 +106,10 @@ async function askUpdate(prompt) {
     terminal.close();
   }
 }
-async function manage(action, { userDir, dataDir, logPath }) {
-  const file = await open(logPath, "a", 0o600);
-  try {
-    await new Promise((done, reject) => {
-      const child = spawn(
-        process.execPath,
-        [join(userDir, "scripts/autostart.mjs"), action],
-        {
-          shell: false,
-          ...installationChildOptions({env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
-          stdio: ["ignore", file.fd, file.fd]}),
-        },
-      );
-      child.once("error", reject);
-      child.once("close", (code) =>
-        code === 0
-          ? done()
-          : reject(Error("Background service operation failed.")),
-      );
-    });
-  } finally {
-    await file.close();
-  }
-}
+const manage = runServiceCommand;
 export async function applyLocalUpdate(options = {}) {
   try { return await withInstallationOperation(() => repairUnderLock(options)); }
-  catch(error) { (options.write || console.log)("Repair stopped. " + error.message); return 1; }
+  catch(error) { await reportCommandFailure(error,{operation:"Repair",write:options.write || console.log}); return 1; }
 }
 async function repairUnderLock({
   userDir = installedUserDir,
@@ -280,7 +258,7 @@ async function repairUnderLock({
         phase = "starting";
         write("3/3 Start Wallet and Runtime.");
         await service("start", { userDir, dataDir, logPath });
-        let ready = false;
+        let ready = false, readinessError;
         const deadline = Date.now() + 15000;
         for (
           let attempt = 0;
@@ -298,12 +276,13 @@ async function repairUnderLock({
               break;
             }
           } catch (error) {
+            readinessError=error;
             if (error.code === "RUNNING_VERSION_UNVERIFIED") throw error;
             /* Startup can take a moment; final failure is reported below. */
           }
           await pause(500);
         }
-        if (!ready) throw Error("Service readiness could not be confirmed.");
+        if (!ready) throw Object.assign(Error("Service readiness could not be confirmed."),{code:"SERVICE_READINESS_FAILED",cause:readinessError});
         context.state.localUpdate = { status: "complete", ...built };
         await context.saveState();
         phase = "ready";
@@ -327,20 +306,12 @@ async function repairUnderLock({
     write(scope.active ? "Next: agentpay wallet unlock\nThen: agentpay status" : "To switch to this installation: agentpay service start");
     return 0;
   } catch (error) {
-    if (phase === "preflight")
-      write("Repair stopped before pausing services. " + error.message);
-    else if (phase === "building")
-      write(
-        activeServices ? "Repair could not finish. Wallet and Runtime remain stopped; your local data was kept."
-          : "Repair could not finish. The active installation was not changed; your local data was kept.",
-      );
-    else
-      write(
-        "Service changes could not be confirmed. Check agentpay status and agentpay service logs runtime before retrying.",
-      );
-    if (error.code === "RUNNING_VERSION_UNVERIFIED") write(error.message);
-    const log = error.logPath || logPath;
-    if (log) write("Details: " + log);
+    const effect=phase==='preflight'
+      ? 'Repair stopped before pausing services.'
+      : phase==='building'
+        ? (activeServices ? 'Wallet and Runtime remain stopped; local data was kept.' : 'The active installation was not changed; local data was kept.')
+        : 'Service startup is not confirmed. The current operation may have changed service state; Wallet keys, permission and Order records were kept.';
+    await reportCommandFailure(error,{operation:`Repair · ${phase}`,write,effect,services:phase==='starting'||phase==='stopping',logPath:error.logPath||logPath});
     write("After resolving the problem, run agentpay repair again.");
     return 1;
   }

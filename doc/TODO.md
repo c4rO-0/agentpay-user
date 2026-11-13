@@ -1,9 +1,16 @@
 # User TODO
 
+- [x] Add common User command failure diagnostics: operation, reviewed cause/code, child exit/version evidence, partial-change guidance and private sanitized report; automatically inspect service state on service failures.
+- [ ] Release and verify diagnostics on the participant installation together with the pending Setup/service ownership fix. Diagnostics alone do not resolve startup failure.
+
+- [x] Implement managed Linux Setup startup and verified legacy guide-process handoff for repair/service operations and installation switches; preserve key, Policy, Orders and startup choice. Verify isolated real-process handoff, stale live PID rejection and repeat-after-exit recovery.
+- [ ] Review/release the handoff fix, then verify participant repair and configured A/B switching; controlled process tests do not establish participant systemd acceptance.
+- [x] Participant B completed the official test and reported one settled Order; full configured A/B switching remains pending service ownership repair.
+
 - [x] Fix Setup paid-test helper rejecting HTTPS Settlement; preserve loopback-only Runtime and original request identity (controlled process regression).
 - [x] Propagate reviewed captured-helper failure categories and bound captured output; preserve original requests and omit private exceptions.
 - [x] Publish User 0.3.16 Setup HTTPS/diagnostics fixes; matching tag, full CI and npm archive integrity verified.
-- [ ] Participant B updates to 0.3.16 and resumes saved setup; verify original test/order state before claiming payment completion.
+- [x] Participant B resumed setup and reported the official test completed, with one settled Order in status; running-version mismatch remains open above.
 
 - [x] Include owner/preview web assets in npm and resolve the ethers browser bundle from the installed dependency; distinguish program-asset errors from missing Wallet files.
 - [x] Publish User 0.3.15 after installed-package owner-page checks; CI, npm integrity and web asset contents verified.
@@ -14,7 +21,7 @@
 - [x] Add read-only `agentpay health` with bounded probes, safe reports and no installation/data changes (controlled verification).
 - [x] Increase combined setup and policy-preview RPC checks to 30 seconds; reproduce a successful read slower than five seconds.
 - [x] Publish diagnostics/interaction fixes as User 0.3.14 with Wallet 0.3.4; CI, npm latest and archive integrity verified.
-- [ ] Resume B with the next reviewed patch and complete its paid test and configured A/B switching acceptance; diagnostics update and owner approval already progressed beyond 0.3.14.
+- [ ] Finish configured A/B switching acceptance after the service ownership fix; B paid-test completion is now reported, but does not establish correct process handoff.
 
 - [x] Review failure guidance across install/setup steps (dependencies, settings, Wallet creation/unlock, authorization, local services, Market connection and official test): report failed step, sanitized known cause, preserved progress and specific recovery action; distinguish retryable/repair-required/user-cancelled/uncertain transaction states. Never infer non-submission after an uncertain write or advise a replacement purchase. Avoid raw JSON-only errors and blind continue loops.
 

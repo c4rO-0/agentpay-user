@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // Deliberate account connection using a narrow Wallet proof. Website display grouping
 // does not merge Policy authority; a saved receipt is not a live access check.
 // SPDX-License-Identifier: MPL-2.0
@@ -277,6 +278,7 @@ export async function connectMarket(
     try {
       endpoints = previous ? await prepareEndpoints({dataDir,origin,scope,fetchJson,changingOrigin}) : {changed:false,apply:async()=>{}};
     } catch (error) {
+      await reportCommandFailure(error,{operation:"Check Market addresses",write,effect:"Address verification failed; review the current saved connection before retrying."});
       const networkFailure = ["AbortError", "TimeoutError"].includes(error.name) ||
         ["ECONNREFUSED", "ECONNRESET", "ENOTFOUND", "ETIMEDOUT"].includes(error.code || error.cause?.code) || error.message === "fetch failed";
       const reason = networkFailure
@@ -409,6 +411,7 @@ Runtime will restart; your spending permission stays the same.`);
       }
     }
   } catch (e) {
+    await reportCommandFailure(e,{operation:"Connect Market",write});
     write(
       ["LOCKED", "WALLET_LOCKED"].includes(e.code)
         ? "Wallet is locked. Run agentpay wallet unlock, then repeat this command."

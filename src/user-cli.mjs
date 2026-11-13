@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -143,21 +144,16 @@ function topicHelp(group, sub) {
   );
 }
 function runNode(args) {
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, args, {
+  return new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [join(installedUserDir,"scripts/command-entry.mjs"), ...args], {
       stdio: "inherit",
       shell: false,
     });
-    child.once("error", () => {
-      console.error(
-        "Could not launch this command with the selected Node executable. Check AGENTPAY_NODE and run agentpay help.",
-      );
-      resolve(1);
-    });
+    child.once("error", reject);
     child.once("exit", (code) => resolve(code ?? 1));
   });
 }
-export async function runUserCli(
+async function dispatchUserCli(
   args,
   {
     run = runNode,
@@ -188,7 +184,8 @@ export async function runUserCli(
             : stdout,
         );
         return 0;
-      } catch {
+      } catch (error) {
+        await reportCommandFailure(error,{operation:"Read service journal"});
         console.error(
           "Could not read the user service journal. Run agentpay status to check services; verify access to your systemd user journal.",
         );
@@ -355,4 +352,15 @@ export async function runUserCli(
       (groups[command] ? "Use agentpay " + command + " help." : "Use agentpay help."),
   );
   return 2;
+}
+
+// One fallback boundary for every public command, including dynamically imported
+// local administration commands. Handled failures retain their tailored guidance.
+export async function runUserCli(args, options={}) {
+  try { return await dispatchUserCli(args, options); }
+  catch(error) {
+    const command = [...Object.keys(groups), 'install','setup','repair','update','status','health','uninstall'].includes(args[0]) ? args[0] : 'command';
+    await reportCommandFailure(error,{operation:command,write:options.write||console.error});
+    return 1;
+  }
 }

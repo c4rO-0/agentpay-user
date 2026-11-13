@@ -106,7 +106,7 @@ test("failed stop never reaches build; unhealthy restart never claims completion
   };
   assert.equal(await applyLocalUpdate(f.opts), 1);
   assert.deepEqual(f.calls, ["prepare-repair", "stop"]);
-  assert.match(f.lines.join("\n"), /could not be confirmed/);
+  assert.match(f.lines.join("\n"), /Service startup is not confirmed/);
   const g = fixture();
   g.opts.runtime = async () => {
     throw Error("unhealthy");

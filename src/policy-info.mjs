@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -28,6 +29,7 @@ export async function showPolicyInfo({
     );
     return 0;
   } catch (e) {
+    if(e.code!=="ENOENT") await reportCommandFailure(e,{operation:"Read permission",write,effect:"This read-only command did not change your permission."});
     write(
       e.code === "ENOENT"
         ? "No saved spending permission. Continue agentpay setup."

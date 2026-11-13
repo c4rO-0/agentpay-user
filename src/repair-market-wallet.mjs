@@ -1,10 +1,11 @@
+import {runServiceCommand} from "./service-command.mjs";
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { ensureRuntimeConnection } from "./runtime-connection-settings.mjs";
 import { walletPackage } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import { spawn } from "node:child_process";
-import { open, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { randomUUID } from "node:crypto";
 import { installedUserDir } from "./local-data-directory.mjs";
@@ -14,28 +15,7 @@ import { runInstall } from "./install-user.mjs";
 import { localWalletAdmin } from "./local-wallet-ipc.mjs";
 import { controlWallet } from "./wallet-control.mjs";
 
-async function service(action, { userDir, dataDir, logPath }) {
-  const log = await open(logPath, "a", 0o600);
-  try {
-    await new Promise((resolve, reject) => {
-      const child = spawn(
-        process.execPath,
-        [join(userDir, "scripts/autostart.mjs"), action],
-        {
-          shell: false,
-          env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
-          stdio: ["ignore", log.fd, log.fd],
-        },
-      );
-      child.once("error", reject);
-      child.once("exit", (code) =>
-        code === 0 ? resolve() : reject(Error("Service preparation failed.")),
-      );
-    });
-  } finally {
-    await log.close();
-  }
-}
+const service = runServiceCommand;
 export async function repairMarketWallet({
   dataDir,
   write = console.log,
@@ -113,6 +93,7 @@ export async function repairMarketWallet({
     write("Wallet is ready. Continuing your Market connection.");
     return true;
   } catch (e) {
+    await reportCommandFailure(e,{operation:"Prepare Wallet for Market",write,services:true,logPath:e.logPath||logPath});
     if (e.message === "CURRENT_SOURCE_REQUIRED")
       write(
         "Install the reviewed User package, then run agentpay market connect again.",

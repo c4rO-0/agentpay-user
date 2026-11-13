@@ -41,7 +41,7 @@ export function requireRunningSoftware(wallet, runtime, expected) {
     const reason = bad.state === 'unreported' ? 'does not report its running version' :
       `does not match the installed package/interface (${bad.expected})`;
     throw Object.assign(Error(`${bad.label} ${reason}. Update the paired packages and run agentpay repair.`), {
-      code: 'RUNNING_VERSION_UNVERIFIED',
+      code: 'RUNNING_VERSION_UNVERIFIED', component: bad.label, running: bad.running, expected: bad.expected,
     });
   }
   return checks;

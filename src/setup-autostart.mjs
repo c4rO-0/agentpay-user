@@ -1,3 +1,4 @@
+import {reportCommandFailure,childCause} from "./command-diagnostics.mjs";
 import { installationDirectory } from "./installation-paths.mjs";
 import { assertPrivateFile } from "./private-journal-files.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
@@ -125,7 +126,7 @@ export async function finishLocalSetup({
       process.execPath,
       [join(userDir, "scripts/autostart.mjs"), "enable"],
       {
-        env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir },
+        env: { ...process.env, AGENTPAY_USER_DATA_DIR: dataDir, AGENTPAY_DIAGNOSTIC_CHANNEL: "1" },
         timeout: 60000,
         maxBuffer: 16384,
       },
@@ -198,7 +199,13 @@ export async function finishLocalSetup({
       "Automatic startup enabled for your next login. Current services are kept; after a restart, use agentpay wallet unlock.",
     );
     return { state: "enabled" };
-  } catch {
+  } catch (error) {
+    const cause=childCause(error.stderr);
+    if(cause && !error.cause)error.cause=cause;
+    await reportCommandFailure(error,{
+      operation:"Setup · automatic startup",write,
+      effect:"Setup is saved. Automatic startup may be incomplete; existing processes and Wallet data were kept.",
+    });
     write(
       "Setup is saved, but automatic startup could not be completed. Retry with agentpay service autostart on. Current processes and Wallet data were kept.",
     );

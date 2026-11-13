@@ -104,7 +104,7 @@ test("missing setup fails before password or child process", async () => {
     1,
   );
   assert.equal(f.calls.length, 0);
-  assert(f.messages[0].includes("setup files are missing"));
+  assert(f.messages.some(message=>message.includes("setup files are missing")));
 });
 test("noninteractive unlock, extra args, unsafe permissions and missing socket fail closed", async () => {
   for (const extra of [

@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { inspectLocalSetup } from "./local-setup-state.mjs";
 import { assessRunningSoftware } from "./software-versions.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
@@ -156,8 +157,8 @@ export async function collectLocalStatus() {
   let dataDir;
   try {
     dataDir = await resolveUserDataDir();
-  } catch {
-    return { configurationError: true };
+  } catch (error) {
+    return { configurationError: true, failures:[{operation:"Read installation settings",error}] };
   }
   const results = await Promise.allSettled([
     execute(
@@ -185,6 +186,7 @@ export async function collectLocalStatus() {
   const value = (i) =>
     results[i].status === "fulfilled" ? results[i].value : null;
   return {
+    failures: results.flatMap((r,i)=>r.status==='rejected'?[{operation:["Read Wallet status","Read Wallet service","Read Runtime service","Read Runtime status","Read permission","Read Market connection","Check deployment","Read setup state"][i],error:r.reason}]:[]),
     setup: value(7),
     software: assessRunningSoftware(value(0), value(3)),
     deployment: value(6) || { state: "unknown" },
@@ -634,10 +636,13 @@ export async function showStatusPanel(
       !Object.hasOwn(process.env, "NO_COLOR"),
   } = {},
 ) {
-  const panel = renderStatusPanel(await collect(), {
+  const model = await collect();
+  const panel = renderStatusPanel(model, {
     color,
     columns: process.stdout.columns || 80,
   });
   write(panel.text);
+  if(model.setup?.state!=="needed") for(const failure of model.failures||[])
+    await reportCommandFailure(failure.error,{operation:failure.operation,write,effect:"This status check did not change services, permission or Orders."});
   return panel.code;
 }

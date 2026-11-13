@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -524,6 +525,7 @@ export async function renewPolicy({
       return 0;
     }
   } catch (e) {
+    if(e.code!=="CANCELLED") await reportCommandFailure(e,{operation:"Renew permission",write,effect:"An authorization transaction may already have been submitted. Resume the saved renewal; do not create a replacement draft."});
     write(
       e.code === "CANCELLED"
         ? "Renewal paused. Your choices are kept."
@@ -596,6 +598,7 @@ export async function revokePolicy({
     );
     return 0;
   } catch (e) {
+    await reportCommandFailure(e,{operation:"Revoke permission",write,effect:"Revocation is not confirmed. Check the saved permission and resume the original operation."});
     write(e.message || "Revocation could not be confirmed.");
     write("Retry: agentpay policy revoke");
     return 1;

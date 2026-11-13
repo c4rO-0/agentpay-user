@@ -66,3 +66,5 @@ Private platform histories and harnesses are retained outside this public tree.
 - [User npm integration verification](reference/npm-integration-verification.md): candidate installation, repair and evidence limits.
 
 - [npm publication](runbooks/npm-publication.md): archive checks, initial upload and GitHub Trusted Publisher.
+
+- [Command diagnostics and repair review](records/2026-11-13-diagnostics-repair-review.md): failure reporting and isolated process ownership findings.

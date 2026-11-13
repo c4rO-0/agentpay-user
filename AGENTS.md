@@ -145,3 +145,15 @@ tag is a publication action and needs maintainer authorization; ordinary branch
 pushes do not publish. Never move an existing release tag. Verify registry state
 before rerunning a failed publication. The `npm-publish` environment must allow
 release tags (for example `v*`), not only the main branch.
+
+## Actionable command failures
+
+Every User command and setup step must report the failed operation, a reviewed
+cause/error code, any uncertain or partial changes, and a concrete next action.
+Preserve lower-level causes and child exit status across wrappers. Service startup
+failures should collect bounded read-only service evidence automatically; do not
+make an ad hoc debug script the normal way to discover why a command failed.
+Save a private sanitized diagnostic report for unexpected failures. Never print or
+store credentials, signed payloads or private request/result contents in that report.
+Unknown errors must remain explicitly unknown with code locations for support;
+never guess that a transaction was not submitted or recommend a replacement purchase.

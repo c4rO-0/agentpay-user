@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { inspectLocalSetup } from "./local-setup-state.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -84,7 +85,8 @@ export async function showLocalInfo({
   let dataDir;
   try {
     dataDir = await resolveDirectory();
-  } catch {
+  } catch (error) {
+    await reportCommandFailure(error,{operation:"Read Wallet information",write,effect:"This read-only command did not change local data."});
     write(
       "Could not read your saved User directory. Check the installation record.",
     );

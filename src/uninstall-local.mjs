@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { installedServiceSelection, withServiceLifecycleLock } from "./service-selection.mjs";
 import { installationBindingPath } from "./installation-binding.mjs";
 import { installationDirectory, legacyInstallationDirectory } from "./installation-paths.mjs";
@@ -338,6 +339,7 @@ export async function uninstallLocal({
   try {
     await remove(selected);
   } catch (error) {
+    await reportCommandFailure(error,{operation:"Uninstall",write,effect:"Some services or files may already have changed. Keep the installed program until the removal state is checked."});
     write(
       "Uninstall did not finish. Some services or files may already have changed. Review the error before retrying; keep the installed User package.",
     );

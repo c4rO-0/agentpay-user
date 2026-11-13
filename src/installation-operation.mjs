@@ -101,13 +101,13 @@ export async function runInstallationCommand(file, args, {env = process.env, tim
       child.kill('SIGTERM');
       killTimer ||= setTimeout(()=>child.kill('SIGKILL'),1000);
     };
-    const timer = setTimeout(()=>stop(Error('Command timed out.')),timeout);
-    child.stdout.on('data',chunk=>{if(failure)return;stdout+=chunk;if(onStdout)onStdout(chunk.toString());if(Buffer.byteLength(stdout)>maxBuffer)stop(Error('Command output exceeded its limit.'));});
-    child.stderr.on('data',chunk=>{if(failure)return;stderr+=chunk;if(Buffer.byteLength(stderr)>maxBuffer)stop(Error('Command output exceeded its limit.'));});
+    const timer = setTimeout(()=>stop(Object.assign(Error('Command timed out.'),{code:'COMMAND_TIMEOUT'})),timeout);
+    child.stdout.on('data',chunk=>{if(failure)return;stdout+=chunk;if(onStdout)onStdout(chunk.toString());if(Buffer.byteLength(stdout)>maxBuffer)stop(Object.assign(Error('Command output exceeded its limit.'),{code:'COMMAND_OUTPUT_LIMIT'}));});
+    child.stderr.on('data',chunk=>{if(failure)return;stderr+=chunk;if(Buffer.byteLength(stderr)>maxBuffer)stop(Object.assign(Error('Command output exceeded its limit.'),{code:'COMMAND_OUTPUT_LIMIT'}));});
     child.once('error',error=>{failure=error;});
     child.once('close',(code,signal)=>{
       clearTimeout(timer); clearTimeout(killTimer);
-      if(failure || code!==0) reject(Object.assign(failure || Error(`Command failed (${signal || code}).`),{stdout,stderr}));
+      if(failure || code!==0) reject(Object.assign(failure || Error(`Command failed (${signal || code}).`),{stdout,stderr,exitCode:code,...(!failure?{code:'COMMAND_FAILED'}:{})}));
       else resolve({stdout,stderr});
     });
   });

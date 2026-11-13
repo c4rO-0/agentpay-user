@@ -1,3 +1,4 @@
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -398,6 +399,7 @@ export async function runOfficialPaidTest({
       },
     );
   } catch (e) {
+    await reportCommandFailure(e,{operation:"Official payment test",write,effect:"A payment may already have been submitted. Keep the original request and test record; do not start a replacement purchase."});
     write(`Official test paused: ${e.message || "Unknown error"}`);
     write(
       "Retry agentpay payment test. Keep the original Order and local test record; do not start a replacement purchase.",

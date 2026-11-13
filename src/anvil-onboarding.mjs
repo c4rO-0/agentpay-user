@@ -1,3 +1,6 @@
+import {runServiceCommand} from "./service-command.mjs";
+import {assessRunningSoftware,runtimeSoftware,requireRunningSoftware} from "./software-versions.mjs";
+import {reportCommandFailure} from "./command-diagnostics.mjs";
 import { ReadOnlyRpc } from "./read-only-rpc.mjs";
 import { CHAIN_CHECK_TIMEOUT_MS, formatSetupFailure, failureGuidance } from "./setup-diagnostics.mjs";
 import { walletCliPath } from "./wallet-package.mjs";
@@ -271,7 +274,9 @@ async function childReady(child, probe) {
   throw Error("LOCAL_PROCESS_START_TIMEOUT");
 }
 async function walletStatus(dataDir) {
-  return captureNode(walletCli, ["status", join(dataDir, "wallet")]);
+  const status=await captureNode(walletCli, ["status", join(dataDir, "wallet")]);
+  requireRunningSoftware(status,{software:runtimeSoftware});
+  return status;
 }
 async function runtimeHealth(url, skill) {
   const response = await fetch(new URL("/health", url), {
@@ -287,6 +292,10 @@ async function runtimeHealth(url, skill) {
     throw Error("USER_RUNTIME_HEALTH_INVALID");
   if (!body.result.capabilities?.includes("agentpay.runtime-call.v1"))
     throw Error("USER_RUNTIME_UPGRADE_REQUIRED");
+  const check=assessRunningSoftware(null,body.result).find(item=>item.label==='Runtime');
+  if(check.state!=='matched')throw Object.assign(Error('Runtime needs the installed version before setup can continue.'),{
+    code:'RUNNING_VERSION_UNVERIFIED',component:'Runtime',running:check.running,expected:check.expected,
+  });
   return body.result;
 }
 async function promptChoice(ask, prompt, choices) {
@@ -370,7 +379,12 @@ export async function runAnvilOnboarding({
     restoreExistingPolicy,
     runNode,
     captureNode,
-    startLocal,
+    startLocal: async (...args) => {
+      if(process.platform!=='linux')return startLocal(...args);
+      await saveServiceSettings({dataDir,runtimeUrl:config.runtimeUrl,settlementUrl:config.settlementUrl});
+      write('Starting Wallet and Runtime as background services. Login startup preference is unchanged.');
+      await runServiceCommand('start',{userDir,dataDir});
+    },
     executeAnvilOwnerCall,
     saveServiceSettings,
     finishLocalSetup,
@@ -1048,9 +1062,8 @@ export async function runAnvilOnboarding({
       }
     } catch (error) {
       advancing = false;
-      write(
-        `${stage} stopped.\n${formatSetupFailure(error)}`,
-      );
+      write(`${stage} stopped.`);
+      await reportCommandFailure(error,{operation:stage,write,effect:"Saved progress is kept. If a transaction was submitted, resume this same step; do not create a replacement request."});
     }
   }
 }

@@ -18,7 +18,7 @@ try {
  await mkdir(env.HOME,{mode:0o700});
  const packed=JSON.parse(run('npm',['pack','--ignore-scripts','--json','--pack-destination',output],source))[0];
  const paths=packed.files.map(x=>x.path);
- for(const name of ['LICENSE','NOTICE.md','SECURITY.md','scripts/agentpay-cli.mjs','scripts/update.mjs','src/index.mjs','web/owner-approval.html','web/owner-approval.js','web/policy-preview.html','web/policy-preview.js'])
+ for(const name of ['LICENSE','NOTICE.md','SECURITY.md','scripts/agentpay-cli.mjs','scripts/update.mjs','src/index.mjs','scripts/command-entry.mjs','src/guide-process-handoff.mjs','src/command-diagnostics.mjs','src/service-command.mjs','web/owner-approval.html','web/owner-approval.js','web/policy-preview.html','web/policy-preview.js'])
   if(!paths.includes(name))throw Error('Missing package file: '+name);
  if(paths.some(x=>x.startsWith('test/') || x.startsWith('node_modules/') || /(?:^|\/)\.env(?:\.|$)|\.keystore\.json$|\.token$|\.log$/.test(x)))throw Error('Unexpected private/test material in archive');
  const archive=join(output,packed.filename),consumer=join(root,'consumer');

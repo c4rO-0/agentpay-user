@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import {stopGuideProcesses} from "../src/guide-process-handoff.mjs";
+import {reportCommandFailure,childDiagnostic} from "../src/command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
@@ -133,7 +135,19 @@ try {
       }
       await unitsPrepared();
       if (action !== 'stop') await ctl('daemon-reload');
-      await ctl(action, ...(action !== "stop" ? runtimeUnits : units));
+      // stop/restart first quiesce managed units; legacy guide children are not
+      // members of those units and require separately verified handoff.
+      if(action==='stop'||action==='restart')await ctl('stop',...units);
+      await stopGuideProcesses({node:process.execPath,userDir:installedUserDir,dataDir});
+      if(action!=='stop') {
+        // A first install may not have loaded units yet. Reset only known units;
+        // never clear failure state for unrelated user services.
+        for(const unit of runtimeUnits) {
+          const state=await runInstallationCommand('systemctl',['--user','show',unit,'--property=LoadState','--value'],{timeout:30000});
+          if(state.stdout.trim()==='loaded')await ctl('reset-failed',unit);
+        }
+        await ctl('start',...runtimeUnits);
+      }
       if (action === 'stop') console.log(
         'Stop requested through systemd. Login startup and saved Wallet data are unchanged.\nNext: agentpay status',
       );
@@ -199,7 +213,10 @@ try {
       'Wallet and Runtime are ready. Default Skill access is available.\nNext: agentpay status',
     );
   }
-} catch (error) {
+ } catch (error) {
+  await reportCommandFailure(error,{operation:'Service '+(process.argv[2]||'operation'),services:true});
+  // Parent installers consume this reviewed envelope; no raw child errors.
+  if(process.env.AGENTPAY_DIAGNOSTIC_CHANNEL === "1") console.error(childDiagnostic(error));
   console.error(
     error.status === undefined
       ? error.message

@@ -1,3 +1,4 @@
+import {reportCommandFailure,childCause} from "./command-diagnostics.mjs";
 import {atomicWritePrivate, assertPrivateFile} from './private-journal-files.mjs';
 import {withInstallationOperation, runInstallationCommand} from './installation-operation.mjs';
 import {maintenanceServiceScope} from './service-selection.mjs';
@@ -29,7 +30,7 @@ async function command(file, args, { logPath, timeout = 120000, env = process.en
     return onStdout ? '' : result.stdout.trim();
   } catch (error) {
     if (logPath) await appendFile(logPath, String(error.stdout || '') + String(error.stderr || ''), {mode:0o600});
-    throw Error(logPath ? 'The command did not complete. Check the update log.' : 'Could not query npm. Check your network and npm configuration, then retry.');
+    throw Object.assign(Error('Update helper failed'),{code:'COMMAND_FAILED',cause:childCause(error.stderr)||error});
   }
 }
 async function askConfirmation(message) {
@@ -68,7 +69,7 @@ async function installationTarget(userDir, npm) {
 
 export async function updateFromNpm(options = {}) {
   try { return await withInstallationOperation(() => updateUnderLock(options)); }
-  catch(error) { (options.write || console.log)("Update stopped. " + error.message); return 1; }
+  catch(error) { await reportCommandFailure(error,{operation:"Update",write:options.write||console.log}); return 1; }
 }
 async function updateUnderLock({
   userDir = installedUserDir, dataDir, force = false, write = console.log,
@@ -242,6 +243,7 @@ async function updateUnderLock({
     write(`User ${metadata.version} installed. No paid test was started.`);
     return 0;
   } catch(error) {
+    await reportCommandFailure(error,{operation:"Update",write,logPath});
     write(installing
       ? 'Update did not finish. Your private data was kept. Reinstall the intended User version with npm if needed, then run agentpay repair.'
       : 'Update stopped before replacing program files. ' + (error.code === 'EEXIST' ? 'Another installation is running.' : error.message));
