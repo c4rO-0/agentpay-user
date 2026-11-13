@@ -1,8 +1,8 @@
 # AgentPay User progress
 
-## Setup diagnostics release candidate — 2026-11-13
+## Setup diagnostics published — 2026-11-13
 
-User 0.3.14 candidate keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
+User 0.3.14 keeps Wallet 0.3.4 / Protocol 0.14.3. Review fixes stop
 further chain probes after RPC timeout and reject HTTP 200 proxy/error pages rather
 than treating them as valid platform responses. An additional process-level check
 found that ethers provider destruction alone leaves HTTP work pending. The final
@@ -25,8 +25,14 @@ failures point to diagnostics while retaining existing specific guidance/log pat
 65 targeted checks passed, including actual local HTTP with controlled chain
 responses, a combined setup check slower than five seconds, invalid confirmation,
 privacy and unchanged diagnostic storage. These are controlled regressions, not
-completion of participant B setup or full configured A/B switching. Package release
-and participant continuation remain pending.
+completion of participant B setup or full configured A/B switching.
+
+Published as `v0.3.14` at `65f178d`. [Release workflow](https://github.com/c4rO-0/agentpay-user/actions/runs/43352403711)
+passed the full behavior suite, independent package checks and registry integrity.
+npm latest, pinned Wallet 0.3.4 and downloaded archive SHA-512 were independently
+verified. The final transport patch also passed 42 targeted regressions, including
+child-process exit against a still-running stalled RPC. Participant continuation
+from the saved B setup remains pending.
 
 
 ## Second-installation participant findings — 2026-11-12
