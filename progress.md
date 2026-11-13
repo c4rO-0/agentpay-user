@@ -1,5 +1,16 @@
 # AgentPay User progress
 
+## User 0.3.18 publication visibility pending — 2026-11-13
+
+Tag v0.3.18 is c6559d18dbcec953559f9e1730e2bab65f6fab72. GitHub run
+43378486830 passed Verify User behavior and standalone package verification;
+Publish with npm trusted identity returned success. Public npm latest still reads
+0.3.16 and the 0.3.18 metadata endpoint returns 404. The registry integrity step is
+waiting. Do not republish or claim availability; maintainer publication output is
+requested to distinguish propagation from a staged/reviewed release. No production
+handoff guard was relaxed. Participant repair remains pending package availability.
+
+
 ## User 0.3.18 release candidate — 2026-11-13
 
 The maintainer supplied the v0.3.17 failure: real-process handoff was refused at

@@ -1,6 +1,7 @@
 # User TODO
 - [x] Correct the process test assumption behind v0.3.17 CI ownership refusal: assert user-session adoption or system-managed rejection from real cgroup evidence; production guards remain unchanged.
-- [ ] Verify v0.3.18 CI, npm publication and archive integrity before participant repair. Preserve the failed v0.3.17 tag.
+- [x] Verify v0.3.18 CI behavior and standalone package checks; both passed in run 43378486830.
+- [ ] Confirm npm 0.3.18 visibility and archive integrity: publish command succeeded, but registry still returns 404/latest 0.3.16. Inspect publish output; do not republish. Participant repair waits for this gate. Preserve the failed v0.3.17 tag.
 
 
 - [x] Add common User command failure diagnostics: operation, reviewed cause/code, child exit/version evidence, partial-change guidance and private sanitized report; automatically inspect service state on service failures.
