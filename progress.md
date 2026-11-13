@@ -1,5 +1,15 @@
 # AgentPay User progress
 
+## User 0.3.17 CI gate — 2026-11-13
+
+Source/tag v0.3.17 points to 86757e1c0b620e25c978e782a04eecf36e0c6d31.
+Local full suite passed 468 tests and standalone archive checks passed. GitHub run
+43377098217 failed at Verify User behavior before publishing; npm release is not
+confirmed. Public annotations contain only exit code 1; log download returns 403.
+Exact failing test output is requested from the maintainer. Do not overwrite the
+tag or bypass tests. Resolve this gate before participant update instructions.
+
+
 ## User 0.3.17 release candidate — 2026-11-13
 
 Release includes managed Linux Setup startup, verified legacy-process handoff and

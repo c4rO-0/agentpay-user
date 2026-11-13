@@ -1,4 +1,6 @@
 # User TODO
+- [ ] Resolve User v0.3.17 CI failure (run 43377098217, Verify User behavior). Local 468 tests/package checks passed; npm publication did not run. Preserve the release tag and inspect the exact failing test before selecting a new release or rerun.
+
 
 - [x] Add common User command failure diagnostics: operation, reviewed cause/code, child exit/version evidence, partial-change guidance and private sanitized report; automatically inspect service state on service failures.
 - [ ] Release and verify diagnostics on the participant installation together with the pending Setup/service ownership fix. Diagnostics alone do not resolve startup failure.
