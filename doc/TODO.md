@@ -1,9 +1,10 @@
 # User TODO
 - [x] Participant User 0.3.18 repair completed successfully; pinned Skill verified and service startup confirmed by repair. No replacement payment was requested.
 - [x] Implement newer-installed-version recovery for an older pending npm update, with release/dependency verification, confirmation, journal retention on failure and typed errors; focused tests passed.
-- [ ] Review/release the pending-update recovery fix and verify participant update completes, followed by normal latest-version checks. Old 0.3.16 code cannot load this fix until npm installs the new program.
+- [x] Review and publish update recovery as User 0.3.19; local 471 tests, package checks, CI and independent npm integrity verification passed.
+- [ ] Participant installs 0.3.19, completes update recovery and confirms the next update returns to ordinary latest-version checking. Old code needs npm to install the recovery release first.
 
-- [ ] Fix interrupted npm update recovery after a manual newer installation: old target 0.3.16 currently retries old repair before checking newer releases; installing 0.3.18 directly permits its repair but leaves an old update record that must be reconciled without downgrade or deletion before successful verification. Preserve installation/data identity and require clear confirmation for any changed target.
+- [x] Recover an older pending update after manual newer npm installation: 0.3.19 verifies the installed release and same installation/data scope, confirms final checks and closes the journal only after success. Earlier released updaters require the recovery release to be installed through npm first.
 
 - [x] Correct the process test assumption behind v0.3.17 CI ownership refusal: assert user-session adoption or system-managed rejection from real cgroup evidence; production guards remain unchanged.
 - [x] Verify v0.3.18 CI behavior and standalone package checks; both passed in run 43378486830.

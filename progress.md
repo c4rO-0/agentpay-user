@@ -1,5 +1,17 @@
 # AgentPay User progress
 
+## User 0.3.19 published and verified — 2026-11-13
+
+Release tag v0.3.19 points to 93dd7a5154db70a0604203c2ad0a6b783ba4f375.
+Local full suite passed 471 tests; standalone archive checks passed. GitHub run
+43382567167 completed successfully, including npm integrity verification. Public
+npm latest is 0.3.19; the 364179-byte download independently matches its SHA-512
+and the tagged update/diagnostic/entry source. Wallet remains 0.3.4.
+Participant installs this recovery release through npm once, then runs update to
+verify and close the older journal. Cancellation/failure keeps the record. Participant
+execution is pending; no new authorization or paid test is required.
+
+
 ## User 0.3.19 release candidate — 2026-11-13
 
 Close older update journals after verifying a manually installed newer release,
