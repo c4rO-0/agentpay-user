@@ -1,5 +1,16 @@
 # AgentPay User progress
 
+## User 0.3.18 publication verified — 2026-11-13
+
+GitHub run 43378486830 completed successfully. Public npm version and latest both
+resolve to 0.3.18. The 361261-byte archive passed independent SHA-512 verification;
+manifest, update pair, handoff/diagnostic modules and CLI/service entries match
+release tag v0.3.18 (c6559d18dbcec953559f9e1730e2bab65f6fab72).
+Wallet remains 0.3.4. Earlier publication-visibility entries below are historical;
+the registry gate is now closed. Participant repair/unlock/status and configured
+A/B switching still require verification; no participant services were changed.
+
+
 ## User 0.3.18 publication visibility pending — 2026-11-13
 
 Tag v0.3.18 is c6559d18dbcec953559f9e1730e2bab65f6fab72. GitHub run
