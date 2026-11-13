@@ -16,6 +16,13 @@ import { repairMarketWallet } from "./repair-market-wallet.mjs";
 import { controlWallet } from "./wallet-control.mjs";
 import { preparePlatformEndpoints } from "./platform-endpoints.mjs";
 import { fetchJsonWithTimeout } from "./transport.mjs";
+// Validate suggestions before rendering them, as well as the final chosen name.
+const invalidLabelCharacters = /[\u0000-\u001f\u007f-\u009f\u061c\u200b\u200e\u200f\u2028-\u202e\u2060-\u206f\ufeff]/;
+function validWalletLabel(value) {
+  return typeof value === "string" && !!value.trim() && value.trim().length <= 64 &&
+    value.trim().normalize("NFKC").toLowerCase().length <= 64 &&
+    !invalidLabelCharacters.test(value);
+}
 export function marketOrigin(value) {
   const u = new URL(value);
   if (
@@ -222,6 +229,8 @@ export async function connectMarket(
           ),
           { code: "ORDER_CONNECTION_LABEL_TAKEN" },
         );
+      if ((!response.ok || result?.ok !== true) && result?.error?.code === "ORDER_CONNECTION_LABEL_INVALID")
+        throw Object.assign(Error("Use 1–64 characters without control or hidden formatting characters. The normalized name must also fit 64 characters."), {code:"ORDER_CONNECTION_LABEL_INVALID"});
       if (!response.ok || result?.ok !== true)
         throw Error(
           response.status === 401
@@ -292,30 +301,37 @@ export async function connectMarket(
     }
     if (endpoints.changed && (previous?.accountId !== signedIn.developer.id || !originalConnectionMatches))
       throw Error("Platform addresses changed, but your original account and Wallet connection could not be confirmed. Current addresses were kept.");
-    if (existing) write(`Using your Wallet name: ${existing.label}`);
-    else
+    if (!existing)
       write(
         "Choose a name to recognize this Wallet in Market, such as Home laptop.",
       );
-    const defaultLabel =
+    const savedDefaultLabel =
       previous?.accountId === signedIn.developer.id
         ? previous?.connection?.label || "My Wallet"
         : "My Wallet";
+    const defaultLabel = validWalletLabel(savedDefaultLabel) ? savedDefaultLabel.trim() : "My Wallet";
     while (true) {
-      const label =
+      const rawLabel =
         existing?.label ||
         (
           await ask(
             `Wallet nickname (Enter to use '${defaultLabel}', 'q' to cancel)`,
           )
-        ).trim() ||
-        defaultLabel;
+        );
+      const label = rawLabel.trim() || defaultLabel;
       if (label === "q") {
         write("Connection cancelled.");
         return 0;
       }
-      if (label.length > 64 || /[\u0000-\u001f\u007f]/.test(label))
-        throw Error("Use a nickname of 1–64 characters.");
+      // Check before trimming so pasted control characters are not silently removed.
+      // Keep joiners used by ordinary scripts and emoji; reject display-direction overrides.
+      if (invalidLabelCharacters.test(rawLabel) || !validWalletLabel(label)) {
+        const message = "Use 1–64 characters without control or hidden formatting characters. The normalized name must also fit 64 characters.";
+        if (existing) throw Object.assign(Error(message + " This Wallet's saved nickname needs review in Market; contact support."), {code:"ORDER_CONNECTION_LABEL_INVALID"});
+        write(message);
+        continue;
+      }
+      if (existing) write(`Using your Wallet name: ${label}`);
       try {
         // Check/reserve the nickname before consent; no Wallet proof or verified
         // connection is created until the participant confirms. Verify rechecks races.
@@ -406,7 +422,11 @@ Runtime will restart; your spending permission stays the same.`);
         completion = `\nWallet connected: ${label}\nView this Wallet’s Orders in Market → Account → My Orders.\nManage or disconnect it in Market Settings. This guide has finished.`;
         return 0;
       } catch (e) {
-        if (e.code !== "ORDER_CONNECTION_LABEL_TAKEN" || existing) throw e;
+        if (!["ORDER_CONNECTION_LABEL_TAKEN", "ORDER_CONNECTION_LABEL_INVALID"].includes(e.code)) throw e;
+        if (existing) {
+          e.message += " This Wallet's saved nickname needs review in Market; contact support.";
+          throw e;
+        }
         write(e.message);
       }
     }

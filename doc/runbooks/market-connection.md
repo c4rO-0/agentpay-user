@@ -12,6 +12,13 @@ If preparation is needed, the command asks once, verifies the installed Wallet p
 restarts local services and continues. Unlock when prompted; input is hidden.
 Keys, spending permission and Order records are preserved.
 
+Choose a nickname of 1–64 characters. Chinese, spaces, punctuation and emoji are
+allowed; control characters and hidden direction/formatting marks are rejected.
+Some emoji count as two characters. Market also checks the normalized name length
+and rejects names already used by another Wallet on your account. If a new name
+is rejected, enter another without signing in again. Existing Wallets reuse their
+name; an invalid saved name requires support review rather than an automatic rename.
+
 Review the account and nickname, then type `confirm`. Use `details` to inspect the
 Safe, network and Policy. Open Market → Account to view your Wallets and Orders.
 A separate browser login may be needed; terminal sign-in does not create browser cookies.

@@ -1,5 +1,31 @@
 # AgentPay User progress
 
+## Nickname validation release 0.3.20 — 2026-11-13
+
+User 0.3.20 pins published Wallet 0.3.5. Local full behavior verification passed
+475 tests in an isolated HOME; standalone package checks passed. The caller-auth
+test now isolates its child state and handles an already-exited child during cleanup.
+Market requires a separate deployment. Tag publication and npm verification are pending.
+
+
+## Nickname review fixes — 2026-11-13
+
+Historical nickname uniqueness keys are checked independently of current input
+restrictions, so previously accepted formatting characters do not prevent Market
+startup. Incorrect stored keys still fail the integrity check. User validates saved
+nickname suggestions before displaying them; invalid suggestions fall back to
+My Wallet, while existing connected identities are never silently renamed.
+User's 16 connection checks and Market's startup/schema and connection HTTP checks
+passed. Market checks use controlled SQL fixtures, not a live database. Source only;
+release and deployment remain pending.
+
+
+## Wallet nickname validation — 2026-11-13
+
+Invalid local nicknames and Market ORDER_CONNECTION_LABEL_INVALID / LABEL_TAKEN responses now keep new-Wallet naming in the same signed-in flow. Existing Wallet names are never silently changed; invalid existing names stop with review guidance. Controlled connection tests cover local rejection, server rejection, unchanged identity and login reuse.
+Source changes only; deployment/package release remains pending.
+
+
 ## User 0.3.19 published and verified — 2026-11-13
 
 Release tag v0.3.19 points to 93dd7a5154db70a0604203c2ad0a6b783ba4f375.

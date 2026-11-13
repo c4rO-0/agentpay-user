@@ -276,6 +276,31 @@ test("nickname collision asks again in the same login without signing the reject
   assert.equal(f.saved[0].connection.label, "Work PC");
 });
 
+test("invalid local nicknames retry without another login or rejected-name signing", async () => {
+  const f=fixture(), ask=f.options.ask;
+  const names=["a".repeat(65), "PC\u202e", "PC\n", "ﷺ".repeat(10), "Work PC"];
+  f.options.ask=async (message,opt)=>message.startsWith("Wallet nickname")?names.shift():ask(message,opt);
+  assert.equal(await connectMarket(["--market","https://market.example"],f.options),0);
+  assert.equal(names.length,0);
+  assert.equal(f.signs.length,1);
+  assert.equal(f.requests.filter(r=>r.url.endsWith("/login")).length,1);
+  assert.equal(f.requests.filter(r=>r.url.endsWith("/challenge")).length,1);
+  assert.match(f.writes.join(" "),/1–64 characters/);
+});
+
+test("Market invalid-name rejection is explained and retried in the same login", async () => {
+  const f=fixture(), fetch=f.options.fetchJson; let first=true;
+  f.options.fetchJson=async(url,opts)=>{
+    if(url.endsWith("/challenge")&&first){first=false;return {response:{ok:false,status:422},result:{ok:false,error:{code:"ORDER_CONNECTION_LABEL_INVALID",message:"untrusted server text"}}};}
+    return fetch(url,opts);
+  };
+  assert.equal(await connectMarket(["--market","https://market.example"],f.options),0);
+  assert.equal(f.signs.length,1);
+  assert.equal(f.requests.filter(r=>r.url.endsWith("/login")).length,1);
+  assert.match(f.writes.join(" "),/1–64 characters/);
+  assert.doesNotMatch(f.writes.join(" "),/untrusted server text/);
+});
+
 test("a new Policy under an existing Wallet reuses its server nickname without prompting", async () => {
   const f = fixture(),
     fetch = f.options.fetchJson,
@@ -348,4 +373,37 @@ test('address preflight failure explains retry and preserves connection without 
   assert.match(f.writes.join('\n'), /No local settings were changed by this check/);
   assert.match(f.writes.join('\n'), /Next:/);
   assert.ok(f.requests.some(r => r.url.endsWith('/logout')));
+});
+
+test("an invalid existing Wallet name stops with review guidance instead of looping or renaming", async () => {
+  const f=fixture(), fetch=f.options.fetchJson, wallet=f.options.wallet;
+  const local={...scope,delegate:"0x"+"4".repeat(40)};
+  f.options.wallet=(dir,method,...args)=>method==="marketConnectionScope"?local:wallet(dir,method,...args);
+  f.options.fetchJson=async(url,opts)=>url.endsWith("/connections")?{response:{ok:true},result:{ok:true,result:{connections:[{...local,label:"PC\u202e",policies:[{...scope}]}]}}}:fetch(url,opts);
+  assert.equal(await connectMarket(["--market","https://market.example"],f.options),1);
+  assert.equal(f.signs.length,0);
+  assert.match(f.writes.join(" "),/saved nickname needs review/);
+});
+
+test("unsafe saved nickname suggestions fall back before display and Enter uses the safe name", async () => {
+ for(const label of ["Old\u202ePC","PC\n", "a".repeat(65), "ﷺ".repeat(10)]) {
+  const f=fixture(),ask=f.options.ask,fetch=f.options.fetchJson;
+  f.options.load=async()=>({version:1,marketOrigin:"https://market.example",accountId:"alice",connection:{...scope,label}});
+  f.options.ask=async(message,opt)=>{
+   if(message.startsWith("Wallet nickname")) {
+    assert.match(message,/Enter to use 'My Wallet'/);
+    assert.ok(!message.includes(label));return "";
+   }
+   return ask(message,opt);
+  };
+  f.options.fetchJson=async(url,opts)=>{
+   const response=await fetch(url,opts);
+   if(url.endsWith("/verify"))response.result.result.connection.label="My Wallet";
+   return response;
+  };
+  assert.equal(await connectMarket(["--market","https://market.example"],f.options),0);
+  assert.equal(f.signs[0].label,"My Wallet");
+  assert.equal(f.saved[0].connection.label,"My Wallet");
+  assert.equal(f.requests.filter(r=>r.url.endsWith("/login")).length,1);
+ }
 });

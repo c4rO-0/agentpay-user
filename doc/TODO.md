@@ -1,4 +1,9 @@
 # User TODO
+
+- [x] Separate historical nickname-key integrity from new-input validation; validate saved suggestions before display and Enter fallback. Regression checks passed.
+
+- [x] Align Wallet nickname validation and actionable rejection handling; focused regression checks passed.
+- [ ] Release/deploy nickname changes and verify the participant naming flow.
 - [x] Participant User 0.3.18 repair completed successfully; pinned Skill verified and service startup confirmed by repair. No replacement payment was requested.
 - [x] Implement newer-installed-version recovery for an older pending npm update, with release/dependency verification, confirmation, journal retention on failure and typed errors; focused tests passed.
 - [x] Review and publish update recovery as User 0.3.19; local 471 tests, package checks, CI and independent npm integrity verification passed.

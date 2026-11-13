@@ -42,6 +42,8 @@ test("purchase route rejects unauthenticated callers before parsing or paid Wall
     stdio: ["ignore", "pipe", "pipe"],
     env: {
       ...process.env,
+      HOME: dir,
+      XDG_STATE_HOME: join(dir, "state"),
       AGENTPAY_USER_HOST: "127.0.0.1",
       AGENTPAY_USER_PORT: String(port),
       AGENTPAY_USER_STATE_FILE: stateFile,
@@ -75,8 +77,11 @@ test("purchase route rejects unauthenticated callers before parsing or paid Wall
     assert.equal(authorized.status, 400);
     assert.equal(walletConnections, 0);
   } finally {
-    child.kill("SIGTERM");
-    await new Promise((resolveExit) => child.once("exit", resolveExit));
+    if (child.exitCode === null && child.signalCode === null) {
+      const exited = new Promise((resolveExit) => child.once("exit", resolveExit));
+      child.kill("SIGTERM");
+      await exited;
+    }
     await new Promise((resolveClose) => wallet.close(resolveClose));
     await rm(dir, { recursive: true, force: true });
   }
