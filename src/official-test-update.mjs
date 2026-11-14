@@ -6,7 +6,7 @@ import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
-  OFFICIAL_TEST_PACKAGE,
+  officialTestPackageForNetwork,
   verifyOfficialTestBytes,
   verifyOfficialTestDigest,
 } from "./official-test-package.mjs";
@@ -70,6 +70,17 @@ export async function prepareOfficialTestUpdate({
 } = {}) {
   write("\n> Official test Skill");
   try {
+    const policy=await readJson(join(dataDir,"wallet/policy.json"));
+    let chainId=policy?.chainId;
+    if(chainId===undefined)for(const name of ["anvil-onboarding.json","user-deployment.json"]){
+      const saved=await readJson(await deploymentFilePath(dataDir,userDir,name));
+      if(saved?.chainId!==undefined){chainId=saved.chainId;break;}
+    }
+    const OFFICIAL_TEST_PACKAGE=officialTestPackageForNetwork(chainId);
+    if(!OFFICIAL_TEST_PACKAGE){
+      write("No reviewed official test package is included for this network in this User release. Local programs and existing test records are kept; no package was selected.");
+      return {status:"unconfigured"};
+    }
     // Only the release-pinned archive can establish the expected installed files.
     // Never trust installation.json or a Market-provided digest for this shortcut.
     const { inspectSavedSkillBundle } = await import("./skill-bundle.mjs");
@@ -119,13 +130,13 @@ export async function prepareOfficialTestUpdate({
       (await download(fetchImpl, metadataUrl, 65536)).toString("utf8"),
     );
     if (body.ok !== true) throw Error("Metadata unavailable");
-    verifyOfficialTestDigest(body.result?.sha256);
+    verifyOfficialTestDigest(body.result?.sha256, OFFICIAL_TEST_PACKAGE);
     const downloadUrl = marketDownloadUrl(
       metadataUrl,
       body.result.marketServiceId,
     );
     const bytes = await download(fetchImpl, downloadUrl, 2097152);
-    verifyOfficialTestBytes(bytes);
+    verifyOfficialTestBytes(bytes, OFFICIAL_TEST_PACKAGE);
     // Load package dependencies only after the software dependency update completed.
     const { parseSkillBundle, installSkillBundle } = await import(
       "./skill-bundle.mjs"

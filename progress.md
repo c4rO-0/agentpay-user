@@ -1,5 +1,21 @@
 # AgentPay User progress
 
+## User 0.3.23 release candidate
+
+Reviewed network-specific official test selection and optional public deployment
+settings. Wallet remains 0.3.5; Protocol remains 0.14.3. Independent npm package
+verification and all 479 behavior checks passed. Publication and registry
+verification are pending.
+
+Review corrections: funding overlap capped at 1999 across configuration consumers;
+Registry admission stays at the chain tip; folder-install recovery guidance is explicit.
+Focused Deploy/Settlement/Web regressions passed; live rollout remains pending.
+
+## Official test deployment mapping — 2026-11-14
+
+Release-owned network/package mapping replaces the private chain permission branch in the official test. Generic setup can finish without a reviewed test and explicitly reports no paid test. Optional public metadata/finality is validated; unknown digests cannot bypass the release pin. Full 479 behavior checks and independent candidate archive verification passed. Current supported official mapping remains 31337/1.2.1; no new network acceptance or npm publication. See doc/reference/official-test-network-mapping.md.
+
+
 ## User 0.3.22 published — 2026-11-14
 
 Result-warning wording now identifies some results missing on this device and

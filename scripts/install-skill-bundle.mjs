@@ -3,7 +3,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import {
-  OFFICIAL_TEST_PACKAGE,
+  officialTestPackageForDigest,
   verifyOfficialTestBytes,
   verifyOfficialTestDigest,
 } from "../src/official-test-package.mjs";
@@ -21,7 +21,8 @@ import {
 } from "../src/skill-bundle.mjs";
 const [mode, data, source, requestedDigest, sourceMode] = process.argv.slice(2);
 const official = mode === "--prepare-official-test";
-const digest = official ? OFFICIAL_TEST_PACKAGE.sha256 : requestedDigest;
+const digest = requestedDigest;
+if(official && !officialTestPackageForDigest(digest))verifyOfficialTestDigest(digest);
 const marketMode = sourceMode === "--market";
 if (
   ![
@@ -67,7 +68,7 @@ if (marketMode) {
   if (!r.ok) throw new Error(`MARKET_BUNDLE_METADATA_HTTP_${r.status}`);
   const body = await r.json();
   metadata = body.result;
-  if (official) verifyOfficialTestDigest(metadata?.sha256);
+  if (official) verifyOfficialTestDigest(metadata?.sha256, officialTestPackageForDigest(digest));
   if (
     body.ok !== true ||
     metadata.sha256 !== digest ||
@@ -102,7 +103,7 @@ for await (const chunk of response.body) {
   chunks.push(chunk);
 }
 const bytes = Buffer.concat(chunks);
-if (official) verifyOfficialTestBytes(bytes); // Check raw bytes before parsing or saving any package files.
+if (official) verifyOfficialTestBytes(bytes, officialTestPackageForDigest(digest)); // Check raw bytes before parsing or saving any package files.
 const bundle = parseSkillBundle(bytes);
 if (bundle.sha256 !== digest) throw new Error("BUNDLE_DIGEST_MISMATCH");
 if (marketMode) {

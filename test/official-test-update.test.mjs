@@ -18,7 +18,7 @@ function fixture() {
       userDir: "/repo/user",
       dataDir: "/private",
       write: (s) => lines.push(s),
-      readJson: async () => ({ marketBundleMetadataUrl: source }),
+      readJson: async () => ({ chainId:31337, marketBundleMetadataUrl: source }),
       install: async () => {
         installs++;
         throw Error("must not install");

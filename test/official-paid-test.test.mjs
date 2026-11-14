@@ -324,3 +324,8 @@ test("cancelled and failed tests do not display completion", async () => {
   assert.doesNotMatch(g.lines.join("\n"), /Test complete/);
   assert.equal(g.record.acknowledged, undefined);
 });
+
+test("an unsupported official test network never signs, quotes, executes or replaces saved requests", async()=>{
+ const opts={dataDir:"/not-used",read:async()=>({chainId:12345}),write:()=>{},offer:async()=>assert.fail("must not quote"),execute:async()=>assert.fail("must not execute"),saveRecord:async()=>assert.fail("must not replace a record"),inspect:async()=>assert.fail("must not inspect another network's package")};
+ assert.equal(await runOfficialPaidTest(opts),0);
+});

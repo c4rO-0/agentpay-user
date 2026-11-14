@@ -7,6 +7,7 @@ const fields = [
   "mode",
   "chainId",
   "source",
+  "finality",
   "rpcUrl",
   "module",
   "token",
@@ -35,7 +36,8 @@ export function validatePublicDeployment(input) {
     input.chainId < 1
   )
     throw Error("Invalid deployment mode or chain ID.");
-  for (const key of ["rpcUrl", "settlementUrl", "marketBundleMetadataUrl"]) {
+  const hasTest=["marketBundleMetadataUrl","bundleSha256","maxUsageUnits"].some(k=>input[k]!==undefined);
+  for (const key of ["rpcUrl", "settlementUrl", ...(hasTest?["marketBundleMetadataUrl"]:[])]) {
     const u = new URL(input[key]);
     if (
       !(
@@ -64,13 +66,17 @@ export function validatePublicDeployment(input) {
     input.tokenDecimals > 36 ||
     typeof input.tokenSymbol !== "string" ||
     !/^[A-Za-z0-9_-]{1,20}$/.test(input.tokenSymbol) ||
-    !/^[a-f0-9]{64}$/.test(input.bundleSha256) ||
-    input.maxUsageUnits !== 1 ||
+    hasTest && (!/^[a-f0-9]{64}$/.test(input.bundleSha256) ||
+    input.maxUsageUnits !== 1) ||
     typeof input.source !== "string" ||
     !input.source.trim()
   )
     throw Error("Invalid token or test package settings.");
-  return Object.fromEntries(fields.map((key) => [key, input[key]]));
+  if(input.finality!==undefined){
+    const f=input.finality,keys=["confirmations","fundingScanOverlapBlocks","unpaidConfirmationBlocks"];
+    if(!f||Object.keys(f).length!==3||!keys.every(k=>Number.isSafeInteger(f[k])&&f[k]>=1&&f[k]<=(k==='fundingScanOverlapBlocks'?1999:100000)))throw Error("Invalid finality settings.");
+  }
+  return Object.fromEntries(fields.filter(key=>input[key]!==undefined).map((key) => [key, input[key]]));
 }
 export async function prepareOnboarding({
   inputPath,

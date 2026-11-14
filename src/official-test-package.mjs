@@ -11,6 +11,16 @@ export const OFFICIAL_TEST_PACKAGE = Object.freeze({
   version: "1.2.1",
   sha256: "20633b314c66166f94dc6e7d7eb5bce54ab5901fb1ed314a04ea3fd49ca8a9a4",
 });
+// Maintainer-reviewed release data. Adding a supported deployment updates this
+// map and its reviewed ZIP; Market cannot add trust entries at runtime.
+export const OFFICIAL_TEST_DEPLOYMENTS = Object.freeze({31337: OFFICIAL_TEST_PACKAGE});
+export function officialTestPackageForNetwork(chainId) {
+  if (!Number.isSafeInteger(chainId) || chainId < 1) return null;
+  return Object.hasOwn(OFFICIAL_TEST_DEPLOYMENTS,chainId) ? OFFICIAL_TEST_DEPLOYMENTS[chainId] : null;
+}
+export function officialTestPackageForDigest(digest) {
+  return Object.values(OFFICIAL_TEST_DEPLOYMENTS).find(p=>p.sha256===digest)||null;
+}
 const mismatch = () =>
   Object.assign(
     new Error(
@@ -19,23 +29,22 @@ const mismatch = () =>
     { code: "OFFICIAL_TEST_PACKAGE_MISMATCH" },
   );
 
-export function verifyOfficialTestBytes(bytes) {
+export function verifyOfficialTestBytes(bytes, expected=OFFICIAL_TEST_PACKAGE) {
   if (
-    createHash("sha256").update(bytes).digest("hex") !==
-    OFFICIAL_TEST_PACKAGE.sha256
+    !officialTestPackageForDigest(expected?.sha256) || createHash("sha256").update(bytes).digest("hex") !== expected.sha256
   )
     throw mismatch();
 }
-export function verifyOfficialTestDigest(digest) {
-  if (digest !== OFFICIAL_TEST_PACKAGE.sha256) throw mismatch();
+export function verifyOfficialTestDigest(digest, expected=OFFICIAL_TEST_PACKAGE) {
+  if (!officialTestPackageForDigest(expected?.sha256) || digest !== expected.sha256) throw mismatch();
 }
 // A saved test may recover using its original locally verified material. This
 // never selects a replacement package or grants permission for another purchase.
 // The caller must still validate the checkpoint against local invocation history.
-export function verifyOfficialTestSelection(skill, checkpoint, savedDigest) {
+export function verifyOfficialTestSelection(skill, checkpoint, savedDigest, expected=OFFICIAL_TEST_PACKAGE) {
   if (!skill) return;
   if (skill.bundle?.locallyModified) throw mismatch();
-  if (skill.bundle?.sha256 === OFFICIAL_TEST_PACKAGE.sha256) return;
+  if (officialTestPackageForDigest(expected?.sha256) && skill.bundle?.sha256===expected.sha256) return;
   if (checkpoint && skill.bundle?.sha256 === savedDigest) return;
   throw mismatch();
 }

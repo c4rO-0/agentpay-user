@@ -1,5 +1,8 @@
 # User TODO
 
+- [x] Implement the approved public configuration/network portability source loop; see current progress and local reference/runbook for scoped test results.
+- [ ] Finish real artifact build/check, review and coordinated release/rollout as applicable; target-network/live transaction acceptance remains separate.
+
 - [x] Record configured participant B → A → B switching and both 0.3.21 updates with separate identities/history.
 - [x] Clarify missing-result copy with “some results” and an exact count.
 - [x] Review and commit the post-0.3.21 missing-result copy and participant closeout (44cef4b).

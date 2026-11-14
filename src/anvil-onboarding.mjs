@@ -11,7 +11,7 @@ import { approveOwnerOperations } from "./owner-approval-server.mjs";
 import { validatePublicDeployment } from "./prepare-onboarding.mjs";
 import { ownerSignerKind, checkTestSigner } from "./owner-signer.mjs";
 import {
-  OFFICIAL_TEST_PACKAGE,
+  officialTestPackageForNetwork,
   verifyOfficialTestSelection,
 } from "./official-test-package.mjs";
 import { restoreExistingPolicy } from "./restore-wallet.mjs";
@@ -77,6 +77,7 @@ export function validateConfig(config) {
     "mode",
     "chainId",
     "source",
+    "finality",
     "rpcUrl",
     "module",
     "token",
@@ -102,7 +103,7 @@ export function validateConfig(config) {
     tokenSymbol: publicConfig.tokenSymbol || "tokens",
   });
   checkTestSigner(ownerSignerKind(ownerSigner), config);
-  if (new URL(config.marketBundleMetadataUrl).search)
+  if (config.marketBundleMetadataUrl && new URL(config.marketBundleMetadataUrl).search)
     throw Error("MARKET_METADATA_URL_QUERY_NOT_ALLOWED");
   if (
     !new URL(localUrl(config.runtimeUrl)).port ||
@@ -112,7 +113,7 @@ export function validateConfig(config) {
   ownerSignerKind(config.ownerSigner);
   getAddress(config.ownerAddress);
   if (config.safe) getAddress(config.safe);
-  if (!/^[a-f0-9]{64}$/.test(config.bundleSha256 || ""))
+  if (config.marketBundleMetadataUrl && !/^[a-f0-9]{64}$/.test(config.bundleSha256 || ""))
     throw Error("BUNDLE_SHA256_REQUIRED");
   if (
     !Number.isInteger(config.tokenDecimals) ||
@@ -120,7 +121,7 @@ export function validateConfig(config) {
     config.tokenDecimals > 36
   )
     throw Error("TOKEN_DECIMALS_INVALID");
-  if (config.maxUsageUnits !== 1)
+  if (config.marketBundleMetadataUrl && config.maxUsageUnits !== 1)
     throw Error("RANDOM_TEST_REQUIRES_ONE_USAGE_UNIT");
   for (const key of ["module", "token", "factory", "registry"])
     getAddress(config[key]);
@@ -413,6 +414,7 @@ export async function runAnvilOnboarding({
     ...operations,
   };
   validateConfig(config);
+  const OFFICIAL_TEST_PACKAGE=config.marketBundleMetadataUrl ? officialTestPackageForNetwork(config.chainId) : null;
   dataDir = resolve(dataDir);
   const draftPath = join(dataDir, "runtime", "authorization-draft.json");
   const walletDir = join(dataDir, "wallet");
@@ -560,9 +562,9 @@ export async function runAnvilOnboarding({
     const checkpoint = await ops.privateJson(
       join(dataDir, "runtime", "model-ack-smoke.json"),
     );
-    verifyOfficialTestSelection(installed, checkpoint, config.bundleSha256);
+    if(OFFICIAL_TEST_PACKAGE)verifyOfficialTestSelection(installed, checkpoint, config.bundleSha256, OFFICIAL_TEST_PACKAGE);
     let completed = null;
-    if (checkpoint) {
+    if (checkpoint && OFFICIAL_TEST_PACKAGE) {
       try {
         completed = validateGuideTestCheckpoint(
           checkpoint,
@@ -879,11 +881,13 @@ export async function runAnvilOnboarding({
         write("Complete chain authorization and local binding first.");
         continue;
       }
-      if (action === "install" && config.chainId !== 31337) {
+      if (["install","check","test"].includes(action) && !OFFICIAL_TEST_PACKAGE) {
         write(
           "Wallet authorization is ready. The official connectivity package for this network is not configured yet. Your binding is kept.",
         );
-        return { completed: false, stage: "official_test_unavailable" };
+        await ops.finishLocalSetup({dataDir,config,ask,write});
+        step("Setup complete", "Wallet and Runtime are running. No reviewed official test is available for this network in this User release. Existing test records are kept; no test purchase was made.");
+        return { completed: true, stage: "configured", officialTest:"unavailable" };
       }
       if (action === "install") {
         if (installed) {

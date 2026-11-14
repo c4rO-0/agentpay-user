@@ -601,7 +601,11 @@ test("the same owner approval and binding flow resumes on another configured cha
   f.state.chainPolicy = true;
   f.state.skill = null;
   const resumed = await f.run(["continue"], config);
-  assert.equal(resumed.stage, "official_test_unavailable");
+  assert.equal(resumed.stage, "configured");
+  assert.equal(resumed.completed,true);
+  assert.equal(resumed.officialTest,"unavailable");
+  assert.ok(f.calls.includes("autostart"));
+  assert.ok(!f.calls.some(c=>c.includes("random-model-ack-smoke")));
   assert.ok(f.calls.includes("bind"));
   assert.equal(f.state.policy.chainId, 31338);
   assert.equal(f.state.policy.policyId, f.draft.policyId);

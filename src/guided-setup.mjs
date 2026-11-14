@@ -70,7 +70,7 @@ export async function ensureGuidedConfig({
         "maxUsageUnits",
       ];
       const normalized = (key, value) =>
-        key.endsWith("Url")
+        key.endsWith("Url") && value!==undefined
           ? new URL(value).href
           : ["module", "token", "factory", "registry"].includes(key)
             ? String(value).toLowerCase()

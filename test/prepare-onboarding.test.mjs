@@ -146,3 +146,10 @@ test('default owner wallet and invalid confirmation preserve the entered setting
  assert.equal(output.filter(s=>s.includes('Your entries are kept')).length,2);
  assert.deepEqual(JSON.parse(await readFile(outputPath,'utf8')),result);
 });
+
+test("generic deployment accepts no official package but rejects a partial mapping and invalid finality",()=>{
+ const {marketBundleMetadataUrl,bundleSha256,maxUsageUnits,...generic}=config;
+ assert.equal(validatePublicDeployment({...generic,chainId:12345}).marketBundleMetadataUrl,undefined);
+ assert.throws(()=>validatePublicDeployment({...generic,bundleSha256:"a".repeat(64)}));
+ assert.throws(()=>validatePublicDeployment({...generic,finality:{confirmations:0,fundingScanOverlapBlocks:12,unpaidConfirmationBlocks:12}}));
+});

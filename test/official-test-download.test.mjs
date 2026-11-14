@@ -55,6 +55,9 @@ test("official installer rejects both substituted metadata and bytes even with m
     e.stderr.includes("official test package does not match"),
   );
   assert.equal(downloads, 0, "untrusted metadata rejected before download");
+  args[4] = OFFICIAL_TEST_PACKAGE.sha256;
+  await assert.rejects(exec(process.execPath,args),e=>e.stderr.includes("official test package does not match"));
+  assert.equal(downloads,0,"a reviewed requested hash still rejects substituted metadata");
   claimed = OFFICIAL_TEST_PACKAGE.sha256;
   await assert.rejects(exec(process.execPath, args), (e) =>
     e.stderr.includes("official test package does not match"),

@@ -81,7 +81,7 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
   throw Error('Runtime settings could not be read safely. Check the selected data folder with agentpay wallet info before retrying.');
  }
  const urls={settlementUrl:proposed.settlementUrl,marketBundleMetadataUrl:proposed.marketBundleMetadataUrl};
- const changed=!!setup&&Object.keys(urls).some(key=>normalize(setup[key])!==normalize(urls[key]))||normalize(settings.settlementUrl)!==normalize(urls.settlementUrl)||!!pending;
+ const changed=!!setup&&Object.keys(urls).some(key=>(setup[key]===undefined?null:normalize(setup[key]))!==(urls[key]===undefined?null:normalize(urls[key])))||normalize(settings.settlementUrl)!==normalize(urls.settlementUrl)||!!pending;
  // RPC is participant-owned: a different local tunnel must never be overwritten.
  // A Market connection alone is not authority to rotate contracts or test packages.
  const publicPath=await deploymentFilePath(dataDir,userDir,'user-deployment.json');
@@ -97,9 +97,11 @@ export async function preparePlatformEndpoints({dataDir,origin,scope,userDir=ins
  const readiness=await fetchJson(query.href,{method:'GET'},15000);
  if(!readiness.response.ok||!readiness.result?.ok||settlementProfileBlocker(policy,readiness.result.result?.settlementProfile))
   throw Error('The new Settlement address does not match this Wallet deployment. Current addresses are kept.');
+ if(urls.marketBundleMetadataUrl){
  const metadata=await fetchJson(urls.marketBundleMetadataUrl,{method:'GET'},15000);
  if(!metadata.response.ok||!metadata.result?.ok||!/^[a-f0-9]{64}$/.test(metadata.result.result?.sha256||''))
   throw Error('The new package address could not be checked. Current addresses are kept.');
+ }
  if(!changed)return {changed:false,apply:async()=>{}};
  return {changed:true,urls,async apply(options={}){return withInstallationOperation(()=>applyAddresses(options));}};
  async function applyAddresses({write=console.log,manage=runtimeControl,stateDir=installationDirectory(),saveConnection=async()=>{}}={}){

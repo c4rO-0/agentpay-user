@@ -1,5 +1,7 @@
 # User documentation
 
+- [Official test deployment mapping](reference/official-test-network-mapping.md): release-pinned trust, optional tests and generic startup.
+
 - [Participant two-installation closeout](records/participant-dual-install-closeout-2026-11-14.md): configured switching, npm updates and evidence limits.
 - [Recent release chronology](archive/client-release-progress-2026-11-13-14.md): stage-specific progress archive.
 

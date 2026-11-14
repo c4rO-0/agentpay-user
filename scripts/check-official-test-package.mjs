@@ -3,9 +3,10 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 // Release check only: never execute the package or accept a new hash automatically.
+import { createHash } from "node:crypto";
 import { readFile, stat } from "node:fs/promises";
 import {
-  OFFICIAL_TEST_PACKAGE,
+  officialTestPackageForDigest,
   verifyOfficialTestBytes,
 } from "../src/official-test-package.mjs";
 import { parseSkillBundle, skillArchiveLimits } from "../src/skill-bundle.mjs";
@@ -19,7 +20,9 @@ try {
   if (!info.isFile() || info.size > skillArchiveLimits.compressed)
     throw Error("Invalid package file or size.");
   const bytes = await readFile(path);
-  verifyOfficialTestBytes(bytes);
+  const OFFICIAL_TEST_PACKAGE=officialTestPackageForDigest(createHash("sha256").update(bytes).digest("hex"));
+  if(!OFFICIAL_TEST_PACKAGE)throw Error("ZIP is not in this User release's reviewed official test mappings.");
+  verifyOfficialTestBytes(bytes,OFFICIAL_TEST_PACKAGE);
   const bundle = parseSkillBundle(bytes);
   if (
     bundle.manifest.packageName !== OFFICIAL_TEST_PACKAGE.name ||

@@ -11,7 +11,7 @@ import { promisify } from "node:util";
 import { createInterface } from "node:readline/promises";
 import { Contract, JsonRpcProvider, formatUnits } from "ethers";
 import { resolveUserDataDir } from "./local-data-directory.mjs";
-import { OFFICIAL_TEST_PACKAGE } from "./official-test-package.mjs";
+import { officialTestPackageForNetwork } from "./official-test-package.mjs";
 import { inspectInstalledBundle } from "./active-skill.mjs";
 import { loadRuntimeConnection, readServiceOffer } from "./runtime-client.mjs";
 import { normalizeAcceptedTerms } from "./service-reference.mjs";
@@ -195,6 +195,13 @@ export async function runOfficialPaidTest({
 } = {}) {
   try {
     dataDir ??= await resolveUserDataDir();
+    const selectedPolicy=await read(join(dataDir,"wallet","policy.json"));
+    if(!selectedPolicy)throw Object.assign(Error("Wallet spending permission is not configured. Run agentpay setup before the official paid test."),{code:"POLICY_UNBOUND"});
+    const OFFICIAL_TEST_PACKAGE=officialTestPackageForNetwork(selectedPolicy.chainId);
+    if(!OFFICIAL_TEST_PACKAGE){
+      write("No reviewed official payment test is included for this network in this User release. Wallet and Runtime can still run; keep any original test records. No purchase was started.");
+      return 0;
+    }
     return await lock(
       join(dataDir, "runtime", "official-test.lock"),
       async () => {
@@ -258,16 +265,17 @@ export async function runOfficialPaidTest({
           const ref = installed.service.reference;
           if (
             !policy ||
-            policy.chainId !== 31337 ||
+            policy.chainId !== selectedPolicy.chainId ||
             policy.token?.toLowerCase() !==
               current.quote.asset?.toLowerCase() ||
+            current.quote.network !== `eip155:${selectedPolicy.chainId}` ||
             current.quote.network !== ref.profile.network ||
             current.quote.providerId !== ref.profile.providerId ||
             current.quote.skillId !== ref.skillId ||
             current.quote.profileHash !== ref.profileHash
           )
             throw Error(
-              "Saved test Policy or service identity does not match the current offer on private Anvil.",
+              "Saved test Policy or service identity does not match the current offer on the selected network.",
             );
           const { decimals, symbol } = await tokenInfo(policy);
           const maximum =
