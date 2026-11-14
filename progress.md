@@ -10,7 +10,7 @@ checks passed; B supplied final status only. See [acceptance record](doc/records
 
 One old A result is still missing; no replacement purchase is required. Clearer
 status/list wording now says some results are not saved on this device; this
-wording is not in published 0.3.21. Review/commit/publication of that copy remains
+wording is not in published 0.3.21. The copy and closeout are committed; publication of the copy remains
 open. Nickname negative-input participant checks and reboot/login verification
 are not established by this switch. Earlier release chronology is preserved in
 [the archive](doc/archive/client-release-progress-2026-11-13-14.md).
