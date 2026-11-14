@@ -63,7 +63,7 @@ test("paid-out record separates local result warning from saved online check tim
       checkedAtMs: 1793440000000,
     };
   const out = renderOrderList([entry], { [entry.invocationId]: o }, {});
-  assert.match(out, /Paid out · Local result unavailable/);
+  assert.match(out, /Paid out · Result not saved on this device/);
   assert.match(out, /Last check:/);
   const stale = renderOrderList(
     [entry],

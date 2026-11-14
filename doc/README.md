@@ -1,5 +1,8 @@
 # User documentation
 
+- [Participant two-installation closeout](records/participant-dual-install-closeout-2026-11-14.md): configured switching, npm updates and evidence limits.
+- [Recent release chronology](archive/client-release-progress-2026-11-13-14.md): stage-specific progress archive.
+
 - [Real two-installation switching](records/dual-install-systemd-2026-11-12.md): live systemd cancellation, switching, restoration and evidence limits.
 
 - [Historical request routing](records/historical-request-routing-2026-11-11.md): switch-time indexing, missing records and conservative recovery limits.

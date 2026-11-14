@@ -63,7 +63,7 @@ export function renderOrderList(
           : "1;33";
     lines.push("", paint(rule, "2"));
     text(
-      `${index + 1}. [${summary.marker}] ${summary.state}${summary.localResultUnavailable ? " · Local result unavailable" : ""}`,
+      `${index + 1}. [${summary.marker}] ${summary.state}${summary.localResultUnavailable ? " · Result not saved on this device" : ""}`,
       { style },
     );
     const date = Number.isSafeInteger(e.createdAtMs)

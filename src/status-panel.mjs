@@ -418,9 +418,9 @@ export function renderStatusPanel(
     detail = "Open your local Order list to review the warnings.";
     next = "agentpay orders list";
   } else if (r.orders.missingResult > 0) {
-    title = "Payment complete; local result unavailable";
+    title = "Orders settled; some results are not saved on this device";
     level = "wait";
-    detail = "See the Order list for recovery options. Do not pay again.";
+    detail = "Check the original Agent conversation or open the Order list for retrieval options. Do not pay again.";
     next = "agentpay orders list";
   } else if (r.orders.archived > 0 && r.orders.waiting === 0) {
     title = "Local review complete";
@@ -605,7 +605,7 @@ export function renderStatusPanel(
       );
     if (r.orders.missingResult > 0)
       lines.push(
-        `  ${badge("wait")} ${paint(`${count(r.orders.missingResult)} local ${r.orders.missingResult === 1 ? "result needs" : "results need"} recovery`, "1;33")}`,
+        `  ${badge("wait")} ${paint(`${count(r.orders.missingResult)} ${r.orders.missingResult === 1 ? "result" : "results"} not saved on this device`, "1;33")}`,
       );
     if (r.orders.legacy)
       lines.push(

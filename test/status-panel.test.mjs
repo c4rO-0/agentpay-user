@@ -129,8 +129,8 @@ test("terminal missing results end the check instead of asking users to poll or 
       ],
     },
   });
-  assert.match(p.text, /Payment complete; local result unavailable/);
-  assert.match(p.text, /\[WAIT\] 1 local result needs recovery/);
+  assert.match(p.text, /Orders settled; some results are not saved on this device/);
+  assert.match(p.text, /\[WAIT\] 1 result not saved on this device/);
   assert.match(p.text, /agentpay orders/);
   assert.doesNotMatch(p.text, /0xaaaaaaaaaa|retrieve/);
   assert.doesNotMatch(p.text, /agentpay status/);
@@ -385,7 +385,7 @@ test("deployment change outranks missing results and unknown compatibility is ex
   });
   assert.match(changed.text, /Spending permission needs updating/);
   assert.match(changed.text, /agentpay policy renew/);
-  assert.match(changed.text, /local result needs recovery/);
+  assert.match(changed.text, /result not saved on this device/);
   const unknown = renderStatusPanel({
     ...base,
     deployment: { state: "unknown" },

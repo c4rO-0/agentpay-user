@@ -1,5 +1,19 @@
 # Original results and delivery cases
 
+## Reading result warnings
+
+A settled Order can have no verified result saved on this device. Check the
+original Agent conversation or retrieve the original result through the Order
+commands below. This warning describes the result record; service health appears
+separately in `agentpay status`. Do not pay again to recover an existing result.
+The post-0.3.21 copy identifies “some results” and shows the affected count; that
+wording is not yet in the published 0.3.21 package.
+
+If the latest query fails temporarily, 0.3.21 retains a previously confirmed
+terminal state for the same request and Settlement source, and marks the check
+as unavailable. This saved state is not a fresh online verification. Keep Wallet
+unlocked and restore connectivity; Runtime retries automatically.
+
 From the User repository, unlock Wallet and use the saved installation:
 
 ```bash

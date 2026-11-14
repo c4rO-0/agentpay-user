@@ -103,6 +103,9 @@ need to be unlocked. Missing configuration or stopped services will be reported,
 not created or started. An inactive installation may therefore show local service
 failures even when the other installation is running normally.
 
+When Setup projection files are absent, health can read the RPC saved in the
+Wallet Policy binding. This does not recreate Setup files or change authorization.
+
 Checks cover installed versions, saved settings, RPC/network, deployed contracts,
 Safe ownership and Module setting, Policy reads, local Wallet/Runtime and configured
 platform HTTP endpoints. HTTP reachability is not a login or payment test. A

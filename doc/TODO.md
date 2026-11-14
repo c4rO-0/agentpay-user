@@ -1,8 +1,12 @@
 # User TODO
 
+- [x] Record configured participant B → A → B switching and both 0.3.21 updates with separate identities/history.
+- [x] Clarify missing-result copy with “some results” and an exact count.
+- [ ] Review/commit and release the post-0.3.21 missing-result copy; actual historical result recovery remains separate.
+
 - [x] Implement Wallet-binding RPC diagnostics, typed platform-check failures and last-confirmed terminal Order display during transient failures.
 - [x] Verify and publish status-diagnostic fixes as User 0.3.21: 477 behavior checks, independent installation and public npm archive integrity passed.
-- [ ] Confirm participant 0.3.21 health/status, then finish A/B return switching.
+- [x] Confirm participant 0.3.21 health/status, then finish A/B return switching. Superseded/closed by the 2026-11-14 participant closeout on 0.3.21.
 
 - [x] Separate historical nickname-key integrity from new-input validation; validate saved suggestions before display and Enter fallback. Regression checks passed.
 
@@ -12,21 +16,21 @@
 - [x] Participant User 0.3.18 repair completed successfully; pinned Skill verified and service startup confirmed by repair. No replacement payment was requested.
 - [x] Implement newer-installed-version recovery for an older pending npm update, with release/dependency verification, confirmation, journal retention on failure and typed errors; focused tests passed.
 - [x] Review and publish update recovery as User 0.3.19; local 471 tests, package checks, CI and independent npm integrity verification passed.
-- [ ] Participant installs 0.3.19, completes update recovery and confirms the next update returns to ordinary latest-version checking. Old code needs npm to install the recovery release first.
+- [x] Participant completed 0.3.19 update recovery and subsequent 0.3.21 updates; see the participant closeout.
 
 - [x] Recover an older pending update after manual newer npm installation: 0.3.19 verifies the installed release and same installation/data scope, confirms final checks and closes the journal only after success. Earlier released updaters require the recovery release to be installed through npm first.
 
 - [x] Correct the process test assumption behind v0.3.17 CI ownership refusal: assert user-session adoption or system-managed rejection from real cgroup evidence; production guards remain unchanged.
 - [x] Verify v0.3.18 CI behavior and standalone package checks; both passed in run 43378486830.
 - [x] Confirm npm 0.3.18 visibility/latest and downloaded archive SHA-512; key package files match v0.3.18 and GitHub run 43378486830 succeeded. Preserve the failed v0.3.17 tag.
-- [ ] Participant updates installation B to 0.3.18, runs repair/unlock/status, then verifies configured A/B switching. Do not repeat the paid test to repair startup.
+- [x] Participant updates installation B to 0.3.18, runs repair/unlock/status, then verifies configured A/B switching. Do not repeat the paid test to repair startup. Superseded/closed by the 2026-11-14 participant closeout on 0.3.21.
 
 
 - [x] Add common User command failure diagnostics: operation, reviewed cause/code, child exit/version evidence, partial-change guidance and private sanitized report; automatically inspect service state on service failures.
-- [ ] Release and verify diagnostics on the participant installation together with the pending Setup/service ownership fix. Diagnostics alone do not resolve startup failure.
+- [x] Release and verify diagnostics on the participant installation together with the pending Setup/service ownership fix. Diagnostics alone do not resolve startup failure. Superseded/closed by the 2026-11-14 participant closeout on 0.3.21.
 
 - [x] Implement managed Linux Setup startup and verified legacy guide-process handoff for repair/service operations and installation switches; preserve key, Policy, Orders and startup choice. Verify isolated real-process handoff, stale live PID rejection and repeat-after-exit recovery.
-- [ ] Review/release the handoff fix, then verify participant repair and configured A/B switching; controlled process tests do not establish participant systemd acceptance.
+- [x] Review/release the handoff fix, then verify participant repair and configured A/B switching; controlled process tests do not establish participant systemd acceptance. Superseded/closed by the 2026-11-14 participant closeout on 0.3.21.
 - [x] Participant B completed the official test and reported one settled Order; full configured A/B switching remains pending service ownership repair.
 
 - [x] Fix Setup paid-test helper rejecting HTTPS Settlement; preserve loopback-only Runtime and original request identity (controlled process regression).
@@ -43,7 +47,7 @@
 - [x] Add read-only `agentpay health` with bounded probes, safe reports and no installation/data changes (controlled verification).
 - [x] Increase combined setup and policy-preview RPC checks to 30 seconds; reproduce a successful read slower than five seconds.
 - [x] Publish diagnostics/interaction fixes as User 0.3.14 with Wallet 0.3.4; CI, npm latest and archive integrity verified.
-- [ ] Finish configured A/B switching acceptance after the service ownership fix; B paid-test completion is now reported, but does not establish correct process handoff.
+- [x] Finish configured A/B switching acceptance after the service ownership fix; B paid-test completion is now reported, but does not establish correct process handoff. Superseded/closed by the 2026-11-14 participant closeout on 0.3.21.
 
 - [x] Review failure guidance across install/setup steps (dependencies, settings, Wallet creation/unlock, authorization, local services, Market connection and official test): report failed step, sanitized known cause, preserved progress and specific recovery action; distinguish retryable/repair-required/user-cancelled/uncertain transaction states. Never infer non-submission after an uncertain write or advise a replacement purchase. Avoid raw JSON-only errors and blind continue loops.
 
