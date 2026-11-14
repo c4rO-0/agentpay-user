@@ -132,3 +132,18 @@ test("setup projection requires verified binding and preserves old draft", () =>
       "external",
     );
   }));
+
+test("deployment HTTP failures retain a safe reason and expire their short negative cache", () =>
+ fixture(async(o)=>{
+  await o.save(join(o.dataDir,"market-connection.json"),{marketOrigin:"https://market.example"});
+  await o.save(join(o.dataDir,"wallet/policy.json"),config);
+  let calls=0;
+  const fetchImpl=async()=>{calls++;return {ok:false,status:503};};
+  const options={...o,fetchImpl,now:100000};
+  const first=await inspectDeploymentStatus(o.dataDir,options);
+  assert.equal(first.errorCode,"PLATFORM_HTTP_503");
+  assert.equal((await inspectDeploymentStatus(o.dataDir,{...options,now:110000})).errorCode,"PLATFORM_HTTP_503");
+  assert.equal(calls,1);
+  await inspectDeploymentStatus(o.dataDir,{...options,now:116000});
+  assert.equal(calls,2);
+ }));

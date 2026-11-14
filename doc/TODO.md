@@ -1,5 +1,8 @@
 # User TODO
 
+- [x] Implement Wallet-binding RPC diagnostics, typed platform-check failures and last-confirmed terminal Order display during transient failures.
+- [ ] Review/verify and publish status-diagnostic fixes; confirm participant health/status, then finish A/B return switching.
+
 - [x] Separate historical nickname-key integrity from new-input validation; validate saved suggestions before display and Enter fallback. Regression checks passed.
 
 - [x] Align Wallet nickname validation and actionable rejection handling; focused regression checks passed.

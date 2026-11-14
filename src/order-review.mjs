@@ -389,7 +389,7 @@ export function localOrderSummary(entry, observation, review) {
     SETTLEMENT_RESPONSE_INVALID:
       "The Order status response could not be verified.",
     ORDER_CHECK_UNAVAILABLE:
-      "Check temporarily unavailable. Runtime retries automatically; check your network and logs if it persists.",
+      "Latest check temporarily unavailable. The displayed state is from the last successful check. Runtime retries automatically; check your network and logs if it persists.",
     SETTLED_RESULT_UNAVAILABLE:
       "Paid out, but no verified result is saved locally. Check the original conversation or retrieve the original result; do not pay again.",
   };

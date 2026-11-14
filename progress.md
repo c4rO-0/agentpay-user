@@ -1,5 +1,19 @@
 # AgentPay User progress
 
+## Participant status diagnostics — 2026-11-14
+
+Installation A's read-only inventory found no Setup projection in the selected
+or fallback locations. Market public settings responded HTTP 200 in 1.15–1.28 s;
+this does not establish the cause of the earlier intermittent failure. Health now
+uses the Wallet binding's registryRpcUrl when Setup RPC is absent. Deployment
+checks allow 10 seconds, retain safe error categories and cache failures for
+15 seconds (successful settings remain cached for 60 seconds). Same-scope terminal
+Order evidence survives transient query failure, with an explicit stale-state
+warning; errors still block unresolved operations and retry normally. No Policy,
+Order identity or platform addresses are changed. Publication and participant
+acceptance remain pending.
+
+
 ## Published 0.3.20 — 2026-11-13
 
 Release tag v0.3.20 identifies a0e0f66bb3c3ad0044241a64bc8b08345b9e0bb5.

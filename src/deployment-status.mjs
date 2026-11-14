@@ -87,18 +87,18 @@ export async function loadCurrentDeployment({
     cache?.origin === origin.href &&
     Number.isSafeInteger(cache.checkedAtMs) &&
     now >= cache.checkedAtMs &&
-    now - cache.checkedAtMs < 60000
+    now - cache.checkedAtMs < (cache.error ? 15000 : 60000)
   ) {
     if (cache.error)
-      throw Error("Platform deployment check temporarily unavailable.");
+      throw Object.assign(Error("Platform deployment check temporarily unavailable."), {code: cache.errorCode || "PLATFORM_CHECK_UNAVAILABLE"});
     return { ...cache, config: validatePublicDeployment(cache.config) };
   }
   try {
     const response = await fetchImpl(
       new URL("/market/web/onboarding/user-config", origin),
-      { signal: AbortSignal.timeout(3000), redirect: "error" },
+      { signal: AbortSignal.timeout(10000), redirect: "error" },
     );
-    if (!response.ok) throw Error("Platform configuration unavailable");
+    if (!response.ok) throw Object.assign(Error("Platform configuration unavailable"), {code:"PLATFORM_HTTP_"+response.status});
     const reader = response.body.getReader();
     let raw = "",
       size = 0;
@@ -125,13 +125,15 @@ export async function loadCurrentDeployment({
     await writePrivateJson(path, result);
     return result;
   } catch (e) {
+    const errorCode = ["TimeoutError", "AbortError"].includes(e.name) ? "PLATFORM_CHECK_TIMEOUT" : /^PLATFORM_HTTP_[0-9]{3}$/.test(e.code || "") ? e.code : ["ECONNREFUSED", "ENOTFOUND", "ECONNRESET", "ETIMEDOUT"].includes(e.cause?.code) ? "PLATFORM_NETWORK_UNAVAILABLE" : "PLATFORM_CHECK_UNAVAILABLE";
     await mkdir(join(dataDir, "runtime"), { recursive: true, mode: 0o700 });
     await writePrivateJson(path, {
       origin: origin.href,
       checkedAtMs: now,
       error: true,
+      errorCode,
     });
-    throw e;
+    throw Object.assign(Error("Platform deployment check unavailable."), {code:errorCode});
   }
 }
 export async function inspectDeploymentStatus(dataDir, options = {}) {
@@ -150,8 +152,8 @@ export async function inspectDeploymentStatus(dataDir, options = {}) {
       changed,
       checkedAtMs: result.checkedAtMs,
     };
-  } catch {
-    return { state: "unknown" };
+  } catch (error) {
+    return { state: "unknown", errorCode: /^PLATFORM_(CHECK_TIMEOUT|NETWORK_UNAVAILABLE|CHECK_UNAVAILABLE|HTTP_[0-9]{3})$/.test(error.code || "") ? error.code : "PLATFORM_CHECK_UNAVAILABLE" };
   }
 }
 export async function syncSetupDeployment({

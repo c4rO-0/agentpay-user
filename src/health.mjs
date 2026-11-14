@@ -99,7 +99,8 @@ export async function runHealth({
     const version = (v) => (/^\d+\.\d+\.\d+$/.test(v) ? v : "unknown");
     return `User ${version(user.version)} · Wallet ${version(wallet.version)} · Node ${process.versions.node}`;
   });
-  const cfg = { ...config, ...services };
+  // Wallet keeps the RPC in its Policy binding even without Setup projections.
+  const cfg = { rpcUrl: policy?.registryRpcUrl, ...config, ...services };
   const expected = { ...config, ...policy };
   expected.safe = policy?.safe || fields?.fields?.safe || config?.safe;
   let rpc,

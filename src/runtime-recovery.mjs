@@ -579,12 +579,17 @@ export function createRuntimeRecovery({
       } catch (e) {
         const code = e.settlementCode || e.code;
         row.errorCode = knownCodes.has(code) ? code : "ORDER_CHECK_UNAVAILABLE";
+        if (["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(row.errorCode) &&
+            row.previousTerminalState) {
+          row.financialState = "terminal";
+          row.vaultState = row.previousTerminalState;
+        }
       }
       if (row.resultState === "invalid" && !row.errorCode)
         row.errorCode = "RECOVERY_RESULT_INVALID";
       row.nextCheckAtMs =
         now() +
-        (row.financialState === "terminal" && row.resultState !== "pending"
+        (row.financialState === "terminal" && row.resultState !== "pending" && !row.errorCode
           ? 3600000
           : row.errorCode
             ? Math.min(300000, 5000 * 2 ** row.attempts)

@@ -398,6 +398,9 @@ export function renderStatusPanel(
     level = "wait";
     detail =
       "Platform deployment check is unavailable. Check your network and retry.";
+    if (model.deployment.errorCode === "PLATFORM_CHECK_TIMEOUT") detail = "Market did not return deployment settings within 10 seconds. Check your connection and retry.";
+    else if (model.deployment.errorCode === "PLATFORM_NETWORK_UNAVAILABLE") detail = "Could not connect to Market for deployment settings. Check your network and retry.";
+    else if (/^PLATFORM_HTTP_[0-9]{3}$/.test(model.deployment.errorCode || "")) detail = "Market deployment check returned HTTP " + model.deployment.errorCode.slice(-3) + ". Run agentpay health if this continues.";
     next = "agentpay status";
   } else if (onlyRetryable && issues.some(issue => issue.code === "CHAIN_RPC_UNAVAILABLE")) {
     title = "Cannot connect to the chain RPC";

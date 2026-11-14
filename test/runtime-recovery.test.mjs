@@ -295,6 +295,10 @@ test("terminal evidence survives a failed read and still rejects regression afte
   let saved = JSON.parse(await readFile(f.path + ".recovery.json"))
     .observations[f.entry.invocationId];
   assert.equal(saved.previousTerminalState, "Released");
+  assert.equal(saved.financialState, "terminal");
+  assert.equal(saved.vaultState, "Released");
+  assert.equal(failed.status().orders.settled, 1);
+  assert.equal(saved.errorCode, "ORDER_CHECK_UNAVAILABLE");
   f.advance();
   f.setOrder({ ...order, vaultState: "Funded", orderStatus: "Funded" });
   const restarted = createRuntimeRecovery(f.deps);

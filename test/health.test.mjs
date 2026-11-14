@@ -306,3 +306,28 @@ test("health stops chain probing after a stalled read times out", async (t) => {
   assert.equal(methods.filter((m) => m === "eth_getCode").length, 1);
   assert.ok(!methods.includes("eth_call"));
 });
+
+test("health reads the Wallet binding RPC when Setup projections are absent", async (t) => {
+ const dir=await mkdtemp(join(tmpdir(),"health-binding-"));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ await mkdir(join(dir,"wallet"),{mode:0o700});
+ await mkdir(join(dir,"runtime"),{mode:0o700});
+ const calls=[];
+ const server=createServer(async(req,res)=>{
+  let raw="";for await(const chunk of req)raw+=chunk;
+  const body=JSON.parse(raw);calls.push(body.method);
+  res.end(JSON.stringify({jsonrpc:"2.0",id:body.id,result:"0x7a69"}));
+ });
+ await new Promise(r=>server.listen(0,"127.0.0.1",r));
+ t.after(()=>new Promise(r=>server.close(r)));
+ const binding={chainId:31337,registryRpcUrl:`http://127.0.0.1:${server.address().port}`};
+ const file=join(dir,"wallet/policy.json");
+ await writeFile(file,JSON.stringify(binding),{mode:0o600});
+ await writeFile(join(dir,"runtime/local-services.json"),"{}",{mode:0o600});
+ const lines=[];
+ await runHealth({resolveDirectory:async()=>dir,write:line=>lines.push(line)});
+ assert.ok(calls.includes("eth_chainId"));
+ assert.match(lines.join("\n"),/\[OK\] Chain RPC/);
+ assert.doesNotMatch(lines.join("\n"),/Chain RPC not configured/);
+ assert.deepEqual(JSON.parse(await readFile(file,"utf8")),binding);
+});
