@@ -1,5 +1,18 @@
 # AgentPay User progress
 
+## User 0.3.22 published — 2026-11-14
+
+Result-warning wording now identifies some results missing on this device and
+shows the affected count. Tag v0.3.22 points to
+d2292e62c08197bc84c8a7d1764393e4fb363f03. Local 477 tests and independent package
+checks passed; GitHub run 43543483244 passed verification and publication steps.
+Public npm 0.3.22 and its archive integrity independently match the local artifact.
+Wallet remains 0.3.5. No new payment or platform deployment was performed.
+Retained Skill 1.1.0 download after current 1.2.1 also passed its public read-only
+acceptance. Next: public/internal/local configuration inventory before network
+changes. This release does not change supported-network acceptance.
+
+
 ## Current client acceptance — 2026-11-14
 
 Participant configured B → A → B switching and both updates to User 0.3.21 /
@@ -10,8 +23,7 @@ checks passed; B supplied final status only. See [acceptance record](doc/records
 
 One old A result is still missing; no replacement purchase is required. Clearer
 status/list wording now says some results are not saved on this device; this
-wording is not in published 0.3.21. The copy and closeout are committed; publication of the copy remains
-open. Nickname negative-input participant checks and reboot/login verification
+wording is not in published 0.3.21. The copy and closeout are committed and the copy is released in 0.3.22. Nickname negative-input participant checks and reboot/login verification
 are not established by this switch. Earlier release chronology is preserved in
 [the archive](doc/archive/client-release-progress-2026-11-13-14.md).
 

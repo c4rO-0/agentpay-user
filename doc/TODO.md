@@ -3,7 +3,7 @@
 - [x] Record configured participant B → A → B switching and both 0.3.21 updates with separate identities/history.
 - [x] Clarify missing-result copy with “some results” and an exact count.
 - [x] Review and commit the post-0.3.21 missing-result copy and participant closeout (44cef4b).
-- [ ] Include revised missing-result copy in a future User patch; actual historical result recovery remains separate.
+- [x] Publish revised missing-result copy in User 0.3.22; npm integrity verified. Actual historical result recovery remains separate.
 
 - [x] Implement Wallet-binding RPC diagnostics, typed platform-check failures and last-confirmed terminal Order display during transient failures.
 - [x] Verify and publish status-diagnostic fixes as User 0.3.21: 477 behavior checks, independent installation and public npm archive integrity passed.
