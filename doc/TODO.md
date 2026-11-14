@@ -1,7 +1,8 @@
 # User TODO
 
 - [x] Implement Wallet-binding RPC diagnostics, typed platform-check failures and last-confirmed terminal Order display during transient failures.
-- [ ] Review/verify and publish status-diagnostic fixes; confirm participant health/status, then finish A/B return switching.
+- [x] Verify and publish status-diagnostic fixes as User 0.3.21: 477 behavior checks, independent installation and public npm archive integrity passed.
+- [ ] Confirm participant 0.3.21 health/status, then finish A/B return switching.
 
 - [x] Separate historical nickname-key integrity from new-input validation; validate saved suggestions before display and Enter fallback. Regression checks passed.
 

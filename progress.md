@@ -1,5 +1,15 @@
 # AgentPay User progress
 
+## User 0.3.21 published — 2026-11-14
+
+Tag v0.3.21 identifies b2da74585b75a050b3a63e3c78257e1cfe22f87f.
+Local full verification passed 477 tests in an isolated HOME; independent package
+installation checks passed. GitHub publication run 43539891554 passed behavior,
+package and publish steps. Public npm 0.3.21 is visible; the 366705-byte archive
+matches its SHA-512 integrity and the verified local artifact. Wallet stays 0.3.5.
+Participant update/health/status and the A/B return switch remain pending.
+
+
 ## Participant status diagnostics — 2026-11-14
 
 Installation A's read-only inventory found no Setup projection in the selected
