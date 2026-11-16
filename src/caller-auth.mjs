@@ -3,7 +3,7 @@
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { constants } from "node:fs";
 import { randomBytes, timingSafeEqual } from "node:crypto";
-import { chmod, mkdir, open } from "node:fs/promises";
+import { mkdir, open } from "node:fs/promises";
 import { dirname } from "node:path";
 
 const TOKEN_PATTERN = /^[0-9a-f]{64}$/;
@@ -53,6 +53,14 @@ export async function initializeCallerCredential(path) {
   } finally {
     await handle?.close();
   }
-  await chmod(path, 0o600);
+  // Existing credentials may need private permissions, but never chmod a link
+  // target or another owner's file. Keep inspection and chmod on one descriptor.
+  const existing = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
+  try {
+    const info = await existing.stat();
+    if (!info.isFile() || info.nlink !== 1 || info.uid !== process.getuid() || info.size > 1024)
+      throw Object.assign(Error("Caller credential must be a regular file owned by you, without links."), {code: "UNSAFE_FILE"});
+    await existing.chmod(0o600);
+  } finally { await existing.close(); }
   return readCallerToken(path);
 }

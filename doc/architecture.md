@@ -89,7 +89,7 @@ User resolves the installed Wallet package through public client, local-administ
 and CLI exports. `wallet-package.mjs` verifies the exact reviewed pair;
 `protocol-package.mjs` resolves each consumer's actual Protocol installation, including
 nested npm dependencies. `software-versions.mjs` compares process-start reports with
-the installed pair during status/repair. User 0.3.1 pins Wallet 0.3.1 for these checks; broader compatibility ranges remain deferred.
+the installed pair during status/repair. The exact pair is recorded in `package.json` and `update-pair.json`; broader compatibility ranges remain deferred.
 User imports ethers from its own
 declared dependency. The pinned public Protocol package provides types, hashes and
 fixtures. No Agent, Protocol source checkout or private platform repository is
@@ -115,3 +115,21 @@ rewritten. `settlement-address-history.mjs` preserves exact directed, Policy-sco
 address mappings so cancellation retries retain their immutable original IDs.
 Runtime recovery observations remain tagged by source and are rechecked instead of
 being relabelled. The pending marker is surfaced by status.
+
+## Ownership and concurrency
+
+Locks protect distinct lifetimes; do not replace them with one timeout-based lease.
+
+| Owner | Protected scope | Recovery |
+| --- | --- | --- |
+| Installer/service selection | Package writes, selection and managed services | Retry after all cooperating writers exit; children may retain installer ownership |
+| Runtime/cache owner | Active Runtime and managed file metadata | Lifetime descriptor; refusal avoids simultaneous writers |
+| Policy operation | Setup/renew/revoke/restore and advanced mutation entries | Descriptor held before journal reads through completion; never inherited by owner-page children |
+| Skill request | Original request checkpoint and replay | Keep immutable identity and read saved state before retry |
+
+Policy lock contention returns `POLICY_OPERATION_BUSY`. No timer removes the lock:
+an old paused process could resume. Stop the original command if necessary, then
+retry to recover its saved plan. OS process exit closes the descriptor. This is local
+coordination, not a cross-machine limit or a replacement for Wallet/chain authority.
+The legacy shared-client pending-request directory lock remains conservative after
+an unidentified crash; it requires review rather than automatically deleting history.

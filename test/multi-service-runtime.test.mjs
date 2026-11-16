@@ -16,7 +16,7 @@ import {
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
-import { createServer as httpServer } from "node:http";
+import { createServer as httpServer, request as httpRequest } from "node:http";
 import { createServer as netServer } from "node:net";
 import { spawn, execFile } from "node:child_process";
 import { promisify } from "node:util";
@@ -1478,4 +1478,25 @@ test("failed output download retries using saved delivery without another paid i
   assert.equal(f.calls.length, count);
   assert.equal(f.orders.size, 1);
   assert.equal(f.providerCalls.length, 1);
+});
+
+
+test("malformed HTTP target is rejected without terminating Runtime or contacting Wallet", async (t) => {
+  const f = await fixture(t);
+  const child = await f.start("", false);
+  const reply = await new Promise((resolve, reject) => {
+    const req = httpRequest(f.runtimeUrl, { path: "http://[", method: "GET", timeout: 3000 }, res => {
+      let body = "";
+      res.on("data", chunk => { body += chunk; });
+      res.on("end", () => resolve({status: res.statusCode, body}));
+    });
+    req.on("timeout", () => req.destroy(Error("request timed out")));
+    req.on("error", reject);
+    req.end();
+  });
+  assert.equal(reply.status, 400);
+  assert.equal(JSON.parse(reply.body).error.code, "INVALID_INPUT");
+  assert.equal(child.exitCode, null);
+  assert.equal((await fetch(f.runtimeUrl + "/health")).status, 200);
+  assert.equal(f.orders.size, 0);
 });

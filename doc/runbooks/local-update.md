@@ -14,11 +14,11 @@ For an npm installation inside a project folder, run its own command:
 ./node_modules/.bin/agentpay update
 ```
 
-If an older updater is stuck retrying a failed repair, install the recovery release
+If an older updater is stuck retrying a failed repair, install the current published release
 in that same project folder, then run its updater:
 
 ```sh
-npm install --save-exact @c4roa0/agentpay-user@0.3.19
+npm install --save-exact @c4roa0/agentpay-user@latest
 ./node_modules/.bin/agentpay update
 ```
 
@@ -80,8 +80,9 @@ reported cause and repeat repair; the log path is shown. An interrupted run may
 leave a lock marker. New-format operations allow retry after all writer processes
 exit; while a writer is alive, wait for it to finish. Do not delete a lock to bypass
 that check. An older lock whose writer cannot be identified is preserved for review.
-There is no automatic code rollback. Running-package negotiation is not implemented; complete the managed
-restart before relying on a newly installed version.
+There is no automatic code rollback. Status and service readiness compare running
+versions/interfaces with installed packages; complete the managed restart before
+relying on a newly installed version.
 
 ## Uninstall
 
@@ -96,9 +97,9 @@ cleanup against your existing data. Never erase keys to repair an installation.
 
 ## Official test Skill check
 
-After a successful software update, the command downloads the published official
-test ZIP using the saved Market source, verifies its bytes against User's built-in
-SHA-256 and saves the new package alongside existing ones. It does not replace the
+After a successful software update, the command verifies the official test against
+User's built-in SHA-256. An intact local copy needs no download. Otherwise it uses
+the saved Market source and saves the verified package alongside existing ones. It does not replace the
 selected original test, edit checkpoints, execute package scripts or purchase.
 The same check also runs when local software has no changes. Cancelling an update
 skips it. Missing settings, network errors or a hash mismatch are reported separately;

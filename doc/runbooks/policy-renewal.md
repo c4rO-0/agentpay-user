@@ -17,7 +17,9 @@ From User, inspect the current permission:
 New renewal drafts read budget, per-payment limit and validity duration from the
 previous on-chain Policy. Press Enter to keep each displayed value; existing draft
 answers take precedence. Duration starts again from now, not the old expiry date.
-If the previous duration is not a whole number of days, enter days explicitly.
+A fractional previous duration is rounded up to whole days and shown for review.
+A deployment change uses remaining allowance/expiry defaults instead; inspect the
+shown summary before approval.
 A previous per-payment limit above a newly reduced budget is not reused.
 Navigation hints appear on a separate line.
 
@@ -78,3 +80,12 @@ against the current Wallet/Policy without contacting Market. A mismatch prompts
 `./run market connect`; a matching receipt does not prove current server availability
 or detect a later website disconnect. Neither renewal nor revocation reruns a completed official
 test or initiates another payment.
+
+## Another authorization command is running
+
+`POLICY_OPERATION_BUSY` means this data folder already has an active setup,
+renewal, revocation, restore or advanced migration command. Finish that command, or
+stop it before retrying. Do not delete lock files or start a new draft. After a
+process exits, retry the original command: it reads the saved plan and verifies any
+submitted operations before continuing. A long-running command does not lose its
+lock just because time passes.

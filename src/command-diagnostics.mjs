@@ -10,6 +10,9 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 const exec = promisify(execFile);
 const definitions = {
+  POLICY_LOCK_UNAVAILABLE: ['The authorization locking dependency could not be loaded.', 'Reinstall the matching User package dependencies and retry. Authorization cannot continue without a working lock.'],
+  POLICY_OPERATION_BUSY: ["Another authorization command is running for this Wallet.", "Finish it, or stop that command and retry this one. Do not delete lock files or authorization records; retry resumes saved progress."],
+  POLICY_LOCK_UNSAFE: ["Authorization lock storage has unsafe ownership, permissions or links.", "Keep your data folder and contact support to check its ownership and permissions. Do not delete authorization records."],
   UPDATE_RECOVERY_CHANGED: ['Installed program files changed while the update was being checked.', 'Run update again from this installation to verify its current version. The recovery record was kept.'],
   UPDATE_RECOVERY_SCOPE_MISMATCH: ['The unfinished update belongs to another data folder.', 'Run update from its original installation. Keep both data folders and the recovery record.'],
   UPDATE_RECOVERY_PACKAGE_MISMATCH: ['Installed packages do not match the release being recovered.', 'Reinstall the intended User version with npm, then run update again. The old recovery record is kept; no downgrade was attempted.'],

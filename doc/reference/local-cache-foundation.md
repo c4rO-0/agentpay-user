@@ -80,7 +80,7 @@ state and safe failure code. Local paths and signed source URLs are private meta
 routine listings/logs omit source credentials. Output provenance remains distinct
 from local digest verification; a digest alone does not prove paid delivery.
 
-Persist `writing` with a unique staging identity before creating partial bytes.
+Persist `downloading` with a unique staging identity before creating partial bytes.
 Write to a private temporary file, stream/hash, fsync, publish complete bytes, then
 commit `available` metadata. Readers never consume partial bytes. Publishing errors
 leave a recoverable record; retries reconcile published bytes before replacement.

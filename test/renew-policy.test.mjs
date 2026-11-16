@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import test from "node:test";
+import test, {after} from "node:test";
+import {mkdtempSync, rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+const testRoot = mkdtempSync(join(tmpdir(), "renew-lock-"));
+after(() => rmSync(testRoot, {recursive:true, force:true}));
 import assert from "node:assert/strict";
 import { renewPolicy } from "../src/renew-policy.mjs";
 const at = (n) => "0x" + String(n).repeat(40),
@@ -42,7 +47,7 @@ function fixture() {
   };
   const opts = {
     readDeployment: async () => null,
-    dataDir: "/private",
+    dataDir: mkdtempSync(join(testRoot, "wallet-")),
     ownerSigner: "anvil",
     write: (s) => lines.push(s),
     ask: async () => "confirm",
@@ -183,7 +188,7 @@ test("active replacement stops after revocation failure; standalone revoke requi
   let revoked = 0,
     saved = 0;
   const options = {
-    dataDir: "/private",
+    dataDir: f.opts.dataDir,
     ownerSigner: "anvil",
     readState: async () => f.current,
     write: () => {},
@@ -238,7 +243,7 @@ test("completed renewal continues saved Market connection only after binding", a
     connections++;
     assert.equal(f.binds, 1);
     assert.deepEqual(args, ["--market", "http://127.0.0.1:8080"]);
-    assert.equal(options.dataDir, "/private");
+    assert.equal(options.dataDir, f.opts.dataDir);
     assert.equal(options.ask, undefined);
     return 0;
   };
@@ -461,4 +466,36 @@ test("ordinary renewal offers whole-day defaults for a non-integral prior durati
   assert.equal(defaults.days, "180");
   assert.equal(defaults.daysRounded, true);
   assert.equal(f.submits, 0);
+});
+
+test('one renewal excludes renew, revoke, setup and restore before they read or change authorization', async () => {
+  const f = fixture();
+  const {revokePolicy} = await import('../src/renew-policy.mjs');
+  const {runAnvilOnboarding} = await import('../src/anvil-onboarding.mjs');
+  const {runWalletRestore} = await import('../src/restore-wallet.mjs');
+  let entered;
+  const ready = new Promise(r => { entered = r; });
+  let unblock;
+  const wait = new Promise(r => { unblock = r; });
+  const guide = f.opts.guide;
+  f.opts.guide = async (...args) => { entered(); await wait; return guide(...args); };
+  f.opts.ask = async () => 'q';
+  const first = renewPolicy(f.opts);
+  try {
+    await ready;
+    let reads = 0;
+    const denied = {...f.opts, readState: async () => { reads++; throw Error('must not read'); }};
+    assert.equal(await renewPolicy(denied), 1);
+    assert.equal(await revokePolicy(denied), 1);
+    assert.equal(reads, 0);
+    await assert.rejects(runAnvilOnboarding({dataDir:f.opts.dataDir}), {code:'POLICY_OPERATION_BUSY'});
+    assert.equal(await runWalletRestore({resolveDirectory:async()=>f.opts.dataDir, write:s=>f.lines.push(s)}), 1);
+    assert.match(f.lines.join('\n'), /POLICY_OPERATION_BUSY/);
+  } finally { unblock(); await first; }
+  const originalId = f.record.config.policyId;
+  f.opts.guide = async () => { throw Error('must resume saved draft'); };
+  f.opts.ask = async () => 'confirm';
+  assert.equal(await renewPolicy(f.opts), 0);
+  assert.equal(f.record.config.policyId, originalId);
+  assert.equal(f.submits, 1);
 });

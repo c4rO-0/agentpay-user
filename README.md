@@ -43,13 +43,15 @@ For a directory-owned installation, choose a program folder:
 mkdir agentpay-local
 cd agentpay-local
 npm install @c4roa0/agentpay-user
-./node_modules/.bin/agentpay help
+./node_modules/.bin/agentpay install --market https://YOUR_MARKET_ORIGIN
 ```
 
 Use `./node_modules/.bin/agentpay` instead of `agentpay` in the commands below.
 `update` updates this installation and its project lockfile; it does not install
-User globally. For an existing Wallet, use `repair` to refresh the background
-services against this installation. Private data stays in its existing directory.
+User globally. If existing data is found, install asks whether to reuse it or create
+separate data. Only one installation's Wallet/Runtime pair runs at a time;
+`service start` asks before switching. `repair` refreshes a configured installation
+without creating a new Wallet. Private data stays outside the program folder.
 Before deleting the program folder, run `uninstall` to remove managed services;
 private data is kept unless you explicitly choose `--delete-data`.
 

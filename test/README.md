@@ -86,3 +86,12 @@ are in [the source review](../doc/security/public-source-review-2026-11-06.md).
 The npm archive acceptance command also runs the owner-page and official-test
 helper checks from an independently installed package. Its platform and payment
 responses are controlled fixtures; it does not authorize or spend live funds.
+
+## Authorization ownership regression
+
+`policy-operation-lock.test.mjs` uses real child processes and the installed native
+lock on Linux: competitors must fail before touching authorization state, forced
+exit permits retry, and a surviving child must not keep the descriptor. The renewal
+coordinator tests resume the saved Policy ID with controlled chain/approval fixtures.
+These protect orchestration; they do not prove another platform, network filesystem,
+or live on-chain renewal. See the [review record](../doc/records/mainnet-static-review-2026-11-15.md).

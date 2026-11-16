@@ -62,6 +62,12 @@ Service stop/Wallet lock do not revoke permission. Archive hides a local warning
 it does not cancel or settle an Order. Retrieve requests the original result and
 never buys a replacement. Cache removal only removes local copies.
 
+Only one setup, renewal, revocation or restoration command can run for the same
+data folder at a time. If another command is running, finish it or stop it before
+retrying. After an interruption, retry the same command to resume saved progress;
+do not delete lock files or authorization records. This coordination is local to
+one data folder, not shared between computers.
+
 Online Order operations require an unlocked Wallet. Start/unlock instructions and
 `status` guide you to the next action; setup renews expired authorization first.
 

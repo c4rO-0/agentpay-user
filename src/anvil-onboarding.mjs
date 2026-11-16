@@ -1,3 +1,4 @@
+import { acquirePolicyOperation } from "./policy-operation-lock.mjs";
 import {runServiceCommand} from "./service-command.mjs";
 import {assessRunningSoftware,runtimeSoftware,requireRunningSoftware} from "./software-versions.mjs";
 import {reportCommandFailure} from "./command-diagnostics.mjs";
@@ -355,7 +356,17 @@ async function bindViaWallet(dataDir, policy) {
     });
   }
 }
-export async function runAnvilOnboarding({
+export async function runAnvilOnboarding(options) {
+  const release = await acquirePolicyOperation(options.dataDir);
+  // Hold ownership across the entire guide, including retries and owner approval.
+  try {
+    return await runLockedOnboarding(options);
+  } finally {
+    await release();
+  }
+}
+
+async function runLockedOnboarding({
   dataDir,
   config,
   ask,

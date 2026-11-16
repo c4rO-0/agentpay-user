@@ -52,5 +52,6 @@ continuing. An external signer can be selected on Anvil. See
 Single-owner private Anvil acceptance does not prove multisig, headless recovery or
 public-network readiness; those acceptance gates remain in [TODO](../TODO.md).
 
-The official test package/network map is still private-only. Another network pauses
-before that package installation after retaining its verified authorization.
+The current official package mapping covers private Anvil. On an unmapped network
+setup skips that optional test; generic Runtime and authorization do not depend on
+it. See [mapping](official-test-network-mapping.md).

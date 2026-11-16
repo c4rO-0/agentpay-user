@@ -2,7 +2,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import assert from "node:assert/strict";
-import { mkdtemp, readFile, rm, stat } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile, symlink, link } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
@@ -30,4 +30,20 @@ test("caller credential is private, reusable and authenticates only an exact bea
   } finally {
     await rm(dir, { recursive: true, force: true });
   }
+});
+
+
+test("credential initialization rejects links without changing their target", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "agentpay-caller-links-"));
+  try {
+    const original = join(dir, "original");
+    await writeFile(original, "a".repeat(64) + "\n", {mode: 0o644});
+    for (const [name, create] of [["symbolic", symlink], ["hard", link]]) {
+      const path = join(dir, name);
+      await create(original, path);
+      await assert.rejects(initializeCallerCredential(path));
+      assert.equal((await stat(original)).mode & 0o777, 0o644);
+      assert.equal(await readFile(original, "utf8"), "a".repeat(64) + "\n");
+    }
+  } finally { await rm(dir, {recursive: true, force: true}); }
 });

@@ -1,3 +1,4 @@
+import { acquirePolicyOperation } from "./policy-operation-lock.mjs";
 import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -112,7 +113,7 @@ export async function renewPolicy({
     return { decimals: Number(await c.decimals()), symbol: await c.symbol() };
   },
 } = {}) {
-  let rpc;
+  let rpc, releasePolicyOperation;
   // Keep connection errors outside renewal failure handling: the on-chain renewal
   // and local binding have already succeeded. Use connect's own hidden password prompt.
   async function continueMarket() {
@@ -134,6 +135,8 @@ export async function renewPolicy({
   }
   try {
     dataDir ??= await resolveUserDataDir();
+    // Acquire before loading the binding/journal: a retry resumes the same plan.
+    releasePolicyOperation = await acquirePolicyOperation(dataDir);
     const path = join(dataDir, "runtime/policy-renewal-guide.json");
     let record = await readState(path);
     const current = await readState(join(dataDir, "wallet/policy.json"));
@@ -538,7 +541,7 @@ export async function renewPolicy({
     );
     return e.code === "CANCELLED" ? 0 : 1;
   } finally {
-    rpc?.destroy();
+    try { rpc?.destroy(); } finally { await releasePolicyOperation?.(); }
   }
 }
 
@@ -553,9 +556,10 @@ export async function revokePolicy({
     new JsonRpcProvider(url, undefined, { batchMaxCount: 1 }),
   revoke = revokeOnChain,
 } = {}) {
-  let rpc;
+  let rpc, releasePolicyOperation;
   try {
     dataDir ??= await resolveUserDataDir();
+    releasePolicyOperation = await acquirePolicyOperation(dataDir);
     const policy = await readState(join(dataDir, "wallet/policy.json"));
     if (!policy) throw Error("No saved spending permission.");
     const signer = await selectedOwnerSigner({
@@ -603,6 +607,6 @@ export async function revokePolicy({
     write("Retry: agentpay policy revoke");
     return 1;
   } finally {
-    rpc?.destroy();
+    try { rpc?.destroy(); } finally { await releasePolicyOperation?.(); }
   }
 }

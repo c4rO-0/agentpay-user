@@ -128,7 +128,13 @@ const recovery = createRuntimeRecovery({
 });
 
 const server = createServer(async (req, res) => {
-  const url = new URL(req.url || "/", `http://${originHost}`);
+  // Parse untrusted request targets inside the response boundary. A malformed
+  // absolute target must not reject the async server callback and kill Runtime.
+  let url;
+  try { url = new URL(req.url || "/", `http://${originHost}`); }
+  catch {
+    return json(res, 400, {ok: false, error: {code: "INVALID_INPUT", message: "Invalid request address."}});
+  }
   if (req.method === "GET" && url.pathname === "/health") {
     return json(res, 200, {
       ok: true,

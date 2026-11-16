@@ -2,7 +2,12 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { OFFICIAL_TEST_PACKAGE } from "../src/official-test-package.mjs";
-import test from "node:test";
+import test, {after} from "node:test";
+import {mkdtempSync, rmSync} from "node:fs";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+const testRoot = mkdtempSync(join(tmpdir(), "onboarding-lock-"));
+after(() => rmSync(testRoot, {recursive:true, force:true}));
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { hashPrivateRequest } from "@c4roa0/agentpay-protocol";
@@ -35,6 +40,7 @@ const config = {
   source: "reviewed private test",
 };
 function fixture() {
+  const dataDir = mkdtempSync(join(testRoot, "wallet-"));
   const draft = {
     ...config,
     version: 1,
@@ -183,7 +189,7 @@ function fixture() {
   };
   async function run(answers, override = {}) {
     return runAnvilOnboarding({
-      dataDir: "/private",
+      dataDir,
       config: { ...config, ...override },
       operations,
       write: (text) => output.push(text),

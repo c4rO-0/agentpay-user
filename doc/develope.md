@@ -63,6 +63,6 @@ wire names and public errors during formatting. Prefer one focused regression ov
 several assertions about implementation shape.
 
 User consumes Wallet through its public package exports and exact reviewed version.
-Running-process compatibility negotiation remains in the
-[distribution plan](plans/user-wallet-distribution.md). No automatic source downloads are
+Installed/running exact-pair checks are implemented; broader compatibility ranges
+remain deferred in the [distribution plan](plans/user-wallet-distribution.md). No automatic source downloads are
 introduced by repair. Keep private platform experiments outside this repository.

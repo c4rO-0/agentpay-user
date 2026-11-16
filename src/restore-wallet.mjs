@@ -1,3 +1,4 @@
+import { acquirePolicyOperation } from "./policy-operation-lock.mjs";
 import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
@@ -71,6 +72,8 @@ async function run(script, args, dataDir) {
       "Local preparation did not finish. Retry agentpay wallet restore.",
     );
 }
+// Shared by setup and wallet restore while their authorization operation is held.
+// Keep previews and final binding inside that same scope; do not reacquire here.
 export async function restoreExistingPolicy({
   dataDir,
   target,
@@ -175,8 +178,10 @@ export async function runWalletRestore({
   resolveDirectory = resolveUserDataDir,
   ops = {},
 } = {}) {
+  let releasePolicyOperation;
   try {
     const dataDir = await resolveDirectory();
+    releasePolicyOperation = await acquirePolicyOperation(dataDir);
     let local = await inspectLocalUserSetup(dataDir);
     if (local.stage !== "initialized") {
       write(
@@ -253,5 +258,7 @@ export async function runWalletRestore({
         "Restoration could not complete. Check the network and retry agentpay wallet restore; existing data was kept.",
     );
     return e.code === "CANCELLED" ? 0 : 1;
+  } finally {
+    await releasePolicyOperation?.();
   }
 }

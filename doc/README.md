@@ -1,23 +1,7 @@
 # User documentation
 
-- [Official test deployment mapping](reference/official-test-network-mapping.md): release-pinned trust, optional tests and generic startup.
-
-- [Participant two-installation closeout](records/participant-dual-install-closeout-2026-11-14.md): configured switching, npm updates and evidence limits.
-- [Recent release chronology](archive/client-release-progress-2026-11-13-14.md): stage-specific progress archive.
-
-- [Real two-installation switching](records/dual-install-systemd-2026-11-12.md): live systemd cancellation, switching, restoration and evidence limits.
-
-- [Historical request routing](records/historical-request-routing-2026-11-11.md): switch-time indexing, missing records and conservative recovery limits.
-
-- [Local instances and installation recovery](plans/local-instances-and-install-recovery.md): agreed design and implementation sequence.
-
-- [Installation maintenance verification](records/installation-maintenance-2026-11-11.md): inactive maintenance and interrupted-writer recovery, with evidence limits.
-
-- [Isolated client acceptance](records/client-isolated-acceptance-2026-11-11.md): installation, failure retry, uninstall and the interruption blocker.
-
-- [Existing-installation update acceptance](records/npm-update-participant-2026-11-11.md): participant update to User 0.3.6 / Wallet 0.3.3 and retained records.
-
-- [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.
+Choose your role, then the operation you need. Current work lives in progress/TODO;
+dated records document evidence rather than new instructions.
 
 ## Start by role
 
@@ -75,3 +59,28 @@ Private platform histories and harnesses are retained outside this public tree.
 - [Command diagnostics and repair review](records/2026-11-13-diagnostics-repair-review.md): failure reporting and isolated process ownership findings.
 
 - [Unfinished update recovery](records/2026-11-13-update-recovery.md): completing an older update after npm installs a newer version.
+
+## Review and acceptance records
+
+Current review: [mainnet static review](records/mainnet-static-review-2026-11-15.md).
+
+- [Official test deployment mapping](reference/official-test-network-mapping.md): release-pinned trust, optional tests and generic startup.
+
+- [Participant two-installation closeout](records/participant-dual-install-closeout-2026-11-14.md): configured switching, npm updates and evidence limits.
+- [Recent release chronology](archive/client-release-progress-2026-11-13-14.md): stage-specific progress archive.
+
+- [Real two-installation switching](records/dual-install-systemd-2026-11-12.md): live systemd cancellation, switching, restoration and evidence limits.
+
+- [Historical request routing](records/historical-request-routing-2026-11-11.md): switch-time indexing, missing records and conservative recovery limits.
+
+- [Local instances and installation recovery](plans/local-instances-and-install-recovery.md): agreed design and implementation sequence.
+
+- [Installation maintenance verification](records/installation-maintenance-2026-11-11.md): inactive maintenance and interrupted-writer recovery, with evidence limits.
+
+- [Isolated client acceptance](records/client-isolated-acceptance-2026-11-11.md): installation, failure retry, uninstall and the interruption blocker.
+
+- [Existing-installation update acceptance](records/npm-update-participant-2026-11-11.md): participant update to User 0.3.6 / Wallet 0.3.3 and retained records.
+
+- [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.
+
+- [Archived progress](archive/review-baseline-progress-2026-11-16.md) and [task baseline](archive/review-baseline-todo-2026-11-16.md): traceable history before consolidation.

@@ -157,3 +157,14 @@ Save a private sanitized diagnostic report for unexpected failures. Never print 
 store credentials, signed payloads or private request/result contents in that report.
 Unknown errors must remain explicitly unknown with code locations for support;
 never guess that a transaction was not submitted or recommend a replacement purchase.
+
+## Repository review closeout
+
+Review design, end-to-end flows, interrupted recovery, security/financial boundaries,
+dependencies, code/comment maintainability, user interaction, tests/CI, documentation,
+and release/operations together. Record inspected scope, defects, corrections,
+verification and evidence limits under doc/records. Discuss major transaction or
+authority changes before implementation; fix small defects within the approved
+scope. Keep the pass bounded, commit the completed review, and do not equate source
+completion with release or deployment. Current native process-lock acceptance is
+Linux only; library portability is not product acceptance on another OS.
