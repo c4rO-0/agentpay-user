@@ -115,6 +115,8 @@ test("Wallet accepted preparation but lost reply: timeout releases lock and retr
       stdio: ["ignore", "pipe", "pipe"],
       env: {
         ...process.env,
+        HOME: join(dir, "home"),
+        XDG_STATE_HOME: join(dir, "state"),
         AGENTPAY_USER_HOST: "127.0.0.1",
         AGENTPAY_USER_PORT: String(port),
         AGENTPAY_USER_STATE_FILE: stateFile,

@@ -61,7 +61,8 @@ test("real process ownership gates handoff and preserves Wallet on managed resta
       ? role==='wallet' ? [cli,'serve',join(dir,'wallet')]
         : [fileURLToPath(new URL('../src/index.mjs',import.meta.url))]
       : [runner,role,dir];
-    const env=guide && role==='runtime' ? {...process.env,...runtimeEnvironment(dir,settings)} : process.env;
+    const env = { ...process.env, ...(guide && role === 'runtime' ? runtimeEnvironment(dir, settings) : {}),
+      HOME: join(dir, 'home'), XDG_STATE_HOME: join(dir, 'state') };
     const c = spawn(process.execPath, args, { stdio: "ignore",env });
     children.push(c);
     completions.set(c, new Promise((resolve) => c.once("exit", resolve)));

@@ -400,6 +400,8 @@ async function fixture(t) {
   ) => {
     const env = {
       ...process.env,
+      HOME: join(dir, "home"),
+      XDG_STATE_HOME: join(dir, "state"),
       AGENTPAY_USER_FILE_CACHE_PRIVATE_ORIGINS: JSON.stringify(privateOrigins),
       AGENTPAY_USER_HOST: "127.0.0.1",
       AGENTPAY_USER_PORT: String(runtimePort),

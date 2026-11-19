@@ -1,5 +1,9 @@
 # AgentPay User progress
 
+## User 0.3.24 release
+
+This version pairs Wallet 0.3.6 with Protocol 0.14.4. Concurrent Policy setup, renewal and revocation now share an operation lock. Runtime handles malformed request targets and rejects unsafe credential file links.
+
 ## Compatibility supplement — 2026-11-19
 
 Completed R11 consumer/state compatibility review. [Dispositions and evidence](doc/records/compatibility-review-2026-11-19.md). Retained historical recovery and published interfaces have explicit exit conditions; no release or deployment.
@@ -23,10 +27,7 @@ are not an npm release and have not changed participant services or authorizatio
 
 ## Published and participant baseline
 
-Published User is 0.3.23, paired with Wallet 0.3.5 and Protocol 0.14.3. Package/tag
-and npm archive checks were recorded before this review; the dependency pins remain
-unchanged. The official test uses reviewed package 1.2.1. Review corrections in
-Wallet and Protocol still require authorized releases before User adopts them.
+Participant acceptance below used User 0.3.23, Wallet 0.3.5 and Protocol 0.14.3. The official test used reviewed Skill package 1.2.1.
 
 Participant configured B → A → B switching and updates preserved each installation's
 own Wallet/Policy/Orders. Work PC subsequently updated to 0.3.23 and retained its
