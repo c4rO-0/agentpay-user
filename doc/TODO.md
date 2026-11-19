@@ -12,10 +12,8 @@ consolidation does not turn partial evidence into acceptance.
   the approved local authorization boundary; [record](records/mainnet-static-review-2026-11-15.md).
 - [x] Prepare the reviewed User source/documentation closeout; enclosing workspace
   records the resulting commit and pointer.
-- [ ] When authorized, publish reviewed Protocol/Wallet corrections, adopt exact
-  public dependency versions and verify User's installed artifact before release.
-  Keep package version, release input and vX.Y.Z tag aligned; verify npm separately.
-- [ ] Reconcile Market installation guidance at the coordinated release step.
+- [x] Publish User 0.3.24 with Wallet 0.3.6 and Protocol 0.14.4. Verified matching tag, registry archive and independent CLI installation.
+- [x] Confirm the Market guide uses the package name for both global and directory-local installation; both resolve the published release.
 
 Public npm dependencies, OIDC publication, installed/running exact-pair checks,
 directory-local updates, maintenance error handling and interrupted-update recovery
