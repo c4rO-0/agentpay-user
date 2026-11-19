@@ -1,5 +1,9 @@
 # AgentPay User progress
 
+## User 0.3.25
+
+Running `status` or `health` asks Runtime to retry recent Order connection failures. Concurrent requests share the check. A slow check continues in the background. This version pairs Wallet 0.3.7 with Protocol 0.14.4.
+
 ## User 0.3.24 — published 2026-11-19
 
 This version pairs Wallet 0.3.6 with Protocol 0.14.4. Concurrent Policy setup, renewal and revocation now share an operation lock. Runtime handles malformed request targets and rejects unsafe credential file links.

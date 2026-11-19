@@ -669,7 +669,10 @@ test('RPC outage retains a useful error and recovers the same Order after connec
  await recovery.refresh();
  assert.equal(recovery.status().issues[0].code,'CHAIN_RPC_UNAVAILABLE');
  assert.deepEqual(await readFile(f.path),before);
- offline=false;f.advance();await recovery.refresh();
+ offline=false;
+ await recovery.refresh(); // Background retries still respect backoff.
+ assert.equal(recovery.status().issues[0].code,'CHAIN_RPC_UNAVAILABLE');
+ await Promise.all([recovery.refreshForStatus(), recovery.refreshForStatus()]);
  assert.equal(recovery.status().orders.settled,1);
  assert.deepEqual(await readFile(f.path),before);
 });

@@ -263,7 +263,7 @@ export function localReviewDetails(
     );
     text("Do not create another purchase to resolve this record.");
   } else if (o?.errorCode === "CHAIN_RPC_UNAVAILABLE")
-    text("Restore the chain RPC connection and any SSH tunnel. Keep Wallet unlocked; Runtime retries automatically. Do not pay again.");
+    text("The last check could not reach the blockchain. Keep Wallet unlocked for automatic retries. Run agentpay health to check the connection now.");
   else if (o?.errorCode === "ORDER_CHECK_UNAVAILABLE")
     text(
       "Runtime retries automatically. Keep Wallet unlocked and check your network if this continues.",
@@ -361,7 +361,7 @@ export function localOrderSummary(entry, observation, review) {
       : null);
   const reasons = {
     CHAIN_RPC_UNAVAILABLE:
-      "Cannot connect to the chain RPC. Check your network and any SSH tunnel. Runtime retries automatically; keep the original request.",
+      "The last Order check could not reach the blockchain. Runtime will retry automatically.",
     RECOVERY_POLICY_UNAVAILABLE:
       "Original Policy cannot authorize this check (it may be revoked or belong to another key).",
     ORIGINAL_POLICY_UNKNOWN:

@@ -195,7 +195,7 @@ async function installUnderLock({
         `Market settings request failed: ${endpoint} (${safeCode})\n`,
       );
       throw Error(
-        `Cannot download Market settings from ${endpoint} (${safeCode}). Check the Market connection; for private rehearsal, keep the website SSH tunnel open and try 127.0.0.1 instead of localhost.`,
+        `Cannot download Market settings from ${endpoint} (${safeCode}). Check the Market address and your network connection, then retry installation.`,
       );
     }
     if (!response.ok)

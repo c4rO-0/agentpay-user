@@ -5,11 +5,11 @@ import { join } from "node:path";
 import { resolveUserDataDir } from "./local-data-directory.mjs";
 import { readServiceSettings } from "./local-services.mjs";
 import { readCallerToken } from "./caller-auth.mjs";
-export async function readRuntimeStatus(dataDir = undefined) {
+export async function readRuntimeStatus(dataDir = undefined, { retryConnections = false } = {}) {
   dataDir ??= await resolveUserDataDir();
   const settings = await readServiceSettings(dataDir),
     token = await readCallerToken(join(dataDir, "runtime/caller.token"));
-  const response = await fetch(settings.runtimeUrl + "/status", {
+  const response = await fetch(settings.runtimeUrl + (retryConnections ? "/status?retry=connections" : "/status"), {
     headers: { authorization: "Bearer " + token },
     redirect: "error",
     signal: AbortSignal.timeout(2500),

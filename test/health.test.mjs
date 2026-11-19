@@ -331,3 +331,28 @@ test("health reads the Wallet binding RPC when Setup projections are absent", as
  assert.doesNotMatch(lines.join("\n"),/Chain RPC not configured/);
  assert.deepEqual(JSON.parse(await readFile(file,"utf8")),binding);
 });
+
+test("health asks the installation's Runtime to retry and reports pending Order checks", async t => {
+  const dir = await mkdtemp(join(tmpdir(), "health-orders-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  for (const name of ["runtime", "wallet"]) await mkdir(join(dir, name), { mode: 0o700 });
+  const token = "a".repeat(64);
+  let authenticatedRetry = false;
+  const server = createServer((req, res) => {
+    if (req.url === "/status?retry=connections") {
+      authenticatedRetry = req.headers.authorization === "Bearer " + token;
+      res.end(JSON.stringify({ ok: true, result: { role: "user-runtime", inventory: "complete", orders: {}, retryInProgress: true } }));
+    } else res.end(JSON.stringify({ ok: true, result: { role: "user-runtime" } }));
+  });
+  await new Promise(resolve => server.listen(0, "127.0.0.1", resolve));
+  t.after(() => new Promise(resolve => server.close(resolve)));
+  const origin = "http://127.0.0.1:" + server.address().port;
+  await writeFile(join(dir, "runtime/local-services.json"), JSON.stringify({ version: 1, runtimeUrl: origin, settlementUrl: origin }), { mode: 0o600 });
+  await writeFile(join(dir, "runtime/caller.token"), token, { mode: 0o600 });
+  await writeFile(join(dir, "wallet/policy.json"), "{}", { mode: 0o600 });
+  const lines = [];
+  await runHealth({ resolveDirectory: async () => dir, write: line => lines.push(line) });
+  assert.ok(authenticatedRetry);
+  assert.match(lines.join("\n"), /\[WAIT\] Order checks pending/);
+  assert.ok(!lines.join("\n").includes(token));
+});

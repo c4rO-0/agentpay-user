@@ -155,10 +155,12 @@ const server = createServer(async (req, res) => {
           message: "Valid caller credential required",
         },
       });
-    void recovery.refresh();
+    let retryInProgress = false;
+    if (url.searchParams.get("retry") === "connections") retryInProgress = await recovery.refreshForStatus();
+    else void recovery.refresh();
     return json(res, 200, {
       ok: true,
-      result: { role: "user-runtime", software: runtimeSoftware, ...recovery.status() },
+      result: { role: "user-runtime", software: runtimeSoftware, ...recovery.status(), retryInProgress },
     });
   }
   if (

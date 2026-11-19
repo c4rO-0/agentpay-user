@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { readFile, lstat } from "node:fs/promises";
 import { createRequire } from "node:module";
 import { Contract } from "ethers";
+import { readRuntimeStatus } from "./runtime-status.mjs";
 import { ReadOnlyRpc } from "./read-only-rpc.mjs";
 import {
   resolveUserDataDir,
@@ -23,7 +24,7 @@ export async function runHealth({
 } = {}) {
   let failures = 0;
   write("\n> AgentPay health");
-  write("Read-only checks · no signing, payment, repair or service changes.");
+  write("Diagnostics only · no payments, repairs or service restarts.");
   write(
     "Report includes software versions, public contract addresses and timings.",
   );
@@ -241,7 +242,7 @@ export async function runHealth({
     return result?.locked ? "running, locked" : "running";
   });
   async function http(label, base, path, validate) {
-    await check(label, async () => {
+    return check(label, async () => {
       const url = new URL(base);
       if (
         !["http:", "https:"].includes(url.protocol) ||
@@ -304,14 +305,24 @@ export async function runHealth({
       }
     });
   }
-  if (policy && cfg.runtimeUrl)
-    await http(
+  if (policy && cfg.runtimeUrl) {
+    const reachable = await http(
       "Local Runtime",
       cfg.runtimeUrl,
       "/health",
       (b) => b?.ok === true && b.result?.role === "user-runtime",
     );
-  else if (policy) write("[WAIT] Local Runtime address not configured");
+    if (reachable && services?.runtimeUrl) {
+      let pending = false;
+      await check("Runtime Order status", async () => {
+        const status = await readRuntimeStatus(dataDir, { retryConnections: true });
+        pending = status.retryInProgress || status.issues?.some(issue =>
+          ["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(issue.code));
+        return "received";
+      });
+      if (pending) write("[WAIT] Order checks pending · see agentpay status");
+    }
+  } else if (policy) write("[WAIT] Local Runtime address not configured");
   if (cfg.settlementUrl)
     await http(
       "Settlement HTTP",

@@ -118,7 +118,7 @@ count as a healthy endpoint. The command makes no automatic retry loop.
 The report includes public contract addresses and timing information. It omits
 private keys, tokens, request/result contents, URLs and personal paths. Review it
 before sharing; do not attach your data directory or raw service logs by default.
-No request is signed, no purchase is made and no local files are changed by health.
+When Runtime is reachable, both `health` and `status` ask it to recheck Orders whose last connection failed. Runtime uses the original Order authorization and saves the updated check. Neither command starts a purchase.
 
 Setup retains entered limits after a failed network check. A failure before
 submission is labelled as such; after a submitted transaction, resume the same

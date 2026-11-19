@@ -324,7 +324,11 @@ export function createRuntimeRecovery({
                       : "Order checks run in the background; this is not proof that a new purchase is eligible.",
     };
   }
-  async function cycle() {
+  const retryableConnectionFailure = row =>
+    ["CHAIN_RPC_UNAVAILABLE", "ORDER_CHECK_UNAVAILABLE"].includes(row?.errorCode);
+  let foregroundRetry = null, nextForegroundRetryAt = 0;
+
+  async function cycle(retryConnections = false) {
     if (!(await inspect())) return;
     let w;
     try {
@@ -344,15 +348,21 @@ export function createRuntimeRecovery({
     }
     if (walletState !== "available") return;
     const entries = Object.entries(inventory);
+    // A user-requested retry shares the ordinary Order verification path.
+    // Start with the oldest failed check so larger histories also make progress.
+    const candidates = retryConnections
+      ? entries.filter(([id]) => retryableConnectionFailure(observations[id]))
+          .sort(([a], [b]) => observations[a].checkedAtMs - observations[b].checkedAtMs)
+      : entries;
     let changed = false;
-    for (let n = 0; n < Math.min(entries.length, 4) && !stopped; n++) {
-      const [id, entry] = entries[cursor++ % entries.length],
+    for (let n = 0; n < Math.min(candidates.length, 4) && !stopped; n++) {
+      const [id, entry] = candidates[retryConnections ? n : cursor++ % candidates.length],
         hash = fingerprint(entry),
         old = observations[id];
       if (
         old?.fingerprint === hash &&
         old.source === settlementUrl &&
-        old.nextCheckAtMs > now()
+        !retryConnections && old.nextCheckAtMs > now()
       )
         continue;
       let row = {
@@ -611,9 +621,9 @@ export function createRuntimeRecovery({
     }
     lastCheckedAtMs = now();
   }
-  function refresh() {
+  function refresh(retryConnections = false) {
     if (active) return active;
-    active = cycle()
+    active = cycle(retryConnections)
       .catch(() => {
         inventoryState = "blocked";
       })
@@ -625,6 +635,27 @@ export function createRuntimeRecovery({
   return {
     status,
     refresh,
+    async refreshForStatus() {
+      if (!foregroundRetry && now() >= nextForegroundRetryAt &&
+          Object.values(observations).some(retryableConnectionFailure)) {
+        nextForegroundRetryAt = now() + 10000;
+        foregroundRetry = Promise.resolve(active).then(() => {
+          if (!stopped) return refresh(true);
+        }).finally(() => { foregroundRetry = null; });
+      }
+      if (!foregroundRetry) {
+        void refresh();
+        return false;
+      }
+      // A slow Wallet must not make the local status command appear offline.
+      let timeout;
+      try {
+        return await Promise.race([
+          foregroundRetry.then(() => false),
+          new Promise(resolve => { timeout = setTimeout(() => resolve(true), 1500); }),
+        ]);
+      } finally { clearTimeout(timeout); }
+    },
     assertInvocation(entry) {
       const observation = observations[entry.invocationId];
       if (

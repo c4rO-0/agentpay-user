@@ -111,6 +111,6 @@ and [security reporting](SECURITY.md). Wallet and Protocol retain their own lice
 
 Run `agentpay health` from the affected installation for a read-only diagnostic
 report. It checks saved settings, chain contracts and reachable services, and gives
-next steps for failures. You can send the report to support; it omits credentials,
+next steps for failures. Both `health` and `status` ask the running Runtime to retry recent Order connection failures. You can send the report to support; it omits credentials,
 URLs, personal file paths and Order contents. It does not unlock Wallet, change
 settings or make a payment. See [diagnostics](doc/usage.md#diagnose-a-problem).

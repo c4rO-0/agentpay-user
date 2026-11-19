@@ -44,12 +44,12 @@ export async function showOrderStatus({
   } catch (error) {
     await reportCommandFailure(error,{operation:"Read Order status",write,effect:"The online status was not refreshed. This query did not start a payment."});
     write("\n> Order status");
-    write(error.code === "CHAIN_RPC_UNAVAILABLE" ? "[WAIT] Cannot connect to the chain RPC" : "[WAIT] Could not update from Settlement");
+    write(error.code === "CHAIN_RPC_UNAVAILABLE" ? "[WAIT] Wallet could not reach the blockchain for this Order" : "[WAIT] Could not update from Settlement");
     write(
       ["LOCKED", "WALLET_LOCKED"].includes(error.code)
         ? "Unlock Wallet: agentpay wallet unlock"
         : error.code === "CHAIN_RPC_UNAVAILABLE"
-          ? "Check your network and any SSH port forwarding, then retry this query. No new payment is needed."
+          ? "Run agentpay health to check the connection, then retry this Order query."
           : "Check agentpay status and your network, then retry this query.",
     );
     const summary = localOrderSummary(entry, observation, review);

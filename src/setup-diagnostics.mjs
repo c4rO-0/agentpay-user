@@ -52,7 +52,7 @@ export function failureGuidance(error) {
     [code, reason, next] = [
       "CHAIN_CHECK_TIMEOUT",
       "The network check took too long.",
-      "Check the network or SSH tunnel, then retry the saved step.",
+      "Check your connection, then retry the saved step.",
     ];
   } else if (
     has(
@@ -70,7 +70,7 @@ export function failureGuidance(error) {
     [code, reason, next] = [
       "NETWORK_UNAVAILABLE",
       "A required network connection is unavailable.",
-      "Check your connection and any SSH tunnel. Run agentpay health to identify the failing service.",
+      "Check your connection. Run agentpay health for a breakdown by service.",
     ];
   } else if (has("CHAIN_ID_MISMATCH", "MIGRATION_CHAIN_MISMATCH")) {
     [code, reason, next] = [

@@ -415,8 +415,10 @@ test('unfinished setup gives setup guidance instead of starting nonexistent serv
 });
 test('RPC outage is explicit while keeping retry guidance',()=>{
  const result=renderStatusPanel({...model,wallet:{locked:false,bound:true},runtime:{...model.runtime,wallet:'available',orders:{total:1,settled:0,waiting:0,review:1},issues:[{code:'CHAIN_RPC_UNAVAILABLE'}]}});
- assert.match(result.text,/Cannot connect to the chain RPC/);
- assert.match(result.text,/SSH port forwarding/);
+ assert.match(result.text,/Last Order check could not reach the blockchain/);
+ assert.match(result.text,/awaiting recheck/);
+ assert.match(result.text,/agentpay health/);
+ assert.doesNotMatch(result.text,/SSH/i);
 });
 
 
@@ -425,6 +427,6 @@ test('manual review is not hidden by a simultaneous RPC outage', () => {
   const mixed = render('ORDER_IDENTITY_MISMATCH');
   assert.match(mixed, /Some Orders need review/);
   assert.match(mixed, /> Next\n  agentpay orders list/);
-  assert.doesNotMatch(mixed, /Cannot connect to the chain RPC/);
-  assert.match(render('ORDER_CHECK_UNAVAILABLE'), /Cannot connect to the chain RPC/);
+  assert.doesNotMatch(mixed, /Last Order check could not reach the blockchain/);
+  assert.match(render('ORDER_CHECK_UNAVAILABLE'), /Last Order check could not reach the blockchain/);
 });

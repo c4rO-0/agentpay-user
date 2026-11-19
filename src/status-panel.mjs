@@ -177,7 +177,7 @@ export async function collectLocalStatus() {
     }),
     service("wallet"),
     service("runtime"),
-    readRuntimeStatus(dataDir),
+    readRuntimeStatus(dataDir, { retryConnections: true }),
     readAuthorizationStatus(dataDir),
     readMarketStatus(dataDir),
     inspectDeploymentStatus(dataDir),
@@ -402,11 +402,16 @@ export function renderStatusPanel(
     else if (model.deployment.errorCode === "PLATFORM_NETWORK_UNAVAILABLE") detail = "Could not connect to Market for deployment settings. Check your network and retry.";
     else if (/^PLATFORM_HTTP_[0-9]{3}$/.test(model.deployment.errorCode || "")) detail = "Market deployment check returned HTTP " + model.deployment.errorCode.slice(-3) + ". Run agentpay health if this continues.";
     next = "agentpay status";
-  } else if (onlyRetryable && issues.some(issue => issue.code === "CHAIN_RPC_UNAVAILABLE")) {
-    title = "Cannot connect to the chain RPC";
+  } else if (onlyRetryable && r.retryInProgress) {
+    title = "Rechecking Orders";
     level = "wait";
-    detail = "Check your network and any SSH port forwarding. Order checks retry automatically; do not repeat purchases.";
-    next = "Restore the connection, then run agentpay status.";
+    detail = "Runtime is checking the Orders whose last connection attempt failed.";
+    next = "agentpay status";
+  } else if (onlyRetryable && issues.some(issue => issue.code === "CHAIN_RPC_UNAVAILABLE")) {
+    title = "Last Order check could not reach the blockchain";
+    level = "wait";
+    detail = "Runtime will retry automatically. For a live connection check, run agentpay health.";
+    next = "agentpay orders list";
   } else if (onlyRetryable) {
     title = "Order checks temporarily unavailable";
     level = "wait";
@@ -601,7 +606,7 @@ export function renderStatusPanel(
       );
     if (r.orders.review > 0)
       lines.push(
-        `  ${badge("wait")} ${paint(`${count(r.orders.review)} need review`, "1;33")}`,
+        `  ${badge("wait")} ${paint(`${count(r.orders.review)} ${onlyRetryable ? "awaiting recheck" : "need review"}`, "1;33")}`,
       );
     if (r.orders.missingResult > 0)
       lines.push(

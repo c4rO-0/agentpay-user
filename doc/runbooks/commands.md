@@ -13,7 +13,7 @@ agentpay status
 Top-level operations are `install --market URL`, `setup`, `repair [-f]`,
 `update [-f]`, `uninstall [--delete-data]`, `status` and `health`.
 Use `health` for a read-only diagnostic report with causes and next steps. It does
-not unlock, repair, sign or pay. See [diagnostics](../usage.md#diagnose-a-problem).
+not unlock, repair or pay. Like `status`, it asks Runtime to retry failed Order connections. See [diagnostics](../usage.md#diagnose-a-problem).
 Update checks npm and installs User with its pinned Wallet, then checks the official
 test Skill. It asks before changes unless `-f` is given. Source/npm-link installations
 use manual source updates followed by repair. Repair checks installed packages and
