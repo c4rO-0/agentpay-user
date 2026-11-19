@@ -1,5 +1,7 @@
 # User documentation
 
+- Completed R11 consumer/state compatibility review. [Dispositions and evidence](records/compatibility-review-2026-11-19.md). Retained historical recovery and published interfaces have explicit exit conditions; no release or deployment.
+
 Choose your role, then the operation you need. Current work lives in progress/TODO;
 dated records document evidence rather than new instructions.
 

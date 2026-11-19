@@ -58,7 +58,8 @@ Use grouped public commands: `wallet info/unlock/lock/restore`, `policy info/ren
 `service start/stop/restart`, `service autostart on/off`, `service logs wallet/runtime`,
 `market connect`, `orders ACTION ID`, `cache ACTION`, and `payment test`.
 Top-level install/setup/repair/uninstall/status/help remain. The official test is a
-paid private-Anvil check after explicit quote consent. Completed tests lead to a
+paid connectivity check on the explicitly configured network after quote consent;
+Anvil verification does not authorize mainnet spending. Completed tests lead to a
 fresh quote and confirmation; unfinished tests retain their original request. Retain older test identities and records. Keep
 generated Next steps, web copy, tests and current
 runbooks aligned. Do not add legacy flat aliases. Policy owner confirmation cannot
