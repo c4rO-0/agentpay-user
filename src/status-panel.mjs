@@ -5,7 +5,8 @@ import { walletCliPath } from "./wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import { inspectDeploymentStatus } from "./deployment-status.mjs";
+import { ReadOnlyRpc } from "./read-only-rpc.mjs";
+import { inspectDeploymentStatus, readPrivateJson } from "./deployment-status.mjs";
 import { constants } from "node:fs";
 import { open } from "node:fs/promises";
 import { execFile } from "node:child_process";
@@ -153,6 +154,33 @@ export async function readMarketStatus(dataDir) {
       : "pending",
   };
 }
+// Check the network independently of the schedule for settled Orders.
+export async function checkStatusChain(dataDir) {
+  const [policy, services, setup] = await Promise.all([
+    readPrivateJson(join(dataDir, "wallet/policy.json")),
+    readPrivateJson(join(dataDir, "runtime/local-services.json")),
+    readPrivateJson(join(dataDir, "anvil-onboarding.json")).then(value =>
+      value ?? readPrivateJson(join(dataDir, "user-deployment.json"))),
+  ]);
+  const url = services?.rpcUrl ?? setup?.rpcUrl ?? policy?.registryRpcUrl;
+  const chainId = policy?.chainId ?? setup?.chainId;
+  if (!url || chainId == null) return "unconfigured";
+  let rpc, timer;
+  try {
+    rpc = new ReadOnlyRpc(url);
+    const network = await Promise.race([
+      rpc.getNetwork(),
+      new Promise(resolve => { timer = setTimeout(() => resolve(null), 5000); }),
+    ]);
+    if (!network) return "timeout";
+    return network.chainId === BigInt(chainId) ? "online" : "wrong_network";
+  } catch {
+    return "unavailable";
+  } finally {
+    clearTimeout(timer);
+    rpc?.destroy();
+  }
+}
 export async function collectLocalStatus() {
   let dataDir;
   try {
@@ -182,12 +210,14 @@ export async function collectLocalStatus() {
     readMarketStatus(dataDir),
     inspectDeploymentStatus(dataDir),
     inspectLocalSetup(dataDir),
+    checkStatusChain(dataDir),
   ]);
   const value = (i) =>
     results[i].status === "fulfilled" ? results[i].value : null;
   return {
-    failures: results.flatMap((r,i)=>r.status==='rejected'?[{operation:["Read Wallet status","Read Wallet service","Read Runtime service","Read Runtime status","Read permission","Read Market connection","Check deployment","Read setup state"][i],error:r.reason}]:[]),
+    failures: results.flatMap((r,i)=>r.status==='rejected'?[{operation:["Read Wallet status","Read Wallet service","Read Runtime service","Read Runtime status","Read permission","Read Market connection","Check deployment","Read setup state","Read chain settings"][i],error:r.reason}]:[]),
     setup: value(7),
+    chain: value(8) ?? "settings_error",
     software: assessRunningSoftware(value(0), value(3)),
     deployment: value(6) || { state: "unknown" },
     market: value(5) || { state: "unknown" },
@@ -285,6 +315,14 @@ export function renderStatusPanel(
     r?.orders.review > 0 &&
     issues.length === r.orders.review &&
     issues.every((issue) => ["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(issue.code));
+  const chainLabels = {
+    online: "Connected",
+    wrong_network: "Wrong network",
+    unavailable: "Connection failed",
+    timeout: "No response within 5 seconds",
+    settings_error: "Settings unreadable",
+    unconfigured: "Not configured",
+  };
   const stopped = (s) =>
     s && ["failed", "inactive", "deactivating"].includes(s.ActiveState);
   let title = "Local checks passed",
@@ -380,6 +418,11 @@ export function renderStatusPanel(
     level = "wait";
     detail = "Choose your Safe and spending limits in setup.";
     next = "agentpay setup";
+  } else if (model.chain && model.chain !== "online") {
+    title = "Chain RPC · " + chainLabels[model.chain];
+    level = "wait";
+    detail = "Wallet needs the configured blockchain connection for payments. Saved Order states are shown below.";
+    next = "agentpay health";
   } else if (r.inventory !== "complete" || r.wallet !== "available") {
     title = "Checks in progress";
     level = "wait";
@@ -517,6 +560,7 @@ export function renderStatusPanel(
             ? "ok"
             : "wait",
       );
+    if (model.chain) row("Chain RPC", chainLabels[model.chain], model.chain === "online" ? "ok" : "wait");
     lines.push("", "> Policy");
     const policyState =
       model.setup?.state === "needed"

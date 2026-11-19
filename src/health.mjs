@@ -314,11 +314,11 @@ export async function runHealth({
     );
     if (reachable && services?.runtimeUrl) {
       let pending = false;
-      await check("Runtime Order status", async () => {
+      await check("Local Order summary", async () => {
         const status = await readRuntimeStatus(dataDir, { retryConnections: true });
         pending = status.retryInProgress || status.issues?.some(issue =>
           ["ORDER_CHECK_UNAVAILABLE", "CHAIN_RPC_UNAVAILABLE"].includes(issue.code));
-        return "received";
+        return "read from Runtime";
       });
       if (pending) write("[WAIT] Order checks pending · see agentpay status");
     }

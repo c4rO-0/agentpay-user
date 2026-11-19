@@ -430,3 +430,44 @@ test('manual review is not hidden by a simultaneous RPC outage', () => {
   assert.doesNotMatch(mixed, /Last Order check could not reach the blockchain/);
   assert.match(render('ORDER_CHECK_UNAVAILABLE'), /Last Order check could not reach the blockchain/);
 });
+
+test("a lost chain connection takes priority over a settled Order's missing result and clears on reconnect", async t => {
+  const { createServer } = await import("node:http");
+  const { mkdtemp, mkdir, writeFile, rm } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { checkStatusChain } = await import("../src/status-panel.mjs");
+  const dir = await mkdtemp(join(tmpdir(), "status-rpc-"));
+  t.after(() => rm(dir, { recursive: true, force: true }));
+  await mkdir(join(dir, "wallet"), { mode: 0o700 });
+  let chain = "0x7a69";
+  const server = createServer(async (req, res) => {
+    let body = "";
+    for await (const part of req) body += part;
+    const { id, method } = JSON.parse(body);
+    assert.equal(method, "eth_chainId");
+    res.end(JSON.stringify({ jsonrpc: "2.0", id, result: chain }));
+  });
+  const listen = port => new Promise(resolve => server.listen(port, "127.0.0.1", resolve));
+  const close = () => new Promise(resolve => server.close(resolve));
+  await listen(0);
+  t.after(async () => { if (server.listening) await close(); });
+  const port = server.address().port;
+  await writeFile(join(dir, "wallet/policy.json"), JSON.stringify({
+    chainId: 31337, registryRpcUrl: "http://127.0.0.1:" + port,
+  }), { mode: 0o600 });
+  const panel = async () => renderStatusPanel({
+    ...model, wallet: { locked: false, bound: true }, chain: await checkStatusChain(dir),
+    runtime: { ...model.runtime, wallet: "available", orders: { total: 2, settled: 2, waiting: 0, missingResult: 1 } },
+  }).text;
+  assert.match(await panel(), /Orders settled; some results/);
+  await close();
+  const offline = await panel();
+  assert.match(offline, /Chain RPC · Connection failed/);
+  assert.match(offline, /2 saved · 2 settled/);
+  await listen(port);
+  chain = "0x1";
+  assert.match(await panel(), /Chain RPC · Wrong network/);
+  chain = "0x7a69";
+  assert.match(await panel(), /Orders settled; some results/);
+});

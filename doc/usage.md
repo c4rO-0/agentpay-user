@@ -80,9 +80,10 @@ An installation whose setup was cancelled before Wallet creation displays
 “Setup not finished”; continue with `agentpay setup`. Existing Wallet records with
 missing files instead require review; do not create a replacement Wallet.
 
-“Cannot connect to the chain RPC” refers to the blockchain connection, not the
-Market website. Restore the RPC connection and any SSH forwarding used by your
-deployment. Keep Wallet unlocked; Runtime retries the original Order checks.
+`agentpay status` reads the chain ID from the configured RPC, even when all
+Orders have settled. If the connection fails, the Services section shows the
+failure and the Orders section keeps the last known settlement states. Restore
+the connection and run `agentpay status` again to see the current result.
 Manual `agentpay orders status ORDER_ID` also retries without making a payment.
 
 Update recovery prepares the selected installation first; repair performs the
