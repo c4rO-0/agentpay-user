@@ -6,7 +6,7 @@ AgentPay does not need your owner private key. macOS startup remains unverified.
 
 ## 1. Install program files
 
-Install User with `npm install --global @c4roa0/agentpay-user@0.3.0`.
+Install User with `npm install --global @c4roa0/agentpay-user`.
 Its reviewed Wallet dependency is included. Source/ZIP alternatives are in
 [README](../../README.md). No separate Wallet checkout or build is needed.
 Keep private data outside the program folder.
@@ -14,10 +14,11 @@ Keep private data outside the program folder.
 ## 2. Configure
 
 ```sh
-agentpay install --market https://YOUR_MARKET_ORIGIN
+agentpay install --market https://agentpay.c4r.fun
 ```
 
-Use your platform's actual HTTPS origin; private rehearsals may use loopback HTTP.
+The command uses the [official Market](https://agentpay.c4r.fun/setup/user).
+For another platform, replace it with that platform's HTTPS origin; private rehearsals may use loopback HTTP.
 Without `npm link`, run `./run install --market ...` from User instead. For a ZIP
 without executable permissions use `sh run`; `AGENTPAY_NODE` can select Node.
 
@@ -51,8 +52,9 @@ services. Wallet starts locked after a restart; [service commands](local-autosta
 control startup and background operation. Keep the Node installation used by those
 service files available.
 
-The default data location is `$HOME/.local/share/agentpay/user`. Install also stores
-private preparation checkpoints/logs under `.agentpay-install/` beside the repositories.
+The default data location is `$HOME/.local/share/agentpay/user`. Install stores
+private preparation checkpoints/logs under `~/.local/state/agentpay/user` by default;
+custom state locations are retained.
 `agentpay wallet info` shows resolved identity and paths. Follow
 [backup and restore](wallet-identity.md) before replacing a computer or deleting data.
 
@@ -80,8 +82,9 @@ original verification first.
 
 ## Update or uninstall
 
-Download compatible User and Wallet code, then run `agentpay repair`. It applies local
-code and preserves keys and requests. See [updates](local-update.md).
+For npm installations, run `agentpay update`. Source/ZIP installations update their
+program files, install their pinned dependencies with `npm ci`, then run `agentpay repair`.
+Both preserve keys and original requests. See [updates](local-update.md).
 `agentpay uninstall` requires confirmation before removing local data. It does not
 revoke on-chain permission; use the appropriate owner-authorized revocation or
 [emergency stop](emergency-payment-stop.md) when needed.

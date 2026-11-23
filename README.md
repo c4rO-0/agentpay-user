@@ -1,116 +1,97 @@
-# AgentPay User
+<h1 align="center">AgentPay User</h1>
+<p align="center"><strong>Give your AI Agent useful Skills. Keep control of its spending.</strong></p>
+<p align="center">
+  <a href="https://agentpay.c4r.fun/">Explore Market</a> ·
+  <a href="https://agentpay.c4r.fun/setup/user">Setup guide</a> ·
+  <a href="https://github.com/c4rO-0/agentpay-user/blob/main/doc/README.md">Documentation</a>
+</p>
 
-User connects your AI Agent's Skills to paid services. A separate local Wallet
-holds the Session Key; your Safe's bounded permission controls spending. After
-setup, eligible purchases do not require an owner-wallet signature every time.
+User runs the connection between your AI Agent's Skills and paid services. Set a
+budget in your Safe, approve it with your owner wallet, and let eligible purchases
+run within those limits. The matching local Wallet is installed automatically.
 
-User is the Agent/Skill runtime, not a Provider server or a general-purpose wallet.
-It retains request identity and local results so interruptions can be recovered
-without silently creating a replacement purchase.
+| You decide | Your Wallet protects | User keeps |
+| --- | --- | --- |
+| Budget, per-purchase limit and expiry | The Session Key and bounded payment checks | Original requests, Order history and verified results |
 
-## Install with npm
+## Get started
 
-On Linux, prepare Node.js 22.22.3 or newer, npm and your AgentPay Market address.
-Install User with the command below. It automatically installs the matching Wallet
-and Protocol packages; you do not need to download two repositories:
+**Linux · Node.js 22.22.3+ · npm**
+
+Start with the [official AgentPay Market](https://agentpay.c4r.fun/) to discover
+Skills and services. Its [setup guide](https://agentpay.c4r.fun/setup/user) explains
+Safe and owner addresses and provides commands for the current platform.
 
 ```sh
 npm install --global @c4roa0/agentpay-user
-agentpay install --market https://YOUR_MARKET_ORIGIN
+agentpay install --market https://agentpay.c4r.fun
 ```
 
-Replace the Market URL with your platform's address. Use a user-owned Node/npm
-installation with Node and npm's executable directory on PATH. No Wallet checkout,
-Corepack, pnpm or TypeScript build is needed.
+Use a user-owned Node/npm installation. The guide downloads public settings,
+prepares User and Wallet, and asks you to approve spending limits with your Safe
+owner wallet. **Never enter your owner private key into AgentPay.**
 
-Install verifies dependencies, downloads public settings and continues setup.
-You choose the Safe and spending limits, then approve with its owner wallet.
-The optional official payment test asks before spending. Never enter an owner
-private key into AgentPay. See [installation and first use](doc/runbooks/user-onboarding.md).
+Using another AgentPay platform? Replace the URL with its HTTPS Market origin.
+The official address is a convenient starting point, not a built-in service dependency.
 
-Program files and private state are separate. Keys, Policies, Orders and cache
-normally live in `~/.local/share/agentpay/user`; an existing custom data directory
-is retained. Installation checkpoints use `~/.local/state/agentpay/user` (or
-`$XDG_STATE_HOME/agentpay/user` on first setup). AgentPay remembers that location
-so terminal and background services use the same records. Upgrading program files
-does not erase either.
-
-## Install in a folder instead
-
-For a directory-owned installation, choose a program folder:
+<details>
+<summary><strong>Prefer installing in a folder?</strong></summary>
 
 ```sh
 mkdir agentpay-local
 cd agentpay-local
 npm install @c4roa0/agentpay-user
-./node_modules/.bin/agentpay install --market https://YOUR_MARKET_ORIGIN
+./node_modules/.bin/agentpay install --market https://agentpay.c4r.fun
 ```
 
-Use `./node_modules/.bin/agentpay` instead of `agentpay` in the commands below.
-`update` updates this installation and its project lockfile; it does not install
-User globally. If existing data is found, install asks whether to reuse it or create
-separate data. Only one installation's Wallet/Runtime pair runs at a time;
-`service start` asks before switching. `repair` refreshes a configured installation
-without creating a new Wallet. Private data stays outside the program folder.
-Before deleting the program folder, run `uninstall` to remove managed services;
-private data is kept unless you explicitly choose `--delete-data`.
+Use `./node_modules/.bin/agentpay` for subsequent commands. Updates remain local to
+this installation. Private Wallet data stays outside this program folder. Before
+removing the folder, use `uninstall` to remove its managed services.
+
+</details>
 
 ## After setup
 
-```sh
-agentpay status
-agentpay wallet unlock
-agentpay orders list
-agentpay market connect
-```
+| Task | Command |
+| --- | --- |
+| Check your installation | `agentpay status` |
+| Unlock after a restart | `agentpay wallet unlock` |
+| Connect this Wallet to Market | `agentpay market connect` |
+| View saved Orders | `agentpay orders list` |
+| Check the complete payment path | `agentpay payment test` |
+| Review and apply an update | `agentpay update` |
 
-Linux background services use your systemd user session. Wallet starts locked after
-a restart. `agentpay service help` explains startup, stop and logs; `agentpay help` lists
-all groups. npm installations use `agentpay update` to review and install a
-new User version with its matching Wallet and official test Skill. Source checkouts
-update their files, run `npm ci`, then `agentpay repair`. [Commands](doc/runbooks/commands.md) · [Updates](doc/runbooks/local-update.md)
-· [Backup and restore](doc/runbooks/wallet-identity.md).
+The optional payment test uses the official random-number Skill. It is a **paid
+request**, with its current price shown before confirmation. Installing or updating
+User does not authorize a purchase. If a request is interrupted, preserve its
+records and resume it rather than buying again.
 
-## Develop or integrate
+Linux services use your systemd user session. Only one installation's Wallet and
+Runtime pair runs at a time; switching installations requires confirmation.
+Run `agentpay health` for diagnostics you can share with support.
 
-For contributors or source ZIP users:
+## Your data stays with you
 
-```sh
-git clone https://github.com/c4rO-0/agentpay-user.git user
-cd user
-npm ci
-npm link
-agentpay help
-```
+Keys, Policies, Orders and cache normally live in `~/.local/share/agentpay/user`;
+installation state lives in `~/.local/state/agentpay/user`. Custom locations are
+retained. `agentpay wallet info` shows the actual paths. Back up private data and
+your unlock password; do not upload them to Market or send them to support.
 
-`npm link` exposes the command from your checkout. Without linking, `./run` (or
-`sh run`) provides the same commands; `AGENTPAY_NODE` can select your Node executable.
+[First use](doc/runbooks/user-onboarding.md) · [Updates](doc/runbooks/local-update.md) ·
+[Backup and recovery](doc/runbooks/wallet-identity.md) · [Emergency stop](doc/runbooks/emergency-payment-stop.md)
 
-- [Developer guide](doc/develope.md): independent checkout, focused tests and evidence limits.
-- [Architecture](doc/architecture.md): source map and recovery/authorization boundaries.
-- [Skill author guide](doc/runbooks/runtime-skill-client.md): call the shared Runtime client.
-- [Contribution guide](CONTRIBUTING.md), [documentation catalog](doc/README.md),
-  [progress](progress.md) and [TODO](doc/TODO.md).
+## Build with User
 
-## Safety and scope
+Clone or download this repository, run `npm ci`, then use `./run help`. Wallet and
+Protocol come from pinned npm dependencies; no sibling checkout is required.
+`npm link` optionally exposes your checkout as `agentpay`.
 
-Source includes external-owner browser approval and a guarded Anvil test signer.
-Network identity never automatically selects the test signer. The recorded private
-single-owner journey is not real-network, multisig or production acceptance.
-Current release gates are in TODO. macOS startup remains unverified.
+[Developer guide](doc/develope.md) · [Skill integration](doc/runbooks/runtime-skill-client.md) ·
+[Architecture](doc/architecture.md) · [Contributing](CONTRIBUTING.md) · [Progress](progress.md)
 
-Keep keys, passwords, caller tokens and private Order data out of repositories and
-support messages. For a suspected compromise, follow
-[emergency payment stop](doc/runbooks/emergency-payment-stop.md) from a trusted device.
-Locking Wallet or disconnecting Market does not revoke on-chain spending permission.
+**Scope:** Linux is verified; macOS startup remains unverified. Local tests and
+Anvil rehearsals do not prove mainnet financial readiness. Locking Wallet or
+disconnecting Market does not revoke on-chain permission.
 
-Original User code is **MPL 2.0**. See [LICENSE](LICENSE), [third-party notices](NOTICE.md)
-and [security reporting](SECURITY.md). Wallet and Protocol retain their own licenses.
-
-## When setup needs help
-
-Run `agentpay health` from the affected installation for a read-only diagnostic
-report. It checks saved settings, chain contracts and reachable services, and gives
-next steps for failures. Both `health` and `status` ask the running Runtime to retry recent Order connection failures. You can send the report to support; it omits credentials,
-URLs, personal file paths and Order contents. It does not unlock Wallet, change
-settings or make a payment. See [diagnostics](doc/usage.md#diagnose-a-problem).
+**License:** [MPL 2.0](LICENSE). Wallet and Protocol retain their own licenses.
+[Third-party notices](NOTICE.md) · [Security reporting](SECURITY.md)

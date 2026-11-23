@@ -1,5 +1,11 @@
 # User work queue
 
+## Official onboarding — 2026-11-23
+
+- [x] Add Base official 1.2.2 pin, preserve Anvil mapping and review published ZIP.
+- [x] Refresh README official Market entry and first-use guidance.
+- [ ] Publish reviewed User update and align platform public test settings; participant works on a separate computer.
+
 - [x] Completed R11 consumer/state compatibility review. [Dispositions and evidence](records/compatibility-review-2026-11-19.md). Retained historical recovery and published interfaces have explicit exit conditions; no release or deployment.
 
 Updated 2026-11-16. Read [progress](../progress.md) for current source and published
@@ -61,9 +67,8 @@ experiment before launch. Select release blockers with the launch plan.
 
 - [x] Retained official Skill 1.1.0 download after current 1.2.1 was verified;
   current fixed-hash downloads and original test records are preserved.
-- [ ] Review/build/deploy candidate Agent template 0.1.2 and bundle 1.2.2 only in an
-  authorized release; then update User's reviewed executable digest. Source changes
-  alone do not authorize publication or replacement of the current 1.2.1 pin.
+- [x] Review the published official random bundle 1.2.2 and add its Base mapping in source; Anvil retains 1.2.1.
+- [ ] Publish the User release carrying this mapping. Generic Agent template 0.1.2 publication is a separate task; no package is released by this source change.
 - [ ] Complete official package/public settings handoff for the selected deployment.
 - [ ] Verify supported Agent harness discovery/tool permissions with maintained
   fixtures. No third-party Skill is required for installation acceptance.

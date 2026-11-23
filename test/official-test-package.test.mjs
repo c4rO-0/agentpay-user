@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import {
   OFFICIAL_TEST_PACKAGE,
+  officialTestPackageForNetwork,
   verifyOfficialTestBytes,
   verifyOfficialTestDigest,
   verifyOfficialTestSelection,
@@ -60,4 +61,16 @@ test("new tests require the pinned unmodified package; old material is recovery-
       null,
     ),
   );
+});
+
+test("network-specific pins reject another network's package without changing old selection", () => {
+  const base=officialTestPackageForNetwork(8453);
+  const rehearsal=officialTestPackageForNetwork(31337);
+  assert.equal(rehearsal,OFFICIAL_TEST_PACKAGE);
+  assert.equal(base.version,"1.2.2");
+  assert.doesNotThrow(()=>verifyOfficialTestDigest(base.sha256,base));
+  assert.throws(()=>verifyOfficialTestDigest(rehearsal.sha256,base),{code:"OFFICIAL_TEST_PACKAGE_MISMATCH"});
+  assert.throws(()=>verifyOfficialTestDigest(base.sha256,rehearsal),{code:"OFFICIAL_TEST_PACKAGE_MISMATCH"});
+  assert.equal(officialTestPackageForNetwork(84532),null);
+  assert.equal(officialTestPackageForNetwork("8453"),null);
 });

@@ -13,7 +13,15 @@ export const OFFICIAL_TEST_PACKAGE = Object.freeze({
 });
 // Maintainer-reviewed release data. Adding a supported deployment updates this
 // map and its reviewed ZIP; Market cannot add trust entries at runtime.
-export const OFFICIAL_TEST_DEPLOYMENTS = Object.freeze({31337: OFFICIAL_TEST_PACKAGE});
+export const OFFICIAL_TEST_DEPLOYMENTS = Object.freeze({
+  // Retain the original rehearsal pin; a release update never migrates a Wallet.
+  31337: OFFICIAL_TEST_PACKAGE,
+  8453: Object.freeze({
+    name: "agentpay-random",
+    version: "1.2.2",
+    sha256: "f49b96168a58cf3fa897c584a0ca1155d688fa13e2fd08a7fb168f4676111a73",
+  }),
+});
 export function officialTestPackageForNetwork(chainId) {
   if (!Number.isSafeInteger(chainId) || chainId < 1) return null;
   return Object.hasOwn(OFFICIAL_TEST_DEPLOYMENTS,chainId) ? OFFICIAL_TEST_DEPLOYMENTS[chainId] : null;

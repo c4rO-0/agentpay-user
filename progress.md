@@ -1,5 +1,9 @@
 # AgentPay User progress
 
+## Base official package and getting started — 2026-11-23
+
+Added the reviewed Base 8453 / Skill 1.2.2 pin while retaining Anvil. Fixed-version download and disposable installation passed; 17 focused regressions passed. No payment or release. The official Market entry and concise README layout are ready. See [record](doc/records/base-official-package-2026-11-23.md).
+
 ## User 0.3.26
 
 `agentpay status` checks the configured chain even when every saved Order has settled. A failed connection or unexpected chain is visible alongside the saved settlement counts. Run the same command after reconnecting to see the current result.

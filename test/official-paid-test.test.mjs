@@ -4,7 +4,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { runOfficialPaidTest } from "../src/official-paid-test.mjs";
-import { OFFICIAL_TEST_PACKAGE } from "../src/official-test-package.mjs";
+import { OFFICIAL_TEST_PACKAGE, officialTestPackageForNetwork } from "../src/official-test-package.mjs";
 import {
   mkdtemp,
   mkdir,
@@ -17,7 +17,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 const b32 = "0x" + "a".repeat(64);
-function fixture() {
+function fixture(chainId=31337) {
+  const OFFICIAL_TEST_PACKAGE=officialTestPackageForNetwork(chainId);
   let record = null,
     calls = 0,
     asked = 0,
@@ -29,7 +30,7 @@ function fixture() {
   const ref = {
     skillId: "0x" + "b".repeat(64),
     profileHash: "0x" + "c".repeat(64),
-    profile: { network: "eip155:31337", providerId: "provider:test" },
+    profile: { network: `eip155:${chainId}`, providerId: "provider:test" },
   };
   const base = {
     dataDir: "/tmp/official-test-fixture",
@@ -46,7 +47,7 @@ function fixture() {
       path.endsWith(`official-paid-test-${OFFICIAL_TEST_PACKAGE.version}.json`)
         ? record
         : {
-            chainId: 31337,
+            chainId,
             token: "0x" + "1".repeat(40),
             maxAmount: "1000000",
           },
@@ -62,13 +63,13 @@ function fixture() {
       service: { reference: ref },
     }),
     connect: async () => ({ runtimeUrl: "http://127.0.0.1:6490/" }),
-    tokenInfo: async () => ({ decimals: 6, symbol: "rUSDC" }),
+    tokenInfo: async () => ({ decimals: 6, symbol: chainId===8453?"USDC":"rUSDC" }),
     offer: async () => ({
       commercialReady: true,
       blockers: [],
       quote: {
         asset: "0x" + "1".repeat(40),
-        network: "eip155:31337",
+        network: `eip155:${chainId}`,
         providerId: "provider:test",
         skillId: ref.skillId,
         profileHash: ref.profileHash,
@@ -328,4 +329,16 @@ test("cancelled and failed tests do not display completion", async () => {
 test("an unsupported official test network never signs, quotes, executes or replaces saved requests", async()=>{
  const opts={dataDir:"/not-used",read:async()=>({chainId:12345}),write:()=>{},offer:async()=>assert.fail("must not quote"),execute:async()=>assert.fail("must not execute"),saveRecord:async()=>assert.fail("must not replace a record"),inspect:async()=>assert.fail("must not inspect another network's package")};
  assert.equal(await runOfficialPaidTest(opts),0);
+});
+
+test("Base official test still requires consent before creating a request", async () => {
+  const f=fixture(8453);
+  f.answer="q";
+  assert.equal(await runOfficialPaidTest(f.base),0);
+  assert.equal(f.record,null);
+  assert.match(f.lines.join("\n"),/USDC/);
+  f.answer="confirm";
+  assert.equal(await runOfficialPaidTest(f.base),0);
+  assert.ok(f.record.requestId);
+  assert.equal(f.record.acknowledged,true);
 });

@@ -17,7 +17,7 @@ logic or platform storage. No Settlement checkout or database access is required
 
 ## Shared Protocol dependency
 
-User and Wallet pin `@c4roa0/agentpay-protocol@0.14.3` from npm. Their lockfiles
+User and Wallet pin `@c4roa0/agentpay-protocol@0.14.4` from npm. Their lockfiles
 record integrity. The current repair gate still checks the exact package versions
 and shared Protocol dependency in `update-pair.json`; `typesDependency` is the
 retained v1 field name for that npm version. It is not a compatibility range.

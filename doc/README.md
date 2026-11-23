@@ -86,3 +86,5 @@ Current review: [mainnet static review](records/mainnet-static-review-2026-11-15
 - [Directory npm update verification](records/local-npm-update-2026-11-08.md): real package update and preflight boundary.
 
 - [Archived progress](archive/review-baseline-progress-2026-11-16.md) and [task baseline](archive/review-baseline-todo-2026-11-16.md): traceable history before consolidation.
+
+- [Base official package review](records/base-official-package-2026-11-23.md): pinned bytes, preserved rehearsal mapping and verification limits.

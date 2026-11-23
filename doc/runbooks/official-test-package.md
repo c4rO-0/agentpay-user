@@ -9,8 +9,16 @@ hash reported by the same server that supplies the ZIP.
 
 This pin applies only to the maintained onboarding test. Generic Runtime calls and
 ordinary Skill installation do not require the random service or this package.
-The current pin is the reviewed random Skill 1.2.1 private rehearsal package;
-it includes its service reference. It is not a production-network release.
+The reviewed source maps each supported network to its own package:
+
+| Network | Official random Skill |
+| --- | --- |
+| Anvil 31337 | 1.2.1, original rehearsal service |
+| Base 8453 | 1.2.2, the published official Provider service |
+
+The exact digest is recorded in `src/official-test-package.mjs`. Adding the Base
+mapping does not switch an existing Wallet's network or replace its saved test.
+The mapping reaches npm users only after a reviewed User release.
 
 ## Download a fixed Market version
 
@@ -60,13 +68,13 @@ invocation history. This exception cannot select a new package or start a replac
 purchase. Unknown/conflicting material stops for review. Old files are not deleted.
 Updating User does not restart a completed paid test or renew an expired Policy.
 
-For a new private rehearsal after updating User/Wallet and checking the new Policy,
+For a new payment check after updating User/Wallet and checking the active Policy,
 run `./run payment test`. This uses the installed pinned package directly, without changing
 the old selected package or its completed checkpoint. The first call shows the
 current quote and requires explicit confirmation; after consent it saves a new
 request identifier before invoking the Skill. A retry uses the saved identifier.
-This release's official test is private-Anvil-only and does not install a third-party
-Skill. Once a test has completed, the same command offers a new paid test with a new
+The test uses the package reviewed for the Wallet's network; on Base it spends real
+USDC through the published official service. It does not install a third-party Skill. Once a test has completed, the same command offers a new paid test with a new
 quote and explicit confirmation. The old completed record is archived before a new
 test. Cached replay alone is not a fresh payment-path check. Success confirms delivery
 and receipt acknowledgement; final Provider payout follows the Order schedule.
