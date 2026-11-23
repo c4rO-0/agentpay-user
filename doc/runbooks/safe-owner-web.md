@@ -2,7 +2,7 @@
 
 The external owner signer now opens a temporary local authorization website during
 setup, Policy renewal and Policy revocation. It requires an injected browser owner
-wallet (window.ethereum) and a validated Safe version: currently 1.3.0 or 1.4.1.
+wallet (window.ethereum) and a validated Safe version: currently 1.3.0, 1.4.1 or 1.5.0.
 Other Safe versions stop explicitly. WalletConnect/QR is not implemented.
 
 ## Local computer

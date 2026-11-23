@@ -92,7 +92,7 @@ async function page({
     });
   }
   const eventInterface = new eth.Interface([
-    `event ExecutionSuccess(bytes32 ${version === "1.4.1" ? "indexed " : ""}txHash,uint256 payment)`,
+    `event ExecutionSuccess(bytes32 ${version === "1.3.0" ? "" : "indexed "}txHash,uint256 payment)`,
   ]);
   const event = eventInterface.encodeEventLog(
     eventInterface.getEvent("ExecutionSuccess"),
@@ -232,8 +232,8 @@ test("missing multisig approvals and non-owner wallets cannot execute", async ()
   assert.equal(q.executed, 0);
 });
 
-test("Safe 1.3.0 real event encoding verifies execution", async () => {
-  const p = await page({ version: "1.3.0" });
+for (const version of ["1.3.0", "1.5.0"]) test(`Safe ${version} event encoding verifies execution`, async () => {
+  const p = await page({ version });
   await p.nodes.get("connect").onclick();
   await p.nodes.get("execute").onclick();
   assert.equal(p.executed, 1);
@@ -296,4 +296,12 @@ test("failed intent persistence prevents submitting the owner transaction", asyn
   await p.nodes.get("execute").onclick();
   assert.equal(p.executed, 0);
   assert.match(p.nodes.get("status").textContent, /Could not save/);
+});
+
+test("unknown Safe version is reported before approval", async () => {
+  const p = await page({ version: "2.0.0" });
+  await p.nodes.get("connect").onclick();
+  assert.match(p.nodes.get("status").textContent, /2\.0\.0/);
+  assert.equal(p.nodes.get("approve").disabled, true);
+  assert.equal(p.nodes.get("execute").disabled, true);
 });

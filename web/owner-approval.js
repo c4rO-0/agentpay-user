@@ -41,16 +41,17 @@ let provider,
   busy = false,
   connecting = false,
   contextChanged = false;
-const eventInterfaces = {
-  "1.3.0": new Interface([
+// Safe 1.3.0 stores the transaction hash in log data. Later verified
+// releases index it as a topic. Share the decoder across matching releases.
+const indexedEvents = new Interface(abi);
+const eventInterfaces = new Map([
+  ["1.3.0", new Interface([
     "event ExecutionSuccess(bytes32 txHash,uint256 payment)",
     "event ExecutionFailure(bytes32 txHash,uint256 payment)",
-  ]),
-  "1.4.1": new Interface([
-    "event ExecutionSuccess(bytes32 indexed txHash,uint256 payment)",
-    "event ExecutionFailure(bytes32 indexed txHash,uint256 payment)",
-  ]),
-};
+  ])],
+  ["1.4.1", indexedEvents],
+  ["1.5.0", indexedEvents],
+]);
 const storageKey = keccak256(toUtf8Bytes(JSON.stringify(plan)));
 let pending = window.agentpayJournalServer
   ? window.agentpayOwnerJournal
@@ -76,7 +77,7 @@ function executionEvents(receipt, version, hash) {
     .filter((l) => l.address?.toLowerCase() === plan.safe.toLowerCase())
     .map((l) => {
       try {
-        return eventInterfaces[version].parseLog(l);
+        return eventInterfaces.get(version).parseLog(l);
       } catch {
         return null;
       }
@@ -99,8 +100,8 @@ async function checked() {
       "Switch your owner wallet to the network shown above, then reconnect.",
     );
   const version = await safe.VERSION();
-  if (!["1.3.0", "1.4.1"].includes(version))
-    throw Error("This Safe version has not been validated by this guide.");
+  if (!eventInterfaces.has(version))
+    throw Error(`Safe version ${version} is not supported by this User release. Update AgentPay and reopen setup before approving.`);
   const owners = await safe.getOwners(),
     threshold = Number(await safe.getThreshold());
   if (!owners.some((a) => a.toLowerCase() === account.toLowerCase()))
