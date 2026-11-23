@@ -3,7 +3,7 @@
 ## Safe release monitoring
 
 - [x] Verify the upstream release on GitHub Anvil before publishing the setup changes.
-- [ ] Publish the reviewed User update with setup preflight and shared compatibility metadata.
+- [x] Published User 0.3.31 and verified its Safe compatibility metadata on npm.
 
 ## Official onboarding — 2026-11-23
 
