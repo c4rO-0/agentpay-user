@@ -117,6 +117,7 @@ function fixture() {
     };
   }
   const operations = {
+    setupMarket: async () => ({}),
     approveOwnerOperations: async () => false,
     finishLocalSetup: async () => {
       calls.push("autostart");
@@ -679,4 +680,24 @@ test("back after failed Safe preflight corrects local settings and resumes with 
   assert.equal(settings.ownerAddress, config.ownerAddress);
   assert.deepEqual(f.state.inputs.fields, {safe: at(9)});
   assert.equal(f.state.draft, null);
+});
+
+test("setup offers Market before payment and deferring the quote does not invoke the service", async () => {
+  const f = fixture();
+  let connections = 0;
+  f.operations.setupMarket = async () => { connections++; return {}; };
+  const result = await f.run(["continue", "later"]);
+  assert.equal(connections, 1);
+  assert.equal(result.officialTest, "deferred");
+  assert.equal(f.calls.some(call => call.startsWith("random-model")), false);
+  assert.match(f.output.at(-1), /payment path untested/);
+});
+
+test("a completed test is recovered by original Order ID after late discovery of the official mapping", async () => {
+  const f = fixture();
+  f.record("confirm");
+  const result = await f.run(["continue"], {marketBundleMetadataUrl:undefined, bundleSha256:undefined, maxUsageUnits:undefined});
+  assert.equal(result.stage, "tested");
+  assert.ok(f.output.at(-1).includes(f.state.checkpoint.orderId));
+  assert.ok(!f.calls.includes("random-model-ack-smoke.mjs:invoke"));
 });

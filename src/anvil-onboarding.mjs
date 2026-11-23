@@ -16,6 +16,7 @@ import {
   verifyOfficialTestSelection,
 } from "./official-test-package.mjs";
 import { restoreExistingPolicy } from "./restore-wallet.mjs";
+import { setupMarket, refreshSetupTest } from "./setup-market.mjs";
 import { finishLocalSetup } from "./setup-autostart.mjs";
 import { saveServiceSettings } from "./local-services.mjs";
 import { saveRuntimeConnection } from "./runtime-client.mjs";
@@ -402,6 +403,7 @@ async function runLockedOnboarding({
     executeAnvilOwnerCall,
     saveServiceSettings,
     finishLocalSetup,
+    setupMarket, refreshSetupTest,
     saveNewDraft,
     saveAuthorizationInputs,
     bindViaWallet,
@@ -427,7 +429,7 @@ async function runLockedOnboarding({
     ...operations,
   };
   validateConfig(config);
-  const OFFICIAL_TEST_PACKAGE=config.marketBundleMetadataUrl ? officialTestPackageForNetwork(config.chainId) : null;
+  let OFFICIAL_TEST_PACKAGE=config.marketBundleMetadataUrl ? officialTestPackageForNetwork(config.chainId) : null;
   dataDir = resolve(dataDir);
   const draftPath = join(dataDir, "runtime", "authorization-draft.json");
   const walletDir = join(dataDir, "wallet");
@@ -487,6 +489,7 @@ async function runLockedOnboarding({
     "AgentPay · Wallet setup",
     `Connected to network eip155:${config.chainId}.`,
   );
+  let marketStep;
   let checkedFor = null,
     advancing = false;
   while (true) {
@@ -575,6 +578,15 @@ async function runLockedOnboarding({
     const checkpoint = await ops.privateJson(
       join(dataDir, "runtime", "model-ack-smoke.json"),
     );
+    // Older installations may have discovered the test after setup. Recover
+    // an existing request from its verified local package without a new lookup.
+    if (!OFFICIAL_TEST_PACKAGE && checkpoint && installed) {
+      const pin = officialTestPackageForNetwork(config.chainId);
+      if (pin && installed.bundle?.sha256 === pin.sha256) {
+        OFFICIAL_TEST_PACKAGE = pin;
+        config = {...config, bundleSha256:pin.sha256, maxUsageUnits:1};
+      }
+    }
     if(OFFICIAL_TEST_PACKAGE)verifyOfficialTestSelection(installed, checkpoint, config.bundleSha256, OFFICIAL_TEST_PACKAGE);
     let completed = null;
     if (checkpoint && OFFICIAL_TEST_PACKAGE) {
@@ -938,12 +950,23 @@ async function runLockedOnboarding({
         write("Complete chain authorization and local binding first.");
         continue;
       }
+      if (["install","check","test"].includes(action) && !marketStep) {
+        const connection = await ops.setupMarket({dataDir, ask, write});
+        if (connection.paused) return {completed:false, stage:"quit", next};
+        if (!config.marketBundleMetadataUrl && !checkpoint) {
+          config = await ops.refreshSetupTest(config, connection.origin, await ops.privateJson(join(dataDir, "user-deployment.json")));
+          OFFICIAL_TEST_PACKAGE = config.marketBundleMetadataUrl ? officialTestPackageForNetwork(config.chainId) : null;
+        }
+        marketStep = connection;
+        // Re-evaluate any installed package against the newly discovered pin.
+        if (OFFICIAL_TEST_PACKAGE) continue;
+      }
       if (["install","check","test"].includes(action) && !OFFICIAL_TEST_PACKAGE) {
         write(
           "Wallet authorization is ready. The official connectivity package for this network is not configured yet. Your binding is kept.",
         );
         await ops.finishLocalSetup({dataDir,config,ask,write});
-        step("Setup complete", "Wallet and Runtime are running. No reviewed official test is available for this network in this User release. Existing test records are kept; no test purchase was made.");
+        step("Wallet ready · payment path untested", officialTestPackageForNetwork(config.chainId) ? "Official test settings are unavailable. Resume agentpay setup after Market publishes the test configuration." : "This User release has no reviewed official test for this network.");
         return { completed: true, stage: "configured", officialTest:"unavailable" };
       }
       if (action === "install") {
@@ -1050,7 +1073,7 @@ async function runLockedOnboarding({
           await ops.finishLocalSetup({ dataDir, config, ask, write });
           step(
             "Setup complete",
-            "Recorded connectivity test verified. You can now browse Market and choose other Skills. Wallet and Runtime remain running. This guide has finished; you can close this terminal.",
+            `Payment path verified. Order: ${completed.orderId}. This guide has finished.`,
           );
           return { completed: true, stage: "tested" };
         }
@@ -1090,13 +1113,17 @@ async function runLockedOnboarding({
             "4/4 Run the paid test",
             `Current test quote: up to ${max} ${config.tokenSymbol || "tokens"}.\n\nUse the official random-number Skill to test your setup.\nThe price may change before purchase, within your spending limits.\n\nAfter a successful test, Wallet confirms receipt automatically, allowing payment to the Provider.\n`,
           );
-          if (
-            (await promptChoice(
+          const decision = await promptChoice(
               ask,
-              "Type 'confirm' to run the paid test, or 'q' to return",
-              ["confirm", "q"],
-            )) === "q"
-          ) {
+              "Type 'confirm' to run the paid test, 'later' to finish setup without testing, or 'q' to return",
+              ["confirm", "later", "q"],
+            );
+          if (decision === "later") {
+            await ops.finishLocalSetup({dataDir,config,ask,write});
+            step("Wallet ready · payment path untested", "Paid test deferred. Run agentpay setup to resume.");
+            return {completed:true, stage:"configured", officialTest:"deferred"};
+          }
+          if (decision === "q") {
             advancing = false;
             continue;
           }
@@ -1108,7 +1135,7 @@ async function runLockedOnboarding({
           config.runtimeUrl,
         ]);
         write("Test result verified. Confirming receipt…");
-        await ops.captureNode(script("random-model-ack-smoke.mjs"), [
+        const receipt = await ops.captureNode(script("random-model-ack-smoke.mjs"), [
           "confirm",
           dataDir,
           config.settlementUrl,
@@ -1117,7 +1144,7 @@ async function runLockedOnboarding({
         await ops.finishLocalSetup({ dataDir, config, ask, write });
         step(
           "Setup complete",
-          "Connectivity check passed. You can now browse Market and choose other Skills. Wallet and Runtime remain running. This guide has finished; you can close this terminal.",
+          `Payment path verified.${receipt?.orderId ? " Order: " + receipt.orderId : ""} This guide has finished.`,
         );
         return { completed: true, stage: "tested" };
       }

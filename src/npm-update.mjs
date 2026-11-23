@@ -1,3 +1,4 @@
+import {inspectLocalSetup} from "./local-setup-state.mjs";
 import {reportCommandFailure,childCause} from "./command-diagnostics.mjs";
 import {atomicWritePrivate, assertPrivateFile} from './private-journal-files.mjs';
 import {withInstallationOperation, runInstallationCommand} from './installation-operation.mjs';
@@ -189,6 +190,8 @@ async function updateUnderLock({
       }
       write(`User ${current.version} is current. Checking the official test Skill.`);
       await officialTest({userDir,dataDir,write});
+      const setup = await inspectLocalSetup(dataDir);
+      write("Next: " + (setup.next || "agentpay status"));
       return 0;
     }
     // Read the installed dependency, not the version requested by User's manifest.
@@ -265,7 +268,8 @@ async function updateUnderLock({
       if(output) write(output);
     } else {
       write('3/3 Program files are ready. Local setup has not been configured.');
-      write('Next: agentpay install --market YOUR_MARKET_URL');
+      const setup = await inspectLocalSetup(dataDir);
+      write('Next: ' + (setup.next || 'agentpay status'));
     }
     await unlink(progressPath);
     write(`User ${metadata.version} installed. No paid test was started.`);

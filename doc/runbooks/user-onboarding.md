@@ -29,9 +29,11 @@ keys, histories and saved drafts are retained on retry. Approve only the intende
 network, Safe, amounts and expiry in your owner wallet. See
 [browser approval](safe-owner-web.md).
 
+Once Wallet is unlocked, setup offers to connect it to Market so you can view its Orders online. Choose `skip` to continue without signing in. An existing connection for the current Policy is reused.
+
 The official connectivity test asks for its maximum price before making a paid
 Order. It uses a reviewed package digest pinned in User. Download/install alone
-must not be mistaken for spending permission or payment.
+does not create an Order. Choose `later` at the payment prompt to finish without testing. Return with `agentpay setup` to continue the original test. A verified test shows its Order ID.
 
 ## Resume and operate
 
@@ -43,9 +45,9 @@ do not delete Wallet state to bypass an error. Deployment changes are handled by
 ```sh
 agentpay status
 agentpay wallet unlock
-agentpay market connect
-agentpay payment test
 ```
+
+To link Market separately, run `agentpay market connect`. To deliberately start a new payment-path test after a successful one, run `agentpay payment test` and review its price.
 
 Runtime and Wallet run locally. On Linux, the guide can configure systemd user
 services. Wallet starts locked after a restart; [service commands](local-autostart.md)

@@ -130,6 +130,7 @@ export async function connectMarket(
   args,
   {
     dataDir: chosen,
+    inSetup = false,
     ask = askTerminal,
     write = console.log,
     wallet = localWalletAdmin,
@@ -419,7 +420,7 @@ Runtime will restart; your spending permission stays the same.`);
             write("Market connected this Wallet, but the local shortcut could not be saved. Use --market URL next time.");
           }
         }
-        completion = `\nWallet connected: ${label}\nView this Wallet’s Orders in Market → Account → My Orders.\nManage or disconnect it in Market Settings. This guide has finished.`;
+        completion = `\nWallet connected: ${label}\nView this Wallet’s Orders in Market → Account → My Orders.\nManage or disconnect it in Market Settings.${inSetup ? "" : " This guide has finished."}`;
         return 0;
       } catch (e) {
         if (!["ORDER_CONNECTION_LABEL_TAKEN", "ORDER_CONNECTION_LABEL_INVALID"].includes(e.code)) throw e;

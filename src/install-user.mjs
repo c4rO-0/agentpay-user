@@ -223,6 +223,7 @@ async function installUnderLock({
     }
     await importSetupFiles(privateDir, userDir);
     await saveJson(join(privateDir, "user-deployment.json"), config);
+    await saveJson(join(privateDir, "install-market.json"), {origin:new URL(endpoint).origin});
     state.dataDir = privateDir;
     await saveJson(statePath, state);
     write(

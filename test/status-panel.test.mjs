@@ -302,7 +302,7 @@ test("Market renewal warning is visible alongside higher priority problems", () 
   const panel = renderStatusPanel(ready);
   assert.equal(panel.code, 1);
   assert.match(panel.text, /Market connection needs updating/);
-  assert.match(panel.text, /> Next\n  agentpay market connect/);
+  assert.match(panel.text, /> Next\n  agentpay setup/);
   assert.match(panel.text, /\[OK\] Enabled for both services/);
   const locked = renderStatusPanel({
     ...ready,
@@ -310,7 +310,7 @@ test("Market renewal warning is visible alongside higher priority problems", () 
   });
   assert.match(locked.text, /Waiting for unlock/);
   assert.match(locked.text, /Current Policy not connected/);
-  assert.match(locked.text, /Continue: agentpay market connect/);
+  assert.match(locked.text, /Continue: agentpay setup/);
   assert.equal(
     renderStatusPanel({ ...ready, market: { state: "none" } }).code,
     0,

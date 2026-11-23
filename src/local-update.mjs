@@ -303,7 +303,7 @@ async function repairUnderLock({
       "Keys, spending permission and Order records were kept. Login startup preference is unchanged.",
     );
     await officialTest({ userDir, dataDir, write });
-    write(scope.active ? "Next: agentpay wallet unlock\nThen: agentpay status" : "To switch to this installation: agentpay service start");
+    write(scope.active ? "Next: agentpay wallet unlock\nTo resume onboarding: agentpay setup" : "To switch to this installation: agentpay service start");
     return 0;
   } catch (error) {
     const effect=phase==='preflight'

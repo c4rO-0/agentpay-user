@@ -61,6 +61,8 @@ removing the folder, use `uninstall` to remove its managed services.
 | Check the complete payment path | `agentpay payment test` |
 | Review and apply an update | `agentpay update` |
 
+Setup offers to connect your Wallet to Market, then asks whether to run the paid test. Use `agentpay setup` to resume.
+
 The optional payment test uses the official random-number Skill. It is a **paid
 request**, with its current price shown before confirmation. Installing or updating
 User does not authorize a purchase. If a request is interrupted, preserve its

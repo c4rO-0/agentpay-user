@@ -434,8 +434,8 @@ export function renderStatusPanel(
     title = "Platform deployment not checked online";
     level = "wait";
     detail =
-      "Only downloaded settings were compared. Connect Market to check current deployment.";
-    next = "agentpay market connect";
+      "Only downloaded settings were compared. Continue setup for the optional Market connection.";
+    next = "agentpay setup";
   } else if (model.deployment?.state === "unknown") {
     title = "Payment availability could not be confirmed";
     level = "wait";
@@ -499,7 +499,7 @@ export function renderStatusPanel(
     level = "wait";
     detail =
       "Website access to this Policy is not confirmed. Local payments are unaffected.";
-    next = "agentpay market connect";
+    next = "agentpay setup";
   }
   if (model.market?.state === "address_pending") {
     title = "Platform address update incomplete";
@@ -626,7 +626,7 @@ export function renderStatusPanel(
               ? `  ${badge("wait")} Current Policy not connected`
               : `  ${badge("wait")} Could not check saved connection`,
       );
-      if (marketPending) lines.push("  Continue: agentpay market connect");
+      if (marketPending) lines.push("  Continue: agentpay setup");
     }
   }
   if (r && r.inventory !== "complete")
@@ -661,6 +661,8 @@ export function renderStatusPanel(
         `  ${count(r.orders.legacy)} older ${r.orders.legacy === 1 ? "request" : "requests"} preserved.`,
       );
   }
+  if (!next && level === "ok" && r?.inventory === "complete" && r.orders.total === 0)
+    next = "agentpay setup · Review the optional paid test with the official random-number Skill.";
   if (next)
     lines.push(
       "",

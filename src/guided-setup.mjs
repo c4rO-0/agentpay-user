@@ -75,7 +75,10 @@ export async function ensureGuidedConfig({
           : ["module", "token", "factory", "registry"].includes(key)
             ? String(value).toLowerCase()
             : value;
-      const changed = keys.filter(
+      // A newly advertised optional test is verified against the User pin later.
+      // Keep all other setup and existing package-source comparisons intact.
+      const addingTest = !existing.marketBundleMetadataUrl && publicConfig.marketBundleMetadataUrl;
+      const changed = keys.filter(key => !(addingTest && ["marketBundleMetadataUrl", "maxUsageUnits"].includes(key))).filter(
         (key) =>
           normalized(key, existing[key]) !== normalized(key, publicConfig[key]),
       );
