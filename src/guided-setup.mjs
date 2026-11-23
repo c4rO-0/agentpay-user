@@ -166,6 +166,9 @@ export async function runGuidedEntry({
     });
     try {
       return await terminal.question(`${prompt}\n> `);
+    } catch (error) {
+      if (error.name === "AbortError") return "q";
+      throw error;
     } finally {
       terminal.close();
     }
@@ -176,7 +179,12 @@ export async function runGuidedEntry({
     ask,
     write,
     validateConfig,
+  }).catch(error => {
+    if (error.code !== "SETUP_CANCELLED") throw error;
+    write("Setup paused. Run agentpay setup to continue.");
+    return null;
   });
+  if (!configPath) return 0;
   return await new Promise((resolve, reject) => {
     const child = spawn(
       process.execPath,

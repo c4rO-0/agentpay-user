@@ -19,6 +19,7 @@ export function failureGuidance(error) {
   }
   const has = (...values) => values.some((c) => codes.includes(c));
   const requestFailures = {
+    MARKET_SETTINGS_DOWNLOAD_FAILED: ["Could not download public settings from Market.", "Check the Market address and network connection, then retry installation. If settings were already downloaded, run agentpay setup to continue."],
     SERVICE_MAINTENANCE: ["The service is under maintenance.", "Wait for maintenance to end, then resume the same request."],
     SERVICE_NOT_READY: ["The service is not ready to accept this request.", "Check the service status, then resume the same request."],
     ORDER_ALREADY_SETTLED: ["Payment is complete, but the original result is unavailable locally.", "Run agentpay orders list to review recovery options. Do not pay again for this result."],

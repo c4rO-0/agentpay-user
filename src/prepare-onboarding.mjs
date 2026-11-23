@@ -2,7 +2,7 @@
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
 import { getAddress } from "ethers";
-import { readFile, open, unlink } from "node:fs/promises";
+import { readFile, open, unlink, lstat } from "node:fs/promises";
 const fields = [
   "mode",
   "chainId",
@@ -89,7 +89,11 @@ export async function prepareOnboarding({
   if (raw.length > 16384) throw Error("Deployment file is too large.");
   const deployment = validatePublicDeployment(JSON.parse(raw.toString("utf8")));
   // Exclusive creation also rejects a symlink or existing participant configuration.
-  const file = await open(outputPath, "wx", 0o600);
+  if (await lstat(outputPath).catch(error => {
+    if (error.code !== "ENOENT") throw error;
+    return null;
+  })) throw Object.assign(Error("Local settings already exist."), {code: "EEXIST"});
+  let file;
   let saved = false;
   try {
     const section = (title) =>
@@ -104,7 +108,7 @@ export async function prepareOnboarding({
       for (;;) {
         const value = (await ask(prompt)).trim();
         if (value.toLowerCase() === "q")
-          throw Error("Cancelled; no configuration saved.");
+          throw Object.assign(Error("Cancelled; no configuration saved."), {code: "SETUP_CANCELLED"});
         try {
           return parse(value);
         } catch {
@@ -192,7 +196,7 @@ export async function prepareOnboarding({
     for (;;) {
       const answer = (await ask("Type 'confirm' to save, or 'q' to cancel")).trim().toLowerCase();
       if (answer === 'confirm') break;
-      if (answer === 'q') throw Error('Cancelled; no configuration saved.');
+      if (answer === 'q') throw Object.assign(Error("Cancelled; no configuration saved."), {code: "SETUP_CANCELLED"});
       write("Enter 'confirm' to save, or 'q' to cancel. Your entries are kept while you choose.");
     }
     const config = {
@@ -202,6 +206,7 @@ export async function prepareOnboarding({
       ownerSigner,
       runtimeUrl: `http://127.0.0.1:${port}`,
     };
+    file = await open(outputPath, "wx", 0o600);
     await file.writeFile(JSON.stringify(config, null, 2) + "\n");
     await file.sync();
     saved = true;
@@ -212,7 +217,7 @@ export async function prepareOnboarding({
     );
     return config;
   } finally {
-    await file.close();
-    if (!saved) await unlink(outputPath);
+    await file?.close();
+    if (file && !saved) await unlink(outputPath);
   }
 }

@@ -194,9 +194,9 @@ async function installUnderLock({
         logPath,
         `Market settings request failed: ${endpoint} (${safeCode})\n`,
       );
-      throw Error(
+      throw Object.assign(Error(
         `Cannot download Market settings from ${endpoint} (${safeCode}). Check the Market address and your network connection, then retry installation.`,
-      );
+      ), {code: "MARKET_SETTINGS_DOWNLOAD_FAILED", cause: error});
     }
     if (!response.ok)
       throw Error(
