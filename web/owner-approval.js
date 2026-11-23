@@ -45,12 +45,11 @@ let provider,
 // releases index it as a topic. Share the decoder across matching releases.
 const indexedEvents = new Interface(abi);
 const eventInterfaces = new Map([
-  ["1.3.0", new Interface([
+  ["unindexed", new Interface([
     "event ExecutionSuccess(bytes32 txHash,uint256 payment)",
     "event ExecutionFailure(bytes32 txHash,uint256 payment)",
   ])],
-  ["1.4.1", indexedEvents],
-  ["1.5.0", indexedEvents],
+  ["indexed", indexedEvents],
 ]);
 const storageKey = keccak256(toUtf8Bytes(JSON.stringify(plan)));
 let pending = window.agentpayJournalServer
@@ -77,7 +76,7 @@ function executionEvents(receipt, version, hash) {
     .filter((l) => l.address?.toLowerCase() === plan.safe.toLowerCase())
     .map((l) => {
       try {
-        return eventInterfaces.get(version).parseLog(l);
+        return eventInterfaces.get(window.agentpaySafeVersions[version]).parseLog(l);
       } catch {
         return null;
       }
@@ -100,8 +99,8 @@ async function checked() {
       "Switch your owner wallet to the network shown above, then reconnect.",
     );
   const version = await safe.VERSION();
-  if (!eventInterfaces.has(version))
-    throw Error(`Safe version ${version} is not supported by this User release. Update AgentPay and reopen setup before approving.`);
+  if (!Object.hasOwn(window.agentpaySafeVersions, version) || !eventInterfaces.has(window.agentpaySafeVersions[version]))
+    throw Error(`Safe version ${version} is not supported by this User release. Check AgentPay release notes for a version supporting this Safe.`);
   const owners = await safe.getOwners(),
     threshold = Number(await safe.getThreshold());
   if (!owners.some((a) => a.toLowerCase() === account.toLowerCase()))

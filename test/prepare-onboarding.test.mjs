@@ -139,7 +139,7 @@ test('default owner wallet and invalid confirmation preserve the entered setting
  await writeFile(inputPath,JSON.stringify(config));
  const answers=['0x'+'5'.repeat(40),'0x'+'6'.repeat(40),'','','','yes','confirm'];
  const output=[];
- const result=await prepareOnboarding({inputPath,outputPath,ask:async()=>{assert.ok(answers.length);return answers.shift();},write:s=>output.push(s)});
+ const result=await prepareOnboarding({inputPath,outputPath,inspectSafe:async()=>({version:"1.5.0"}),ask:async()=>{assert.ok(answers.length);return answers.shift();},write:s=>output.push(s)});
  assert.equal(result.ownerSigner,'external');
  assert.equal(result.safe,'0x'+'5'.repeat(40));
  assert.match(output.join('\n'),/recommended/);
@@ -152,4 +152,34 @@ test("generic deployment accepts no official package but rejects a partial mappi
  assert.equal(validatePublicDeployment({...generic,chainId:12345}).marketBundleMetadataUrl,undefined);
  assert.throws(()=>validatePublicDeployment({...generic,bundleSha256:"a".repeat(64)}));
  assert.throws(()=>validatePublicDeployment({...generic,finality:{confirmations:0,fundingScanOverlapBlocks:12,unpaidConfirmationBlocks:12}}));
+});
+
+test("external setup retries the same Safe and lets the owner correct an address before saving", async t => {
+  const dir = await mkdtemp(join(tmpdir(), "safe-preflight-"));
+  t.after(() => rm(dir, {recursive:true, force:true}));
+  const inputPath = join(dir, "public.json"), outputPath = join(dir, "local.json");
+  await writeFile(inputPath, JSON.stringify(config));
+  const safe = "0x" + "5".repeat(40), wrong = "0x" + "6".repeat(40), owner = "0x" + "7".repeat(40);
+  const answers = [safe, wrong, "", "retry", "back", safe, owner, "", "confirm"];
+  const inspected = [];
+  const result = await prepareOnboarding({
+    inputPath, outputPath, ask: async () => { assert.ok(answers.length); return answers.shift(); }, write: () => {},
+    inspectSafe: async (_, address, signer) => {
+      await assert.rejects(stat(outputPath), {code:"ENOENT"});
+      inspected.push([address, signer]);
+      if (inspected.length === 1) return {problem:"RPC unavailable"};
+      return signer === owner ? {version:"1.5.0"} : {problem:"Wrong owner"};
+    },
+  });
+  assert.deepEqual(inspected, [[safe, wrong], [safe, wrong], [safe, owner]]);
+  assert.equal(result.ownerAddress, owner);
+});
+
+test("an unsupported Safe gets an update recommendation only for a published compatible User", async () => {
+  const {unsupportedSafeMessage} = await import("../src/check-setup-safe.mjs");
+  const latest = {name:"@c4roa0/agentpay-user", version:"99.0.0", agentpaySafeVersions:{"1.6.0":"indexed"}};
+  const registry = async () => new Response(JSON.stringify(latest));
+  assert.match(await unsupportedSafeMessage("1.6.0", registry), /Update User and resume/);
+  assert.match(await unsupportedSafeMessage("2.0.0", registry), /No compatible update/);
+  assert.match(await unsupportedSafeMessage("1.6.0", async () => {throw Error();}), /Could not confirm an update/);
 });

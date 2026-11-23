@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { checkSetupSafe } from "./check-setup-safe.mjs";
 import { getAddress } from "ethers";
 import { readFile, open, unlink, lstat } from "node:fs/promises";
 const fields = [
@@ -84,6 +85,7 @@ export async function prepareOnboarding({
   ask,
   write,
   continueAutomatically = false,
+  inspectSafe = checkSetupSafe,
 }) {
   const raw = await readFile(inputPath);
   if (raw.length > 16384) throw Error("Deployment file is too large.");
@@ -121,31 +123,35 @@ export async function prepareOnboarding({
       if (result === "0x" + "0".repeat(40)) throw Error();
       return result;
     };
-    section("1/3 · Safe");
-    write(
-      "The Safe holds your purchase funds. Enter its account address on the network shown above.",
-    );
-    const safe = await field(
-      "Safe account address (0x…)",
-      address,
-      "Enter a valid Safe address: 0x followed by 40 hexadecimal characters.",
-    );
-    section("2/3 · Safe owner");
-    write(
-      "The owner is a wallet allowed to approve actions for the Safe. It has its own address.",
-    );
-    write(
-      "Enter a public address of one Safe owner. Approval still requires the configured Safe signature threshold.",
-    );
-    const ownerAddress = await field(
-      "Safe owner address (0x…)",
-      (value) => {
-        const a = address(value);
-        if (a === safe) throw Error();
-        return a;
-      },
-      "Enter a valid owner address, different from the Safe address.",
-    );
+    let safe, ownerAddress;
+    async function enterAddresses() {
+      section("1/3 · Safe");
+      write(
+        "The Safe holds your purchase funds. Enter its account address on the network shown above.",
+      );
+      safe = await field(
+        "Safe account address (0x…)",
+        address,
+        "Enter a valid Safe address: 0x followed by 40 hexadecimal characters.",
+      );
+      section("2/3 · Safe owner");
+      write(
+        "The owner is a wallet allowed to approve actions for the Safe. It has its own address.",
+      );
+      write(
+        "Enter a public address of one Safe owner. Approval still requires the configured Safe signature threshold.",
+      );
+      ownerAddress = await field(
+        "Safe owner address (0x…)",
+        (value) => {
+          const a = address(value);
+          if (a === safe) throw Error();
+          return a;
+        },
+        "Enter a valid owner address, different from the Safe address.",
+      );
+    }
+    await enterAddresses();
     section("Owner approval");
     write(
       "Use your own wallet, such as MetaMask, to approve Safe operations (recommended). The test signer is only for a prepared local Anvil rehearsal.",
@@ -169,6 +175,20 @@ export async function prepareOnboarding({
       },
       "Press Enter for My wallet. Type test only for a prepared local Anvil signer.",
     );
+    while (ownerSigner === "external") {
+      write("Checking Safe version and ownership on the selected network…");
+      const result = await inspectSafe(deployment, safe, ownerAddress);
+      if (result.version) {
+        write(`eip155:${deployment.chainId} · Safe ${result.version} · Owner verified`);
+        break;
+      }
+      write(result.problem);
+      const choice = await field("Type 'retry' to check again, 'back' to edit addresses, or 'q' to quit", value => {
+        if (!["retry", "back"].includes(value)) throw Error();
+        return value;
+      }, "Enter retry, back or q.");
+      if (choice === "back") await enterAddresses();
+    }
     section("3/3 · Local Runtime");
     write(
       "Your Agent connects to Runtime on this computer. Keep the default unless the port is already in use.",

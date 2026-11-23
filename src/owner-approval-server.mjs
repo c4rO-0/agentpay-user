@@ -3,6 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import manifest from "../package.json" with {type: "json"};
+const safeVersions = manifest.agentpaySafeVersions;
 import { constants } from "node:fs";
 import { createServer } from "node:http";
 import { randomBytes } from "node:crypto";
@@ -88,7 +90,8 @@ export async function ownerAssets(input) {
     ],
     [
       "owner-approval.js",
-      await approvalAsset(new URL("../web/owner-approval.js", import.meta.url)),
+      Buffer.concat([Buffer.from(`window.agentpaySafeVersions=${JSON.stringify(safeVersions)};\n`),
+        await approvalAsset(new URL("../web/owner-approval.js", import.meta.url))]),
     ],
     [
       "ethers.js",

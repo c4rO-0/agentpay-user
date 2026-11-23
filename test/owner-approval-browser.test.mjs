@@ -4,6 +4,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import manifest from "../package.json" with {type: "json"};
+const safeVersions = manifest.agentpaySafeVersions;
 import vm from "node:vm";
 import * as eth from "ethers";
 const at = (n) => "0x" + String(n).repeat(40),
@@ -173,6 +175,7 @@ async function page({
       },
     },
     window: {
+      agentpaySafeVersions: safeVersions,
       agentpayOwnerPlan: plan,
       agentpayOwnerJournal: pending
         ? {

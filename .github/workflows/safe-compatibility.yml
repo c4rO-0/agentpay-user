@@ -1,0 +1,84 @@
+name: Check official Safe compatibility
+on:
+  schedule:
+    - cron: '27 6 * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/safe-compatibility.yml'
+      - '.github/checks/verify-safe.mjs'
+permissions:
+  contents: read
+concurrency:
+  group: safe-compatibility
+  cancel-in-progress: false
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    outputs:
+      version: ${{ steps.safe.outputs.version }}
+      verify: ${{ steps.safe.outputs.verify }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - id: safe
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const { data } = await github.rest.repos.getLatestRelease({owner:'safe-fndn', repo:'safe-smart-account'});
+            const match = /^v(\d+\.\d+\.\d+)$/.exec(data.tag_name);
+            if (!match || data.draft || data.prerelease) throw Error('Unexpected official stable release');
+            const version = match[1];
+            const known = Object.hasOwn(JSON.parse(require('node:fs').readFileSync('package.json', 'utf8')).agentpaySafeVersions, version);
+            core.setOutput('version', version);
+            core.setOutput('verify', !known || context.eventName !== 'schedule');
+            if (known) return;
+            const title = `Validate Safe ${version} owner approval`;
+            const issues = github.paginate.iterator(github.rest.issues.listForRepo, {...context.repo, state:'all', per_page:100});
+            for await (const page of issues) if (page.data.some(i => !i.pull_request && i.title === title)) return;
+            await github.rest.issues.create({...context.repo, title, body:
+              `Official release: ${data.html_url}\n\nCompatibility run: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\n\nReview the contract results and receipt layout before adding support and releasing User.`});
+  verify:
+    needs: discover
+    if: needs.discover.outputs.verify == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SAFE_VERSION: ${{ needs.discover.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22.22.3
+      - run: npm ci --ignore-scripts
+      - name: Read reviewed Protocol version
+        id: protocol
+        run: node -e 'const v=require("./package.json").dependencies["@c4roa0/agentpay-protocol"]; if(!/^\d+\.\d+\.\d+$/.test(v)) process.exit(1); require("fs").appendFileSync(process.env.GITHUB_OUTPUT,"tag=v"+v+"\n")'
+      - uses: actions/checkout@v6
+        with:
+          repository: c4rO-0/agentpay-protocol
+          ref: ${{ steps.protocol.outputs.tag }}
+          path: protocol
+          persist-credentials: false
+      - uses: foundry-rs/foundry-toolchain@v1
+      - run: forge build --root protocol/contracts
+      - name: Exercise published Safe contracts on isolated Anvil
+        run: |
+          mkdir "$RUNNER_TEMP/safe-artifacts"
+          cd "$RUNNER_TEMP/safe-artifacts"
+          archive=$(npm pack --ignore-scripts --silent "@safe-global/safe-smart-account@$SAFE_VERSION")
+          tar -xzf "$archive" -- package/build/artifacts/contracts/{Safe.sol/Safe.json,SafeL2.sol/SafeL2.json,proxies/SafeProxy.sol/SafeProxy.json}
+          cd "$GITHUB_WORKSPACE"
+          anvil --host 127.0.0.1 --port 8545 --chain-id 31337 --silent &
+          chain_pid=$!
+          trap 'kill "$chain_pid" || true' EXIT
+          for i in {1..20}; do cast chain-id --rpc-url http://127.0.0.1:8545 >/dev/null 2>&1 && break; sleep 1; done
+          node .github/checks/verify-safe.mjs "$SAFE_VERSION" "$RUNNER_TEMP/safe-artifacts/package/build/artifacts/contracts" protocol/contracts/out

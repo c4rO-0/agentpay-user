@@ -102,3 +102,25 @@ operations are skipped after chain checks. Revoking the old permission alone doe
 not prevent returning to edit the new draft. Once creation approval/execution has
 been prepared for the wallet, the draft is protected against changes; verify the
 original operation instead. Exporting the portable page also protects its draft.
+
+## If setup flags your Safe
+
+During initial setup with an external owner wallet, User reads the network, Safe
+version and owner list before creating a Session Key. Use `retry` after a network
+interruption to keep the two addresses, or `back` to change them. For an
+unsupported Safe, User checks the latest npm package metadata for a compatible
+update. The approval page checks the connected chain and Safe again before signing.
+
+## Maintaining Safe compatibility
+
+The compatibility table is `agentpaySafeVersions` in User’s package.json. Each
+entry identifies how the Safe encodes its execution receipt. The daily **Check
+official Safe compatibility** GitHub Action checks the latest stable upstream
+release. For an unknown release it opens one issue per version and exercises the
+official Safe and SafeL2 proxy contracts with AgentPay on isolated Anvil. A manual
+workflow run also verifies the current upstream release when already supported.
+
+Review the run’s single-owner and two-owner results, including Module enablement,
+Policy creation, revocation and receipt decoding. A missing matching npm artifact
+or changed ABI requires investigation. Add the version to the table and release
+User only after review. The candidate check does not publish packages.

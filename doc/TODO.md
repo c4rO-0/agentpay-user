@@ -1,5 +1,10 @@
 # User work queue
 
+## Safe release monitoring
+
+- [ ] After merging the workflow, run **Check official Safe compatibility** manually and inspect the Anvil results.
+- [ ] Publish the reviewed User update with setup preflight and shared compatibility metadata.
+
 ## Official onboarding — 2026-11-23
 
 - [x] Add Base official 1.2.2 pin, preserve Anvil mapping and review published ZIP.

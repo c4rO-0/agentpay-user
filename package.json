@@ -2,6 +2,11 @@
   "name": "@c4roa0/agentpay-user",
   "version": "0.3.30",
   "type": "module",
+  "agentpaySafeVersions": {
+    "1.3.0": "unindexed",
+    "1.4.1": "indexed",
+    "1.5.0": "indexed"
+  },
   "dependencies": {
     "@c4roa0/agentpay-protocol": "0.14.4",
     "@c4roa0/agentpay-wallet": "0.3.8",
