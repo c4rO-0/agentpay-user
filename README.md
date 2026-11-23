@@ -10,26 +10,6 @@ User runs the connection between your AI Agent's Skills and paid services. Set a
 budget in your Safe, approve it with your owner wallet, and let eligible purchases
 run within those limits. The matching local Wallet is installed automatically.
 
-## Who controls spending, and where does the money go?
-
-```mermaid
-flowchart LR
-    Owner["Owner wallet (e.g. MetaMask)"] -.->|Approves or revokes the spending Policy| Safe["Your Safe"]
-    Wallet["Local AgentPay Wallet"] -.->|Signs purchases within the Policy| Safe
-    Funds["Funding wallet"] -->|Transfers payment tokens| Safe
-    Safe -->|Prepays an Order| Escrow["Order escrow"]
-```
-
-**Control** follows the dotted arrows. You approve the spending limits with your
-owner wallet. The local AgentPay Wallet holds the Session Key your Agent uses
-for eligible purchases.
-
-**Money** follows the solid arrows. On Base, send USDC to your **Safe address**.
-Your owner wallet can make that transfer. Setting a budget leaves the funds in
-their existing accounts. Each purchase draws from the Safe, and Order escrow
-handles payout or refund. To find your funding address, run `agentpay wallet info`
-and copy **Safe account**.
-
 ## Get started
 
 **Linux · Node.js 22.22.3+ · npm**
@@ -65,6 +45,21 @@ this installation. Private Wallet data stays outside this program folder. Before
 removing the folder, use `uninstall` to remove its managed services.
 
 </details>
+
+### Fund your Safe
+
+```mermaid
+flowchart LR
+    Owner["Owner wallet"] -->|Sets limits| Safe["Safe"]
+    Agent["AgentPay Wallet"] -->|Requests payment| Safe
+```
+
+During setup, use your owner wallet (such as MetaMask) to approve the limits.
+AgentPay Wallet then uses its local Session Key to request purchases within them.
+Each payment comes from the **Safe balance**.
+
+On Base, transfer USDC to your **Safe account** before the first paid test.
+Run `agentpay wallet info` to copy that address.
 
 ## After setup
 
