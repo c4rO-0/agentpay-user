@@ -2,7 +2,7 @@
 
 ## Safe version detection
 
-Initial external-wallet setup checks the Safe contract version and owner before key creation. Setup and the approval page use the receipt layouts in the User package manifest. The candidate-release workflow and review procedure are described in the [owner approval guide](doc/runbooks/safe-owner-web.md). Local verification used official 1.5.0 artifacts and a disposable Hardhat chain. Hosted scheduling and the new User package release are pending.
+Initial external-wallet setup checks the Safe contract version and owner before key creation. Setup and the approval page use the receipt layouts in the User package manifest. The candidate-release workflow and review procedure are described in the [owner approval guide](doc/runbooks/safe-owner-web.md). Local verification used official 1.5.0 artifacts and a disposable Hardhat chain. GitHub verified the same contract journeys on [isolated Anvil](https://github.com/c4rO-0/agentpay-user/actions/runs/45184351730) before tagging User 0.3.31.
 
 ## Base official package and getting started — 2026-11-23
 

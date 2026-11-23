@@ -2,7 +2,7 @@
 
 ## Safe release monitoring
 
-- [ ] After merging the workflow, run **Check official Safe compatibility** manually and inspect the Anvil results.
+- [x] Verify the upstream release on GitHub Anvil before publishing the setup changes.
 - [ ] Publish the reviewed User update with setup preflight and shared compatibility metadata.
 
 ## Official onboarding — 2026-11-23
