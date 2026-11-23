@@ -1091,6 +1091,14 @@ async function runLockedOnboarding({
           checkedFor = null;
           advancing = false;
           write(`Purchase not ready: ${(result.blockers || []).join(", ")}`);
+          if (result.blockers?.includes("SAFE_TOKEN_BALANCE_LOW") && !result.blockers.includes("POLICY_ASSET_MISMATCH")) {
+            const { policy, safeTokenBalanceAtomic, estimatedPrepaidMaximumAtomic } = result.facts;
+            const balance = BigInt(safeTokenBalanceAtomic);
+            const maximum = BigInt(estimatedPrepaidMaximumAtomic);
+            const amount = value => `${formatUnits(value, config.tokenDecimals)} ${config.tokenSymbol || "tokens"}`;
+            write(`Purchases use the balance held by your Safe on eip155:${config.chainId}.\nSafe: ${policy.safe}\nToken: ${config.token}\nSafe balance: ${amount(balance)}\nCurrent test quote: up to ${amount(maximum)}`);
+            write(`For this quote, add ${amount(maximum - balance)} to this Safe on the network above. Once funded, enter 'continue' to check again.`);
+          }
           for (const diagnostic of result.diagnostics || []) {
             const guidance = failureGuidance({code: diagnostic.code});
             write(`${guidance.reason} ${guidance.next}`);

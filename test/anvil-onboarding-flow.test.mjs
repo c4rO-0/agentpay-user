@@ -226,6 +226,21 @@ test("check recommends test, shows actual quote, automatically acknowledges veri
     ["random-model-ack-smoke.mjs:invoke", "random-model-ack-smoke.mjs:confirm"],
   );
 });
+test("setup identifies the funding Safe and shows the shortfall for the current quote", async () => {
+  const f = fixture();
+  f.operations.captureNode = async () => ({
+    readyToPurchase: false,
+    blockers: ["SAFE_TOKEN_BALANCE_LOW"],
+    facts: { policy: { safe: f.draft.safe }, safeTokenBalanceAtomic: "10000", estimatedPrepaidMaximumAtomic: "35000" },
+  });
+  await f.run(["continue", "q"]);
+  const text = f.output.join("\n");
+  assert.ok(text.includes("Safe: " + f.draft.safe));
+  assert.match(text, /Safe balance: 0\.01 rUSDC/);
+  assert.match(text, /Current test quote: up to 0\.035 rUSDC/);
+  assert.match(text, /add 0\.025 rUSDC/);
+  assert.equal(f.state.checkpoint, null);
+});
 test("cancel before purchase creates no intent; quit has successful user cancellation semantics", async () => {
   const f = fixture();
   const r = await f.run(["continue", "q", "q"]);
