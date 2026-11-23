@@ -11,7 +11,7 @@ import {
 } from "../src/demo-unlock-secret.mjs";
 import { createInterface } from "node:readline/promises";
 import { readFile } from "node:fs/promises";
-import { isAbsolute } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawn } from "node:child_process";
 import { checkLocalInstallation } from "../src/install-preflight.mjs";
@@ -84,6 +84,7 @@ try {
       const result = await runAnvilOnboarding({
         dataDir: args[1],
         config,
+        managedSettings: resolve(args[2]) === resolve(join(args[1], "anvil-onboarding.json")),
         ask,
         write: (value) => process.stdout.write(`${value}\n`),
       });

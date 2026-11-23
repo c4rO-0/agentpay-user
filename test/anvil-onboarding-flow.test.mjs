@@ -187,10 +187,11 @@ function fixture() {
       return { ok: true };
     },
   };
-  async function run(answers, override = {}) {
+  async function run(answers, override = {}, managedSettings = false) {
     return runAnvilOnboarding({
       dataDir,
       config: { ...config, ...override },
+      managedSettings,
       operations,
       write: (text) => output.push(text),
       ask: async () => {
@@ -644,4 +645,38 @@ test('setup keeps a slow but valid contract preflight alive beyond five seconds 
  assert.ok(methods.filter(m=>m==='eth_getCode').length===5);
  assert.ok(methods.every(m=>['eth_chainId','eth_getCode','eth_call'].includes(m)));
  assert.equal(f.calls.length,0);
+});
+
+test("setup resumes an unsigned questionnaire with the configured Safe only after confirming a conflicting address", async () => {
+  const f = fixture();
+  f.state.draft = null;
+  f.state.policy = null;
+  f.state.chainPolicy = false;
+  await f.run(["continue", at(6), "q", "q"]);
+  await f.run(["continue", "q", "q"], {safe: at(7)});
+  assert.equal(f.state.inputs.fields.safe, at(6));
+  await f.run(["continue", "restart", "q", "q"], {safe: at(7)});
+  assert.deepEqual(f.state.inputs.fields, {safe: at(7)});
+  assert.equal(f.state.draft, null);
+});
+
+test("back after failed Safe preflight corrects local settings and resumes with the same Wallet", async () => {
+  const f = fixture();
+  const initial = {safe: at(7)};
+  let settings = {...config, ...initial};
+  f.state.draft = f.state.policy = null;
+  const read = f.operations.privateJson;
+  const save = f.operations.saveAuthorizationInputs;
+  f.operations.privateJson = path => path.endsWith("anvil-onboarding.json") ? settings : read(path);
+  f.operations.saveAuthorizationInputs = (path, value) => {
+    if (path.endsWith("anvil-onboarding.json")) settings = value;
+    else return save(path, value);
+  };
+  f.operations.chainState = async () => { throw Error("SAFE_CODE_MISSING"); };
+  await f.run(["continue", "", "5", "1", "180", "back", at(8), "q", "back", at(9), "confirm", "q", "q"], initial, true);
+  assert.ok(f.output.some(line => line.includes("SAFE_CODE_MISSING")));
+  assert.equal(settings.safe, at(9));
+  assert.equal(settings.ownerAddress, config.ownerAddress);
+  assert.deepEqual(f.state.inputs.fields, {safe: at(9)});
+  assert.equal(f.state.draft, null);
 });

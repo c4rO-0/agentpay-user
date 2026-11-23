@@ -39,6 +39,7 @@ import { executeAnvilOwnerCall } from "./safe-owner-anvil.mjs";
 import { checkLocalInstallation } from "./install-preflight.mjs";
 import { inspectLocalUserSetup } from "./user-setup-guide.mjs";
 import {
+  authorizationContext,
   runPolicyTerminalGuide,
   showAuthorizationSummary,
 } from "./policy-terminal-guide.mjs";
@@ -372,6 +373,7 @@ async function runLockedOnboarding({
   ask,
   write,
   operations = {},
+  managedSettings = false,
 }) {
   // Dependencies allow focused orchestration tests; the CLI uses these real defaults.
   const ops = {
@@ -628,11 +630,40 @@ async function runLockedOnboarding({
               ? "4/4 Continue the existing test"
               : "4/4 Run the paid test";
     if (!advancing) {
+      const canEditSafe = managedSettings && next === "limits" && !saved && !wallet?.policy;
       step(
         "> Continue setup",
-        `${stage}\n  * 'continue'  Resume the next incomplete step\n    'details'   Inspect current state\n    'q'         Quit`,
+        `${stage}\n  * 'continue'  Resume the next incomplete step${canEditSafe ? "\n    'back'      Review or correct your Safe address" : ""}\n    'details'   Inspect current state\n    'q'         Quit`,
       );
-      const choice = await promptChoice(ask, "", ["continue", "details", "q"]);
+      const choices = ["continue", "details", "q"];
+      if (canEditSafe) choices.push("back");
+      const choice = await promptChoice(ask, "", choices);
+      if (choice === "back") {
+        const answer = (await ask(`Setup Safe: ${config.safe || "not set"}\nOwner: ${config.ownerAddress}\nEnter the Safe address to use, or 'q' to return\n> `)).trim();
+        if (answer.toLowerCase() === "q") continue;
+        let safe;
+        try { safe = getAddress(answer); } catch {}
+        if (!safe || /^0x0{40}$/i.test(safe) || safe.toLowerCase() === config.ownerAddress.toLowerCase()) {
+          write("Enter the Safe contract address shown in Safe Wallet. The owner address signs for it.");
+          continue;
+        }
+        const confirm = await promptChoice(ask, `Use Safe ${safe} and re-enter the unfinished spending limits? Type 'confirm' or 'q'.`, ["confirm", "q"]);
+        if (confirm === "q") continue;
+        const settingsPath = join(dataDir, "anvil-onboarding.json");
+        const disk = await ops.privateJson(settingsPath);
+        if (JSON.stringify(disk) !== JSON.stringify(config)) throw Error("Setup settings changed. Reopen agentpay setup before editing.");
+        // Clear only the unsigned questionnaire first. After interruption either
+        // saved Safe can start with fresh answers; there is no submitted draft.
+        await ops.saveAuthorizationInputs(join(dataDir, "runtime", "authorization-fields.json"), {
+          version: 2, context: authorizationContext(config, local.delegate), fields: {},
+        });
+        const updated = { ...config, safe };
+        await ops.saveAuthorizationInputs(settingsPath, updated);
+        config = updated;
+        write(`Saved Safe: ${safe}. Continuing to spending limits.`);
+        advancing = true;
+        continue;
+      }
       if (choice === "q") return { completed: false, stage: "quit", next };
       if (choice === "details") {
         write(
@@ -680,7 +711,21 @@ async function runLockedOnboarding({
           continue;
         }
         const inputPath = join(dataDir, "runtime", "authorization-fields.json");
-        const inputs = await ops.privateJson(inputPath);
+        let inputs = await ops.privateJson(inputPath);
+        // Earlier setup versions asked for the Safe twice. Only an unfinished
+        // questionnaire in this installation may be restarted at this point.
+        if (config.safe && inputs?.version === 2 &&
+            inputs.context === authorizationContext(config, local.delegate) &&
+            inputs.fields?.safe && getAddress(inputs.fields.safe) !== getAddress(config.safe)) {
+          write(`Saved setup Safe: ${getAddress(config.safe)}\nUnfinished questionnaire Safe: ${getAddress(inputs.fields.safe)}`);
+          const answer = await ask("Type 'restart' to discard these unfinished answers and use the setup Safe, or 'q' to return\n> ");
+          if (answer.trim().toLowerCase() !== "restart") {
+            advancing = false;
+            continue;
+          }
+          inputs = { version: 2, context: inputs.context, fields: {} };
+          await ops.saveAuthorizationInputs(inputPath, inputs);
+        }
         if (
           !inputs &&
           (await ops.privateJson(
@@ -693,6 +738,7 @@ async function runLockedOnboarding({
         }
         const result = await runPolicyTerminalGuide({
           deployment: config,
+          boundSafe: config.safe,
           delegate: local.delegate,
           collectOnly: true,
           checkpoint: inputs,
