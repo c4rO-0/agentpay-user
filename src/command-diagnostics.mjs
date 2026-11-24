@@ -50,6 +50,8 @@ export function diagnostic(error) {
       const m=line.match(/[/\\]([A-Za-z0-9_.-]+\.(?:mjs|js|ts)):(\d+):(\d+)/);
       return m ? [`${m[1]}:${m[2]}:${m[3]}`] : [];
     });
+    const previous = chain.at(-1);
+    if (previous?.code === row.code && !row.frames.length && row.sourceCode === previous.sourceCode && row.exitCode === previous.exitCode && !row.component) continue;
     chain.push(row);
   }
   return chain.length ? chain : [failureGuidance({})];

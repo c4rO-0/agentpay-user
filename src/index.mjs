@@ -818,9 +818,7 @@ for (const signal of ["SIGINT", "SIGTERM"])
   });
 
 async function assertOriginalOrderOpen(orderId) {
-  const result = settlementResult(
-    await callWallet("readSettlementOrder", { settlementUrl, orderId }),
-  );
+  const result = await readOriginalOrder(orderId, Date.now() + operationTimeoutMs);
   if (result.order?.orderId !== orderId)
     throw coded(
       "SETTLEMENT_RESPONSE_INVALID",
@@ -837,6 +835,21 @@ async function assertOriginalOrderOpen(orderId) {
     );
   return result;
 }
+// A read may be repeated after a lost reply. Payment and signing calls must
+// keep their own recovery rules. All attempts share the current step deadline.
+async function readOriginalOrder(orderId, deadline) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return settlementResult(await callWallet("readSettlementOrder", { settlementUrl, orderId }, remaining(deadline)));
+    } catch (error) {
+      const pauseMs = 500 * 2 ** attempt;
+      if (attempt >= 3 || Date.now() + pauseMs >= deadline ||
+          !["WALLET_TIMEOUT", "WALLET_EMPTY_RESPONSE", "ECONNRESET", "ECONNREFUSED",
+            "ETIMEDOUT", "CHAIN_RPC_UNAVAILABLE"].includes(error.code)) throw error;
+      await delay(pauseMs);
+    }
+  }
+}
 async function waitForPaymentRequired(initial) {
   const deadline = Date.now() + operationTimeoutMs;
   let current = initial;
@@ -848,13 +861,7 @@ async function waitForPaymentRequired(initial) {
         "Vault creation did not finish in time",
       );
     await delay(Math.min(250, remaining(deadline)));
-    current = settlementResult(
-      await callWallet(
-        "readSettlementOrder",
-        { settlementUrl, orderId: current?.order?.orderId },
-        remaining(deadline),
-      ),
-    );
+    current = await readOriginalOrder(current?.order?.orderId, deadline);
   }
   assertOrderCanContinue(current);
   return current;

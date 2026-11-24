@@ -1,5 +1,11 @@
 # User work queue
 
+## Future upgrade · background Order execution
+
+- [ ] After Runtime durably accepts a purchase, let the caller disconnect and later reattach to the same request or retrieve its verified result. Keep input snapshots until recovery finishes.
+- [ ] Resume eligible work across restarts with one executor per request, persisted retry limits and explicit pauses. Reconcile ambiguous signatures, payment submission and Provider execution before any replay. Old Orders require explicit continuation.
+- [ ] Expose progress and cancellation through the existing CLI. Cover interrupted creation, payment, delivery, cached results and cancellation races with controlled services.
+
 ## Safe release monitoring
 
 - [x] Verify the upstream release on GitHub Anvil before publishing the setup changes.

@@ -26,6 +26,16 @@ test('captured helper retains meaningful safe diagnostics and original state', a
     });
     assert.equal(await readFile(record, 'utf8'), 'original-request');
   }
+  await writeFile(script, `throw Object.assign(Error('private'), {code:'RUNTIME_REQUEST_FAILED',runtimeCode:'WALLET_TIMEOUT'});`);
+  await assert.rejects(captureNode(script, []), e => {
+    assert.match(formatSetupFailure(e), /Code: WALLET_TIMEOUT/);
+    return true;
+  });
+  await writeFile(script, `throw Object.assign(Error('private'), {code:'RUNTIME_REQUEST_FAILED',runtimeCode:'CHAIN_RPC_UNAVAILABLE'});`);
+  await assert.rejects(captureNode(script, []), e => {
+    assert.match(formatSetupFailure(e), /Code: NETWORK_UNAVAILABLE/);
+    return true;
+  });
   await writeFile(script, `console.log(JSON.stringify({ok:true,value:7}));`);
   assert.deepEqual(await captureNode(script, []), {ok:true,value:7});
   await writeFile(script, `console.log(JSON.stringify({ok:false,error:{code:'LOCKED',message:'DO_NOT_SHARE'}}));process.exitCode=1;`);

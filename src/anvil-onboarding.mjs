@@ -1158,8 +1158,10 @@ async function runLockedOnboarding({
       }
     } catch (error) {
       advancing = false;
-      write(`${stage} stopped.`);
-      await reportCommandFailure(error,{operation:stage,write,effect:"Saved progress is kept. If a transaction was submitted, resume this same step; do not create a replacement request."});
+      const effect = action === "test"
+        ? "Run agentpay orders list. If the test Order is listed, check it with agentpay orders status <Order ID>. Return to agentpay setup to continue. Keep any saved request."
+        : "Saved progress is kept. If a transaction was submitted, resume this same step; do not create a replacement request.";
+      await reportCommandFailure(error, {operation:stage, write, effect});
     }
   }
 }

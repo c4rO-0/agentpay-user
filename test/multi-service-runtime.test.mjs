@@ -65,6 +65,7 @@ async function fixture(t) {
   let tamper = false,
     mismatch = false,
     dropPrepare = false,
+    dropOrderRead = false,
     closure = null,
     vaultOverride = null,
     quoteReject = false,
@@ -336,6 +337,11 @@ async function fixture(t) {
           authorization: "opaque-fixture-" + order.id,
         };
       } else if (request.method === "readSettlementOrder") {
+        if (dropOrderRead) {
+          dropOrderRead = false;
+          socket.end();
+          return;
+        }
         const order = orders.get(p.orderId);
         result = {
           closure,
@@ -491,6 +497,7 @@ async function fixture(t) {
     invoke,
     setTamper: (value) => (tamper = value),
     setMismatch: (value) => (mismatch = value),
+    dropOrderRead: () => (dropOrderRead = true),
     dropPrepare: () => (dropPrepare = true),
     setClosure: (value) => (closure = value),
   };
@@ -541,6 +548,15 @@ test("one Runtime routes two JSON services without selection/restart and isolate
   for (const order of f.orders.values()) assert.equal(order.fundings, 1);
   assert.ok(!JSON.stringify(f.calls).includes("private-example"));
   assert.equal((await readdir(f.dir)).includes("state.json.results"), true);
+});
+test("lost Order read reply continues the same invocation with one funding", async (t) => {
+  const f = await fixture(t);
+  await f.start("", true, [], "2500");
+  f.dropOrderRead();
+  const response = await f.invoke(f.refs[0], { text: "one" }, "lost-read-reply-001");
+  assert.equal(response.ok, true, JSON.stringify(response.error));
+  assert.equal(f.orders.size, 1);
+  assert.equal(f.orders.get(response.result.orderId).fundings, 1);
 });
 test("official test passes an explicit request ID through the Skill client and repeats without another payment", async (t) => {
   const f = await fixture(t);

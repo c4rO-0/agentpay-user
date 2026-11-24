@@ -2,6 +2,18 @@
 // Only reviewed categories reach the terminal; never forward RPC request bodies,
 // credential-bearing URLs or child-process output as a diagnostic message.
 export const CHAIN_CHECK_TIMEOUT_MS = 30000;
+// Only product-owned Runtime codes cross the helper boundary. Error messages
+// and unknown upstream strings can contain private request data.
+const orderFailures = new Set(`
+  DELIVERY_EVIDENCE_MISMATCH DELIVERY_EVIDENCE_TIMEOUT INVOCATION_BUSY
+  INVOCATION_CONFLICT INVOCATION_SERVICE_BINDING_MISMATCH OFFER_UNAVAILABLE
+  ORDER_PAYMENT_DEADLINE_PASSED ORDER_PREPARATION_TIMEOUT ORDER_RESPONSE_DEADLINE_PASSED
+  PAYMENT_FAILED PAYMENT_REJECTED PROVIDER_FAILED PROVIDER_RECOVERY_TIMEOUT
+  PROVIDER_REJECTED PROVIDER_RETRY PURCHASE_NOT_READY QUOTE_TERMS_INVALID
+  SERVICE_AUTHORIZATION_MISMATCH SERVICE_READY_TIMEOUT SETTLEMENT_RESPONSE_INVALID
+  SETTLEMENT_REQUEST_REJECTED SKILL_INVOCATION_FAILED WALLET_TIMEOUT
+  WALLET_CREDENTIAL_UNAVAILABLE WALLET_EMPTY_RESPONSE WALLET_RESPONSE_TOO_LARGE
+`.trim().split(/\s+/));
 export function failureGuidance(error) {
   const codes = [];
   const pending = [error];
@@ -34,7 +46,17 @@ export function failureGuidance(error) {
     SETTLEMENT_REQUEST_REJECTED: ["Settlement did not accept this operation.", "Check the original Order status and service logs before resuming; do not create a replacement request."],
     RUNTIME_REQUEST_FAILED: ["Runtime could not finish this request.", "Run agentpay health and inspect agentpay service logs runtime. Keep the original request."],
   };
-  const requestCode = codes.find(c => Object.hasOwn(requestFailures, c));
+  const runtimeCode = error?.code === "RUNTIME_REQUEST_FAILED" ? error.runtimeCode : undefined;
+  // Wallet/network errors can arrive inside the Runtime client's generic wrapper.
+  // Use the same reviewed guidance as a direct transport failure.
+  if (["CHAIN_RPC_UNAVAILABLE", "ECONNREFUSED", "ECONNRESET", "ETIMEDOUT"].includes(runtimeCode))
+    return failureGuidance({code: runtimeCode});
+  const specific = orderFailures.has(runtimeCode) ? runtimeCode : codes.find(c => orderFailures.has(c));
+  if (specific && !Object.hasOwn(requestFailures, specific)) {
+    const reason = specific.endsWith("_TIMEOUT") ? "The request timed out during this step." : "The original request stopped during this step.";
+    return {code:specific, reason, next:"Check the original Order with agentpay orders status before continuing the same request."};
+  }
+  const requestCode = specific || codes.find(c => Object.hasOwn(requestFailures, c));
   if (requestCode) {
     const [reason, next] = requestFailures[requestCode];
     return {code: requestCode, reason, next};
