@@ -3,6 +3,8 @@ import { walletCliPath } from "../src/wallet-package.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
+import { readProxy, proxyEnvironment } from "../src/service-proxy.mjs";
+import { atomicWritePrivate } from "../src/private-journal-files.mjs";
 import { spawn } from "node:child_process";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -37,6 +39,13 @@ try {
   );
   if (role === "runtime")
     Object.assign(env, runtimeEnvironment(dataDir, settings));
+  const proxy = await readProxy(dataDir);
+  Object.assign(env, proxyEnvironment(proxy));
+  if (process.env.INVOCATION_ID) {
+    await atomicWritePrivate(join(dataDir, "runtime", "proxy-" + role + ".json"), JSON.stringify({
+      invocation: process.env.INVOCATION_ID, revision: proxy?.enabled ? proxy.revision : "off"
+    }));
+  }
   const child = spawn(
     process.execPath,
     [entry, ...(role === "wallet" ? ["serve", join(dataDir, "wallet")] : [])],

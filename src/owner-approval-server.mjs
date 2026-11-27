@@ -219,6 +219,9 @@ export function tryBrowser(
   url,
   { env = process.env, platform = process.platform } = {},
 ) {
+  // External browsers have their own network policy and credential environment.
+  // Leave opening the local approval page to the user in strict proxy mode.
+  if (env.AGENTPAY_PROXY_REQUIRED === '1') return false;
   const command =
     platform === "darwin"
       ? "open"

@@ -63,6 +63,11 @@ if (!Number.isSafeInteger(operationTimeoutMs) || operationTimeoutMs < 1) {
     "AGENTPAY_USER_OPERATION_TIMEOUT_MS must be a positive number of milliseconds",
   );
 }
+// Chain jobs can outlast an individual network operation. Keep their polling
+// windows separate from ordinary requests and honor explicit timeout overrides.
+const chainWaitTimeoutMs = process.env.AGENTPAY_USER_OPERATION_TIMEOUT_MS
+  ? operationTimeoutMs
+  : 180_000;
 const includeProviderEvidence =
   process.env.AGENTPAY_USER_INCLUDE_PROVIDER_EVIDENCE === "true";
 const invocationStore = createInvocationStore(
@@ -851,7 +856,7 @@ async function readOriginalOrder(orderId, deadline) {
   }
 }
 async function waitForPaymentRequired(initial) {
-  const deadline = Date.now() + operationTimeoutMs;
+  const deadline = Date.now() + chainWaitTimeoutMs;
   let current = initial;
   while (!current?.paymentRequired) {
     assertOrderCanContinue(current);
@@ -867,7 +872,7 @@ async function waitForPaymentRequired(initial) {
   return current;
 }
 async function waitForServiceReady(orderId, requestHash) {
-  const deadline = Date.now() + operationTimeoutMs;
+  const deadline = Date.now() + chainWaitTimeoutMs;
   let last;
   while (Date.now() < deadline) {
     try {

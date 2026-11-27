@@ -10,6 +10,9 @@ import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 const exec = promisify(execFile);
 const definitions = {
+  PROXY_ADDRESS_INVALID: ['Invalid proxy address.', 'Run agentpay proxy configure and enter an HTTP or HTTPS origin. Enter credentials at the separate prompts.'],
+  PROXY_USERNAME_INVALID: ['Invalid proxy username.', 'Run agentpay proxy configure and enter a username without a colon or control characters.'],
+  PROXY_CONFIG_INVALID: ['Private proxy settings could not be read.', 'Run agentpay proxy clear to remove damaged settings, then configure the proxy again. Clearing switches this installation to direct connections.'],
   POLICY_LOCK_UNAVAILABLE: ['The authorization locking dependency could not be loaded.', 'Reinstall the matching User package dependencies and retry. Authorization cannot continue without a working lock.'],
   POLICY_OPERATION_BUSY: ["Another authorization command is running for this Wallet.", "Finish it, or stop that command and retry this one. Do not delete lock files or authorization records; retry resumes saved progress."],
   POLICY_LOCK_UNSAFE: ["Authorization lock storage has unsafe ownership, permissions or links.", "Keep your data folder and contact support to check its ownership and permissions. Do not delete authorization records."],

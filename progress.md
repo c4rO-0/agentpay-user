@@ -1,5 +1,9 @@
 # AgentPay User progress
 
+## User 0.3.35 release candidate
+
+User pairs with Wallet 0.3.8 and Protocol 0.14.4. An installation can now save a proxy for its CLI, Wallet and Runtime. External requests fail when the selected proxy is unavailable. See [network proxy settings](doc/usage.md#use-a-network-proxy) for setup and file-download limits. The local Skill client now honors its configured wait for a slow Order response.
+
 ## Safe version detection
 
 Initial external-wallet setup checks the Safe contract version and owner before key creation. Setup and the approval page use the receipt layouts in the User package manifest. The candidate-release workflow and review procedure are described in the [owner approval guide](doc/runbooks/safe-owner-web.md). Local verification used official 1.5.0 artifacts and a disposable Hardhat chain. GitHub verified the same contract journeys on [isolated Anvil](https://github.com/c4rO-0/agentpay-user/actions/runs/45184351730) before tagging User 0.3.31.

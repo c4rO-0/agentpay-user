@@ -9,6 +9,7 @@ import { join } from "node:path";
 import { installedUserDir } from "./local-data-directory.mjs";
 const execute = promisify(execFile);
 const groups = {
+  proxy: [["status", "Show saved and running proxy settings"], ["configure", "Edit the address and optional credentials"], ["on", "Use the saved proxy"], ["off", "Connect directly and keep settings"], ["clear", "Remove saved proxy settings"]],
   wallet: [
     ["info", "Wallet identity and local file locations"],
     ["unlock", "Unlock Wallet for payments"],
@@ -87,7 +88,7 @@ export const helpText =
                   ? "Website connection"
                   : name === "payment"
                     ? "Payment path checks"
-                    : "Local file cache",
+                    : name === "proxy" ? "Wallet and Runtime network proxy" : "Local file cache",
       ]),
       ["help", "Show this overview"],
     ],
@@ -113,6 +114,7 @@ function topicHelp(group, sub) {
       ) + "Current processes are unchanged. Wallet starts locked.\n"
     );
   const notes = {
+    proxy: "Proxy settings belong to this installation.",
     wallet: "Locking Wallet does not revoke on-chain spending permission.",
     policy:
       "Renewal and revocation require owner approval. Existing Orders are retained.",
@@ -210,6 +212,10 @@ async function dispatchUserCli(
     if (rest.length && groups[rest[0]]) write(topicHelp(rest[0], rest[1]));
     else write(helpText);
     return 0;
+  }
+  if (command === "proxy" && (!rest.length || !rest.some(isHelp))) {
+    const {proxyCommand} = await import("./proxy-command.mjs");
+    return proxyCommand(rest, {write});
   }
   if (
     groups[command] &&

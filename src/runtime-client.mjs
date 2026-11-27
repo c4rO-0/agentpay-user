@@ -1,3 +1,4 @@
+import { request as localHttpRequest } from "node:http";
 import { readFileSync, lstatSync } from "node:fs";
 import { installationDirectory } from "./installation-paths.mjs";
 // Shared Skill transport and recovery. Resolve local credentials privately; endpoint
@@ -220,23 +221,25 @@ function identity(service) {
 async function requestJson(url, options, timeoutMs) {
   const signal = AbortSignal.timeout(timeoutMs);
   try {
-    const response = await fetch(url, {
-      ...options,
-      redirect: "error",
-      signal,
+    // An invoke can take longer than fetch's default response-header timeout.
+    // This authenticated transport is exclusively for the loopback Runtime.
+    runtimeBase(url.origin);
+    const stream = await new Promise((resolve,reject) => {
+      const req = localHttpRequest(url, {method:options.method, headers:options.headers,
+        signal, agent:false}, resolve);
+      req.once("error",reject);
+      req.end(options.body);
     });
+    const response = {status:stream.statusCode, ok:stream.statusCode >= 200 && stream.statusCode < 300};
     const chunks = [];
     let length = 0;
-    if (response.body)
-      for await (const chunk of response.body) {
-        length += chunk.length;
-        if (length > 2 * 1048576)
-          throw fail(
-            "RUNTIME_RESPONSE_TOO_LARGE",
-            "Runtime response exceeded the local size limit. Keep the original request and inspect Runtime logs; do not create a replacement purchase.",
-          );
-        chunks.push(chunk);
-      }
+    for await (const chunk of stream) {
+      length += chunk.length;
+      if (length > 2 * 1048576)
+        throw fail("RUNTIME_RESPONSE_TOO_LARGE",
+          "Runtime response exceeded the local size limit. Keep the original request and inspect Runtime logs; do not create a replacement purchase.");
+      chunks.push(chunk);
+    }
     let body;
     try {
       body = JSON.parse(Buffer.concat(chunks).toString("utf8"));
@@ -558,7 +561,8 @@ async function invokeSaved(
   connection,
   service,
   checkpoint,
-  { timeoutMs = 300000, inputFiles, prepareRequest } = {},
+  // Allow both Runtime chain waits plus time for submission and delivery.
+  { timeoutMs = 480_000, inputFiles, prepareRequest } = {},
 ) {
   // Re-read durable state: no POST is allowed for an unpersisted or changed request.
   let saved = await resumeInvocation(

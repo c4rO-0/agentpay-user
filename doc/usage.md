@@ -11,6 +11,7 @@ internal scripts for ordinary setup.
 | Diagnose connectivity or setup | `agentpay health` |
 | Unlock / lock | `agentpay wallet unlock`, `agentpay wallet lock` |
 | Start / stop / restart | `agentpay service start`, `stop`, `restart` |
+| Wallet and Runtime proxy | `agentpay proxy` |
 | Login startup | `agentpay service autostart on` / `off` |
 | Inspect identity / restore | `agentpay wallet info`, `agentpay wallet restore` |
 | Change / revoke permission | `agentpay policy renew`, `agentpay policy revoke` |
@@ -26,6 +27,35 @@ See [full command reference](runbooks/commands.md) for arguments and examples.
 Status distinguishes saved local facts from refreshed observations. It is not a
 promise that a new purchase will be accepted. Online Order status queries go through
 Wallet; a failed query or missing local result does not prove non-payment.
+
+## Use a network proxy
+
+Run `agentpay proxy configure` to save an HTTP or HTTPS proxy for this installation.
+For a local proxy, enter its listening address, such as `http://127.0.0.1:7890`.
+Enter a username only if the proxy needs authentication. The password prompt hides your input.
+
+| Command | What happens |
+| --- | --- |
+| `agentpay proxy on` | Checks Settlement and the chain RPC through the selected connection. If running services need to restart, asks for confirmation. |
+| `agentpay proxy off` | Switches to a direct connection and keeps the saved address and credentials. |
+| `agentpay proxy` | Shows the saved mode and whether the selected managed services have applied it. |
+| `agentpay proxy clear` | Turns the proxy off and removes its saved credentials and address. |
+
+Use `configure` again to edit the address or credentials. After a restart, run
+`agentpay wallet unlock`. Stopped services pick up the setting on their next start.
+Each User data directory has its own private `runtime/proxy.json` (mode 600).
+It can contain the proxy password. Keep backups private.
+
+When enabled, new AgentPay CLI commands and the managed Wallet and Runtime use
+the selected proxy for external requests. If the proxy stops responding, those
+requests fail. Loopback Runtime requests and Wallet IPC stay on this computer.
+External file-cache downloads return an error before DNS lookup because their pinned
+downloader requires a direct socket. Browser and independently launched Skill
+connections follow their own network settings.
+
+For an installation with local Anvil and Settlement endpoints, the connection
+check can verify the local services only. If the proxy settings file is damaged,
+`agentpay proxy clear` asks before removing it and selecting direct connections.
 
 ## Authorization and recovery
 

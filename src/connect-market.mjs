@@ -4,7 +4,7 @@ import {reportCommandFailure} from "./command-diagnostics.mjs";
 // SPDX-License-Identifier: MPL-2.0
 // This Source Code Form is subject to the terms of the Mozilla Public License, v. 2.0.
 // If a copy was not distributed with this file, see https://mozilla.org/MPL/2.0/.
-import { createInterface } from "node:readline/promises";
+import { askTerminal } from "./terminal-input.mjs";
 import { constants } from "node:fs";
 import { open, rename, unlink } from "node:fs/promises";
 import { join } from "node:path";
@@ -39,53 +39,6 @@ export function marketOrigin(value) {
       "Use your Market HTTPS address, or a local rehearsal address such as http://127.0.0.1:8080.",
     );
   return u.origin;
-}
-async function askTerminal(message, { hidden = false } = {}) {
-  if (!process.stdin.isTTY)
-    throw Error("Run this command in an interactive terminal.");
-  if (!hidden) {
-    const rl = createInterface({
-      input: process.stdin,
-      output: process.stderr,
-    });
-    try {
-      return await rl.question(message + "\n> ");
-    } finally {
-      rl.close();
-    }
-  }
-  process.stderr.write(message + " (input hidden): ");
-  const previous = process.stdin.isRaw;
-  process.stdin.setRawMode(true);
-  process.stdin.resume();
-  process.stdin.setEncoding("utf8");
-  return new Promise((resolve, reject) => {
-    let value = "";
-    const finish = (e) => {
-      process.stdin.off("data", read);
-      process.stdin.setRawMode(!!previous);
-      process.stdin.pause();
-      process.stderr.write("\n");
-      const result = value;
-      value = "";
-      e ? reject(e) : resolve(result);
-    };
-    const read = (chunk) => {
-      for (const c of chunk) {
-        if (c === "\u0003" || c === "\u0004")
-          return finish(
-            Object.assign(Error("Connection cancelled."), {
-              code: "CANCELLED",
-            }),
-          );
-        if (c === "\r" || c === "\n") return finish();
-        if (c === "\u007f" || c === "\b") value = value.slice(0, -1);
-        else if (c >= " ") value += c;
-        if (value.length > 4096) return finish(Error("Input is too long."));
-      }
-    };
-    process.stdin.on("data", read);
-  });
 }
 async function previousConnection(dataDir) {
   let h;

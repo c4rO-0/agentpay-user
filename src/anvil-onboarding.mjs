@@ -31,7 +31,8 @@ import {
   rename,
 } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { join, resolve } from "node:path";
+import {readProxy, proxyEnvironment} from "./service-proxy.mjs";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { getAddress, formatUnits, Contract } from "ethers";
 import { Phase0Wallet } from "@c4roa0/agentpay-wallet/local";
@@ -56,7 +57,8 @@ const userDir = fileURLToPath(new URL("..", import.meta.url));
 const walletCli = walletCliPath();
 const runtimeEntry = fileURLToPath(new URL("./index.mjs", import.meta.url));
 const ownEnv = Object.fromEntries(
-  ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "TZ"]
+  ["HOME", "PATH", "TMPDIR", "LANG", "LC_ALL", "TZ",
+    ...(process.env.AGENTPAY_PROXY_REQUIRED === "1" ? ["AGENTPAY_PROXY_REQUIRED","NODE_USE_ENV_PROXY","HTTP_PROXY","HTTPS_PROXY","NO_PROXY"] : [])]
     .filter((key) => process.env[key])
     .map((key) => [key, process.env[key]]),
 );
@@ -245,8 +247,9 @@ async function startLocal(script, args, env, probe, pidPath) {
   const log = await open(logPath, "a", 0o600);
   let child, started;
   try {
+    const proxy = await readProxy(dirname(dirname(pidPath)));
     child = spawn(process.execPath, [script, ...args], {
-      env,
+      env: {...env, ...proxyEnvironment(proxy)},
       stdio: ["ignore", log.fd, log.fd],
       detached: true,
     });

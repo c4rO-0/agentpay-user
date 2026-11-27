@@ -107,6 +107,12 @@ export async function downloadFile(
   try {
     let target = allowedUrl(url);
     for (let hop = 0; hop <= 5; hop++) {
+      // Pinned downloads resolve the destination locally and use a direct
+      // socket. Do not perform even the DNS lookup for an external URL when
+      // the installation requires a proxy. Check redirects independently.
+      if (process.env.AGENTPAY_PROXY_REQUIRED === '1' &&
+          !['127.0.0.1','[::1]'].includes(target.hostname))
+        throw fileError('FILE_PROXY_REQUIRED', 'This file requires a pinned direct download, which is blocked while the proxy is on.');
       const answers = await addresses(target),
         allowPrivate = privateOrigins.includes(target.origin);
       if (
